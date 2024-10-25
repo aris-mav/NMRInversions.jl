@@ -41,45 +41,44 @@ function solve_gcv(svds::svd_kernel_struct, solver::Union{regularization_solver,
     ñ = length(s̃)
 
     #Initial guess (overestimate)
-    αₙ = sum(s̃ .^ 2) / ñ
-    α = []
-    φ = []
+    α = sum(s̃ .^ 2) / ñ
+
+    alphas = []
+    phis = []
     f_star = []
-    count = 0
 
-    done = false
+    conditions = [true for _ in 1:3]
 
+    while all(conditions) 
 
-    while ~done && count <= 15
-        count += 1
-        display("Testing α = $(round(αₙ,sigdigits=3))")
-        f, r = solve_regularization(svds.K, svds.g, αₙ, solver)
+        display("Testing α = $(round(α,sigdigits=3))")
 
-        push!(α, αₙ) # Add the just tested α to the array
-        φₙ, αₙ = gcv_score(αₙ, r, svds.S, (svds.V' * f)) # Compute φ for current α, and also compute new α 
-        push!(φ, φₙ)
+        f, r = solve_regularization(svds.K, svds.g, α, solver)
+        push!(alphas, α) # Add the just tested α to the array
 
-        if length(φ) > 1 && φ[end] < φ[end-1]
-            f_star = deepcopy(f)
+        φ, α = gcv_score(α, r, svds.S, (svds.V' * f)) # Compute φ for current α, and also compute new α 
+        push!(phis, φ)
 
-        elseif length(φ) > 1 && (abs(α[end] - α[end-1]) > 1e-4) && φ[end] >= φ[end-1] 
-            done = true
+        conditions .= [
+            length(phis) > 1 ? phis[end] < phis[end-1] : true,
+            length(alphas) > 1 ? (abs(alphas[end] - alphas[end-1]) > 1e-3) : true,
+            length(alphas) < 15
+        ]
 
-            display("The optimal α is $(round(α[end-1],digits=3))")
-            if count == 15
-                @warn("Reached maximum iterations looking for alpha, results might be inaccurate")
-            end
+        # If the gcv score dropped, save the solution
+        if conditions[1] 
+            f_star = copy(f)
         end
 
     end
 
-    α = α[end-1]
+    display("The optimal α is $(round(alphas[end-1], digits=3))")
+    α = alphas[end-1]
     f = f_star
     r = svds.g - svds.K * f
 
     return f, r, α
 end
-
 
 
 """

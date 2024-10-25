@@ -145,7 +145,7 @@ And for 2D inversions, there's an interactive gui to characterize the inversion 
 
 ```@docs
 plot(::NMRInversions.inv_out_2D)
-plot(::NMRInversions.inv_out_2D,::String)
+plot(results::AbstractMatrix{inv_out_2D}; kwargs...)
 plot!(::Union{Makie.Figure,Makie.GridPosition}, ::NMRInversions.inv_out_2D )
 ```
 

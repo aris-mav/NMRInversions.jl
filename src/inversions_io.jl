@@ -146,36 +146,6 @@ end
 #=end=#
 
 
-function writeresults(results::Union{inv_out_1D,inv_out_2D}, dir)
-
-    open(dir, "w") do io
-        for field in fieldnames(typeof(results))
-            data = getfield(results, field)
-            datastring = isa(data, Array) ? join(data, ", ") : string(getfield(results, field))
-            write(io, String(field) * " : " * datastring * "\n")
-        end
-    end
-
-end
-
-function readresults(dir::String)
-
-    open(dir) do io
-
-        readuntil(io, "seq : ")
-        seq = eval(Meta.parse(readline(io)))
-        supertype(seq) == pulse_sequence1D ? datatype = inv_out_1D : datatype = inv_out_2D
-
-        for field in fieldnames(datatype)
-            readuntil(io, field * " : ")
-
-        end
-
-    end
-
-end
-
-
 
 export import_geospec
 """

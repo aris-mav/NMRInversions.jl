@@ -222,9 +222,10 @@ A structure containing the following fields:
 - `SNR`, the signal-to-noise ratio.
 - `α`, the regularization parameter.
 - `wa`, the weighted average of the inversion results (e.g. the mean relaxation time or diffusion coefficient).
+- `title`, a title describing the data.
 
 """
-struct inv_out_1D
+mutable struct inv_out_1D
     seq::Type{<:pulse_sequence1D}
     x::Vector
     y::Vector
@@ -236,6 +237,7 @@ struct inv_out_1D
     SNR::Real
     alpha::Real
     wa::Real
+    title::String
 end
 
 
@@ -255,9 +257,10 @@ A structure containing the following fields:
 - `alpha`, the regularization parameter.
 - `filter`, apply a mask to filter out artefacts when plotting.
 - `selections`, the selection masks (e.g. when you want to highlight some peaks in a T₁-T₂ map).
+- `title`, a title describing the data.
 
 """
-struct inv_out_2D
+mutable struct inv_out_2D
     seq::Type{<:pulse_sequence2D}
     X_dir::Vector
     X_indir::Vector
@@ -267,6 +270,7 @@ struct inv_out_2D
     alpha::Real
     filter::Matrix
     selections::Vector{Vector{Vector}}
+    title::String
 end
 
 
@@ -284,9 +288,10 @@ The fields are as follows:
 - `r` : The residuals.
 - `eq` : The equation of the fitted function.
 - `eqn` : The equation of the initial function.
+- `title` : A title describing the data.
 
 """
-struct expfit_struct
+mutable struct expfit_struct
     seq::Type{<:NMRInversions.pulse_sequence1D}
     x::Vector
     y::Vector
@@ -295,4 +300,5 @@ struct expfit_struct
     r::Vector
     eq::String
     eqn::String
+    title::String
 end

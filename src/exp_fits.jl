@@ -159,9 +159,9 @@ function expfit(u0::Vector{<:Real}, seq::Type{<:NMRInversions.pulse_sequence1D},
     r = mexp(seq, u, x) - y
 
     if length(u0) == 2
-        return expfit_struct(seq, x, y, u, u0, r, eq, eq)
+        return expfit_struct(seq, x, y, u, u0, r, eq, eq, "")
     else
-        return expfit_struct(seq, x, y, u, u0, r, eq, eqn)
+        return expfit_struct(seq, x, y, u, u0, r, eq, eqn, "")
     end
 
 end

@@ -137,20 +137,25 @@ end
 ## Plots for 2D inversions
 
 """
-    plot(results::NMRInversions.inv_out_2D, title::String; kwargs...)
+    plot(results::AbstractMatrix{inv_out_2D}; kwargs...)
 
-Plot the results contained in a `inv_out_2D` structure.
+Plot the results contained in a matrix of `inv_out_2D` structures.
+The arrangement is determined by the shape of the matrix.
 
 The arguments are:
 
 - `results` : The `inv_out_2D` structure containing the fit results.
-- `title` : Title of the plot.
 kwargs are passed onto `plot!`.
 """
-function Makie.plot(results::NMRInversions.inv_out_2D, title::String; kwargs...)
+function Makie.plot(
+    res_mat::AbstractMatrix{NMRInversions.inv_out_2D},
+    kwargs...)
 
-    f = Figure(size=(500, 500))
-    plot!(f, results; title=title, kwargs...)
+    f = Figure(size=(400, 400) .* reverse(size(res_mat)))
+
+    for (ind, res) in pairs(res_mat)
+        plot!(f[Tuple(ind)...], res; title=res.title, kwargs...)
+    end
 
     return f
 
@@ -313,7 +318,11 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     saveb = Button(gui[3, 10:19]; label="Save and exit")
 
     # Title textbox
-    tb = Textbox(gui[1, 2:7], placeholder="Insert a title for the plot, then press enter.", width=300, reset_on_defocus=true)
+    tb = Textbox(gui[1, 2:7], 
+                 placeholder="Insert a title for the plot, then press enter.", 
+                 width=300, 
+                 reset_on_defocus=true,
+                 )
 
     z = res.F' .* res.filter'
     x = collect(range(0, 1, size(z, 1)))
@@ -420,13 +429,12 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
         on(saveb.clicks) do _
 
-            ttl = ""
             if !isnothing(tb.stored_string[])
-                ttl = tb.stored_string[]
+                res.title = tb.stored_string[]
             end
 
-            f = plot(res, ttl)
-            savedir = NMRInversions.save_file(ttl, filterlist = "png")
+            f = plot(permutedims([res])) # permutedims so that it's a matrix
+            savedir = NMRInversions.save_file(res.title, filterlist = "png")
 
             if savedir == ""
                 display("Please enter a name for your file on the file dialog.")
