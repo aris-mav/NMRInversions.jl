@@ -122,7 +122,8 @@ expfit(::Vector{Real}, ::input1D)
 
 # Plotting functions
 This package offers plotting capabilities, using its GLMakie extension.
-Simply use `using GLMakie` to load the package, and these functions become available.
+Simply use `using GLMakie` before or after `using NMRInversions`
+to load the package, and these functions become available.
 
 We basically take the `plot()` function offered by GLMakie and extend it to types from the package.
 
@@ -145,7 +146,11 @@ And for 2D inversions, there's an interactive gui to characterize the inversion 
 
 ```@docs
 plot(::NMRInversions.inv_out_2D)
-plot(results::AbstractMatrix{inv_out_2D}; kwargs...)
-plot!(::Union{Makie.Figure,Makie.GridPosition}, ::NMRInversions.inv_out_2D )
+plot(results::AbstractVecOrMat{inv_out_2D}; kwargs...)
 ```
+Basically, if your `inv_out_2D` structure is a variable named `results`, 
+you can run the GUI by running `plots(results)`, or you can create a 
+simple plot by running `plot([results])`. The latter can be used with 
+matrices of `inv_out_2D` structures, and the layout of the resulting plot will
+reflect the layout of the matrix.
 

@@ -11,8 +11,11 @@ For more details, it's best to refer to the [functions](functions.md) page.
 
 # Performing an inversion
 
-Suppose we're working with data coming from a Spinsolve instrument.
+Suppose we're working with data coming from a Spinsolve instrument
 Then we can do the following:
+
+(you can find some example data in the files of this package, 
+look at the github page for the example_data folder).
 
 ```julia
 using NMRInversions
