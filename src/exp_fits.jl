@@ -48,82 +48,71 @@ end
 
 export expfit
 """
-    expfit(n, seq, x, y;solver)
+    expfit(n, seq, x, y; kwargs...)
 
-Fit an exponential function to the data `x`, `y` using `n` exponential terms. \n
-Starting points for the nonlinear regression are automatically chosen.
+Fit an n-exponential function to the data `x` and `y`. \n
 The outut is an `expfit_struct` structure.
 
 Arguments:
 
-- `n` : number of exponential terms.
+- `n` : Integer specifying the number of exponential terms.
 - `seq` : pulse sequence.
 - `x` : acquisition x parameter (time for relaxation or b-factor for diffusion).
 - `y` : acquisition y parameter (magnetization).
-- `solver` : optimization solver (default is BFGS).
 
-
-Note that initial conditions are automatically determined. 
-If you get NaN for any of the resulting parameters, 
-try changing the initial conditions by calling the funtion using
-the `u0` argument instead of `n`.
-"""
-function expfit(n::Int, seq::Type{<:NMRInversions.pulse_sequence1D}, x::Vector, y::Vector; kwargs...)
-
-    # Make an educated guess of u0
-    if seq == PFG
-        u0 = [v for l in 1:n for v in ( abs(y[1])/(3*l -2) ,maximum(x)/100 * 10.0^(-(l/2 -0.5)) ) ]
-    else 
-        u0 = [v for l in 1:n for v in ( abs(y[1])/(3*l -2) ,maximum(x)/5 * 10.0^(-(l/2)) ) ]
-    end
-
-    return expfit(u0, seq, x, y; kwargs...)
-end
-
-"""
-    expfit(n, data::input1D; kwargs...)
-Similar to the `invert` fucntion, `expfit` can be called using an `input1D` structure.
-"""
-function expfit(u0::Vector{<:Real}, res::NMRInversions.input1D; kwargs...)
-    expfit(u0, res.seq, res.x, res.y, kwargs...)
-end
-
-
-"""
-    expfit(u0, seq, x, y; solver=BFGS())
-
-Fit an exponential function to the data `x`, `y`. \n
-The outut is an `expfit_struct` structure.
-
-Arguments:
-
-- `u0` : initial parameter guesses.
-- `seq` : pulse sequence.
-- `x` : acquisition x parameter (time for relaxation or b-factor for diffusion).
-- `y` : acquisition y parameter (magnetization).
+Optional arguments:
 - `solver` : OptimizationOptimJL solver, defeault choice is BFGS().
+- `normalize` : Normalize the data before fitting? (default is true).
 
-The `u0` argument is a vector of initial parameter guesses, 
-and it also determines the number of exponential terms used.
+
+The `n` argument can also be a vector of initial parameter guesses, 
+in which case it also determines the number of exponential terms used.
 It should be of the form [a1, b1, a2, b2, ...], 
-where a's are the amplitudes and b's are the reciprocals of the decay constants.
-The length of `u0` must be an even number.
+where a's are the amplitudes and b's are the parameters inside the exponentials.
+
+The length of the vector in this case must be an even number.
 
 The following examples might help to clarify: \n
 `expfit([a,b] , CPMG, x, y)` -> mono-exponential fit with initial guess: a * exp.( (1/b) * x) \n
 
-`expfit([a,b,c,d] , CPMG, x, y)` -> double-exponential fit with initial guess: a * exp.( (1/b) * x) + c * exp.((1/d) * x) \n
+`expfit([a,b,c,d] , CPMG, x, y)` -> bi-exponential fit with initial guess: a * exp.( (1/b) * x) + c * exp.((1/d) * x) \n
 
-`expfit([a,b,c,d,e,f] , CPMG, x, y)` -> triple-exponential fit with initial guess: a * exp.( (1/b) * x) + c * exp.((1/d) * x) + e * exp.((1/f) * x) \n
+`expfit([a,b,c,d,e,f] , CPMG, x, y)` -> tri-exponential fit with initial guess: a * exp.( (1/b) * x) + c * exp.((1/d) * x) + e * exp.((1/f) * x) \n
 
 (where a,b,c,d,e,f are numbers of your choice)
+
+
 Numbers of parameters beyond tri-exponential can also be used, but it is not recommended.
 
 """
-function expfit(u0::Vector{<:Real}, seq::Type{<:NMRInversions.pulse_sequence1D}, x::Vector, y::Vector;
-     solver=OptimizationOptimJL.BFGS())
+function expfit(
+    n::Union{Int, Vector{<:Real}}, 
+    seq::Type{<:NMRInversions.pulse_sequence1D}, 
+    x::Vector, 
+    y::Vector;
+    solver=OptimizationOptimJL.BFGS(),
+    normalize=true
+)
 
-    u0 = Float64.(u0)
+    if normalize
+        y = y ./ y[argmax(real(y))]
+    end
+
+
+    if isa(n,Int) 
+
+        # Make an educated guess of the initial parameters
+        if seq == PFG
+            u0 = [v for l in 1:n for v in ( abs(y[1])/(3*l -2) ,maximum(x)/100 * 10.0^(-(l/2 -0.5)) ) ]
+        else 
+            u0 = [v for l in 1:n for v in ( abs(y[1])/(3*l -2) ,maximum(x)/5 * 10.0^(-(l/2)) ) ]
+        end
+
+    elseif isa(n,Vector)
+
+        u0 = Float64.(n)
+
+    end
 
     # Solve the optimization
     optf = Optimization.OptimizationFunction(mexp_loss, Optimization.AutoForwardDiff())
@@ -166,11 +155,17 @@ function expfit(u0::Vector{<:Real}, seq::Type{<:NMRInversions.pulse_sequence1D},
 
 end
 
+
 """
-    expfit(u0, data::input1D; kwargs...)
+    expfit(n, data; kwargs...)
 Similar to the `invert` fucntion, `expfit` can be called using an `input1D` structure.
+
+Arguments:
+
+- `n` : Integer specifying the number of exponential terms.
+- `data` : `input1D` structure containing the data to be fitted.
 """
-function expfit(n::Int, res::NMRInversions.input1D; kwargs...)
-    expfit(n, res.seq, res.x, res.y, kwargs...)
+function expfit(n::Union{Int, Vector{<:Real}}, res::NMRInversions.input1D; kwargs...)
+    return expfit(n, res.seq, res.x, res.y; kwargs...)
 end
 

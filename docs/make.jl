@@ -12,9 +12,10 @@ makedocs(sitename="NMRInversions.jl",
 
          pages=["Overview" => "index.md",
                 "Tutorial" => "tutorial.md",
-                #="Theory" => "theory.md",=#
                 "Functions" => "functions.md",
-                "Types and Structures" => "types_structs.md"
+                "Types and Structures" => "types_structs.md",
+                "Saving data" => "savefiles.md",
+                #="Theory" => "theory.md",=#
                ],
          checkdocs=:none
         )

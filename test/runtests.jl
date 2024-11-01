@@ -17,7 +17,7 @@ function test1D(seq::Type{<:pulse_sequence1D})
     g = K * f_custom
     y = g + 0.001 * maximum(g) .* randn(length(x))
 
-    results = invert(seq, x, y, alpha=gcv, lims=(-5, 1, 128))
+    results = invert(seq, x, y, alpha=gcv, lims=(-5,1,128), normalize=false)
 
     return norm(results.f - f_custom) < 1.0
 end
@@ -106,7 +106,7 @@ function testT1T2()
     data = K1 * F_original * K2'
     data = complex.(data, 0.001 .* maximum(real(data)) .* randn(size(data)))
 
-    results = invert(IRCPMG, x_direct, x_indirect, data, alpha=0.01, lims1=(-5, 1, 64), lims2=(-5, 1, 64))
+    results = invert(IRCPMG, x_direct, x_indirect, data, alpha=0.01, lims1=(-5, 1, 64), lims2=(-5, 1, 64), normalize=false)
 
     return LinearAlgebra.norm(results.F - F_original) < 0.5
 
@@ -150,10 +150,10 @@ end
 function test_expfit()
 
     x = [range(0.001, 3, 32)...]
-    u = [3.0, 0.2 ,4.0 ,0.05]
+    u = [3, 0.2 ,4 ,0.05]
     y = mexp(CPMG, u, x) + 0.01 .* randn(length(x))
     data = input1D(CPMG, x, y)
-    results = expfit(2,data)
+    results = expfit(2,data,normalize=false)
 
     return sum((sort(u) .- sort(results.u)) .^ 2) < 0.5
 end

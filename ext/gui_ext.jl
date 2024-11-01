@@ -19,7 +19,7 @@ so please refer to the `plot!` documentation for more information.
 """
 function Makie.plot(res::expfit_struct...; kwargs...)
 
-    f = Figure(size=(500, 500))
+    f = Figure(size=(800, 400))
     plot!(f, res...; kwargs...)
 
     return f
@@ -35,7 +35,8 @@ The arguments are:
 
 - `fig` : The figure or grid position object.
 - `res` : One or more `expfit_struct` structures containing the fit results.
-- `names` : Vector with the names of the data (default is a vector of "Data" for each result).
+
+Keyword (optional) arguments:
 - `markersize` : The size of the markers (default is 7).
 - `normeq` : Whether to plot the normalised form of the equation or not (default is `true`).
 
@@ -45,7 +46,7 @@ If you want to use a vector of `expfit_struct` structures, make sure to
 splat it by using `...` in the function call (e.g. `plot!(fig, [data1, data2, data3]...)`).
 """
 function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::expfit_struct...;
-    names=["Data" for _ in res], markersize=7, normeq=true)
+     markersize=7, normeq=true)
 
     # Make axes
     if res[1].seq in [NMRInversions.IR]
@@ -60,7 +61,7 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::expfit_st
 
     for (i, r) in enumerate(res)
         xfit = collect(range(0, 1.1 * maximum(r.x), 500))
-        scatter!(ax, r.x, r.y, markersize=markersize, label=names[i])
+        scatter!(ax, r.x, r.y, markersize=markersize, label= r.title )
         lines!(ax, xfit, mexp(r.seq, r.u, xfit), label=getfield(r, normeq == true ? :eqn : :eq))
     end
 
@@ -80,7 +81,7 @@ This function can take any number of `inv_out_1D` structures as input.
 """
 function Makie.plot(res::NMRInversions.inv_out_1D...; kwargs...)
 
-    f = Figure(size=(500, 500))
+    f = Figure(size=(800, 400))
     plot!(f, res...; kwargs...)
 
     return f
@@ -244,6 +245,9 @@ function draw_on_axes(axmain, axtop, axright, res, clmap,contf,levels)
     end
     lines!(axtop, x, vec(sum(z, dims=2)), colormap=clmap, colorrange=(1, 10), color=5, alpha=0.8)
     lines!(axright, vec(sum(z, dims=1)), y, colormap=clmap, colorrange=(1, 10), color=5, alpha=0.8)
+
+    #=band!(axtop, x, zeros(length(x)), vec(sum(z, dims=2)) ,colormap=clmap, colorrange=(1, 10), color = 5 ,alpha=0.5)=#
+    #=band!(axright, Point2f.(zeros(length(y)), y), Point2f.(vec(sum(z, dims=1)), y) ,colormap=clmap, colorrange=(1, 10), alpha=0.5)=#
 
     # Plot diagonal line
     lines!(axmain, [(0, 0), (1, 1)], color=:black, linewidth=1)

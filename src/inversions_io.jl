@@ -35,9 +35,23 @@ function read_acqu(filename, parameter)
 
     p = ""
     open(filename) do io
+
         readuntil(io, parameter * " = ")
-        p = readline(io)
+
+        if !eof(io)
+            p = readline(io)
+        else
+            seekstart(io)
+            readuntil(io, parameter * "= ")
+            p = readline(io)
+            
+        end
     end
+
+    if p == ""
+        throw("There seems to be an issue in reading the acqu file")
+    end
+
     return replace(p, "\"" => "")
 end
 
@@ -126,22 +140,18 @@ function import_spinsolve(files=pick_multi_file(pwd()))
 end
 
 
-# Import bruker function
-    # read BYTORDA in aqcus and DTYPA from the the the files
-    # read the binary
-#=A 2-dimensional experiment generates a ser file contains TD(F1) series of FIDs, which is the=#
-#=parameter TD in the file acqu2s. Each FID in a ser file start at a 1024 byte block boundary,=#
-#=even if its size is not a multiple of 1024 bytes.=#
 #=function import_bruker(dir::String=pick_folder(pwd()))=#
 #==#
 #=    # read BYTORDA in aqcus and DTYPA from the the the files=#
-#=    BYTORDA::Int = 0=#
-#=    DTYPA::Int = 0=#
-#=    open(dir * "/acqus") do io=#
-#=        readuntil(io, "BYTORDA = ")=#
-#=        BYTORDA = parse(Int, readline(io))=#
-#=    end=#
+#=    BYTORDA = read_acqu(dir, "BYTORDA")=#
+#=    DTYPA = read_acqu(dir, "DTYPA")=#
 #==#
+#=    a = []=#
+#=    open("ser") do io=#
+#=        while !eof(io)=#
+#=            push!(a, read(io, Float64))=#
+#=        end=#
+#=    end=#
 #==#
 #=end=#
 

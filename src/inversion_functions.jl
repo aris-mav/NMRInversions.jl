@@ -14,17 +14,23 @@ The output is an `inv_out_1D` structure.
 - `lims=(a,b,c)` will set the "limits" of the output X, 
 so that it starts from 10^a, ends in 10^b and consists of c 
 logarithmically spaced values 
-(default is (-4, 1, 128) for relaxation and (-10, -7, 128) for diffusion). 
+(default is (-5, 1, 128) for relaxation and (-10, -7, 128) for diffusion). 
 Alternatiively, a vector of values can be used directly, if more freedom is needed 
 (e.g. `lims=exp10.(range(-4, 1, 128))`).
 - `alpha` determines the smoothing term. Use a real number for a fixed alpha.  No selection will lead to automatically determining alpha through the defeault method, which is `gcv`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.
+- `normalize` will normalize `y` to 1 at the max value of `y`. Default is `true`.  
 
 """
 function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
     lims::Union{Tuple{Real, Real, Int}, AbstractVector, Type{<:pulse_sequence1D}}=seq, 
     alpha::Union{Real, smoothing_optimizer, Type{<:smoothing_optimizer}}=gcv, 
-    solver::Union{regularization_solver, Type{<:regularization_solver}}=brd)
+    solver::Union{regularization_solver, Type{<:regularization_solver}}=brd,
+    normalize::Bool = true)
+
+    if normalize
+        y = y ./ y[argmax(real(y))]
+    end
 
     if isa(lims, Tuple)
         X = exp10.(range(lims...))
@@ -34,7 +40,7 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
         if lims == PFG
             X = exp10.(range(-11, -8, 128))
         else
-            X = exp10.(range(-4, 1, 128))
+            X = exp10.(range(-5, 1, 128))
         end
     end
 
@@ -119,14 +125,20 @@ The output is an `inv_out_2D` structure.
 
 - `alpha` determines the smoothing term. Use a real number for a fixed alpha.  No selection will lead to automatically determining alpha through the defeault method, which is `gcv`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.
+- `normalize` will normalize `Data` to 1 at the max value of `Data`. Default is `true`.
 
 """
 function invert(
     seq::Type{<:pulse_sequence2D}, x_direct::AbstractVector, x_indirect::AbstractVector, Data::AbstractMatrix;
-    lims1::Union{Tuple{Real, Real, Int}, AbstractVector}=(-4, 1, 100), 
-    lims2::Union{Tuple{Real, Real, Int}, AbstractVector}=(-4, 1, 100),
+    lims1::Union{Tuple{Real, Real, Int}, AbstractVector}=(-5, 1, 100), 
+    lims2::Union{Tuple{Real, Real, Int}, AbstractVector}=(-5, 1, 100),
     alpha::Union{Real, smoothing_optimizer, Type{<:smoothing_optimizer}}=gcv, 
-    solver::Union{regularization_solver, Type{<:regularization_solver}}=brd)
+    solver::Union{regularization_solver, Type{<:regularization_solver}}=brd,
+    normalize::Bool=true)
+
+    if normalize
+        Data = Data ./ Data[argmax(real(Data))]
+    end
 
     if isa(lims1, Tuple)
         X_direct = exp10.(range(lims1...))

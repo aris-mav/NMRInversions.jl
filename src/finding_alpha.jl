@@ -110,7 +110,8 @@ end
 
 
 """
-
+Test `n` alpha values between `lower` and `upper` and select the one 
+which is at the heel of the L curve, accoding to Hansen 2010.
 """
 function solve_l_curve(K, g, solver, lower, upper, n)
 

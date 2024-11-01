@@ -105,19 +105,14 @@ or a vector which defines the starting points for the regression.
 See below:
 
 ```@docs
-expfit(::Int, ::Type{<:NMRInversions.pulse_sequence1D}, ::Vector, ::Vector )
-expfit(::Int, ::input1D)
+expfit(::Union{Int, Vector{<:Real}}, ::Type{<:NMRInversions.pulse_sequence1D}, ::Vector, ::Vector)
+expfit(::Union{Int, Vector{<:Real}}, ::NMRInversions.input1D)
 ```  
   
-If you have some rough clues about what results you expect, 
-it's best to define some starting points close to these, as shown below.
+If you have some rough clue about what results you expect, 
+it's best to define some starting points close to these.
 (especially important if you're using double or tri-exponential fits.)
 
-```@docs
-expfit(::Vector{Real}, ::Type{<:NMRInversions.pulse_sequence1D}, ::Vector, ::Vector )
-expfit(::Vector{Real}, ::input1D)
-
-```
 
 
 # Plotting functions

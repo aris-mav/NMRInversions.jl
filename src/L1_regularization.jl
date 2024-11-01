@@ -20,10 +20,7 @@ function PDHGM(K::AbstractMatrix, s::AbstractVector, α::Real; tol=10, τ=10 , �
     return f
 end
 
-function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, solver::Type{pdhgm})
-
-    K = K ./ maximum(K)
-    g = g ./ maximum(g)
+function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, solver::pdhgm)
 
     f = PDHGM(K, g, α, τ=solver.τ, σ=solver.σ)
 
