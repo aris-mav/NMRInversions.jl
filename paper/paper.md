@@ -1,27 +1,26 @@
 ---
-title: 'NMRInversions.jl, a julia package for time-domain Nuclear Magnetic Resonance.'
-date: 04/11/2024 
+title: 'NMRInversions.jl, a julia package for time-domain Nuclear Magnetic Resonance'
+date: 04 November 2024 
 tags:
-- Magnetic Resonance
-- NMR relaxation
-- NMR diffusion
-- julia
-- Inverse problems
-- Numerical inversion
+  - Magnetic Resonance
+  - NMR relaxation
+  - NMR diffusion
+  - julia
+  - Inverse problems
+  - Numerical inversion
 authors:
-- name: Aristarchos Mavridis
-affiliation: "1"
-orcid: 0000-0002-6619-2303
-- name: Carmine D'Agostino
-affiliation: "1,2"
-orcid: 0000-0003-3391-8320
+  - name: Aristarchos Mavridis
+    affiliation: "1"
+    orcid: 0000-0002-6619-2303
+  - name: Carmine D'Agostino
+    affiliation: "1,2"
+    orcid: 0000-0003-3391-8320
 
 affiliations:
-- index: 1
-name: Department of Chemical Engineering, The University of Manchester, Oxford Road, Manchester, UK
-- index: 2
-name: Dipartimento di Ingegneria Civile, Chimica, Ambientale e dei Materiali (DICAM), Alma Mater Studiorum – Università di Bologna, Via Terracini, 28, 40131 Bologna, Italy
-
+  - name: Department of Chemical Engineering, The University of Manchester, Oxford Road, Manchester, UK 
+    index: 1
+  - name: Dipartimento di Ingegneria Civile, Chimica, Ambientale e dei Materiali (DICAM), Alma Mater Studiorum  Università di Bologna, Via Terracini, 28, 40131 Bologna, Italy
+    index : 2
 bibliography: paper.bib
 ---
 
