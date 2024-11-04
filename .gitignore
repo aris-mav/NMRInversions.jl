@@ -3,5 +3,4 @@ test.jl
 
 docs/Manifest.toml
 docs/build
-paper/
 example_data/d_t2/

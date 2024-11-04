@@ -43,9 +43,11 @@ functions in the NMRInversions package.
 
 # Importing data functions
 This package offers some functions to import NMR experiment data of various formats.
+Alternatively, you can of course import your data however you see fit.
 If a format you're working with is not yet supported, 
 please [submit an issue](https://github.com/arismavridis/NMRInversions.jl/issues/new) 
 and we'll work on it.
+
 
 The most basic use case would be using data saved in a csv format, 
 where there are *only* two columns, 
