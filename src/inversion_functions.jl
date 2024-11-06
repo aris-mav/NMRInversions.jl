@@ -82,9 +82,8 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
         X .= X ./ 1e9
     end
 
-    weighted_average =  f'X / sum(f)
 
-    return inv_out_1D(seq, x, y, x_fit, y_fit, X, f, r, SNR, α, weighted_average,"")
+    return inv_out_1D(seq, x, y, x_fit, y_fit, X, f, r, SNR, α, [],"")
 
 end
 

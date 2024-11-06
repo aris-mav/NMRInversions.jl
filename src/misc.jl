@@ -245,3 +245,18 @@ function compress_data(t_direct::AbstractVector, G::AbstractMatrix, bins::Int=64
     # surface(G, camera=(110, 25), xscale=:log10)
 
 end
+
+
+export weighted_averages
+"""
+    weighted_averages(r::inv_out_1D)
+Return a vector with the weighted averages for the selections in `r.selections`.
+"""
+function weighted_averages(r::inv_out_1D)
+
+    wa = Vector(undef, length(r.selections))
+    for (i,s) in enumerate(r.selections)
+        wa[i] = r.f[s[1]:s[2]]' * r.X[s[1]:s[2]] / sum(r.f[s[1]:s[2]]) 
+    end
+    return wa
+end

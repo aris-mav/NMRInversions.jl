@@ -127,8 +127,8 @@ We basically take the `plot()` function offered by GLMakie and extend it to type
 For example, for 1D inversions, we have:
 
 ```@docs
-plot(::NMRInversions.inv_out_1D)
-plot!(::Union{Makie.Figure,Makie.GridPosition}, ::NMRInversions.inv_out_1D )
+plot(res::inv_out_1D)
+plot(res_mat::VecOrMat{inv_out_1D};kwargs...)
 
 ```
 
