@@ -250,13 +250,51 @@ end
 export weighted_averages
 """
     weighted_averages(r::inv_out_1D)
-Return a vector with the weighted averages for the selections in `r.selections`.
+Return a vector with the weighted averages for the selections in the input structure.
 """
 function weighted_averages(r::inv_out_1D)
 
     wa = Vector(undef, length(r.selections))
     for (i,s) in enumerate(r.selections)
         wa[i] = r.f[s[1]:s[2]]' * r.X[s[1]:s[2]] / sum(r.f[s[1]:s[2]]) 
+        println("The weighted average of peak $(i) is: $(round(wa[i], sigdigits=2))")
     end
     return wa
+end
+
+
+"""
+    weighted_averages(r::inv_out_2D)
+Return two vectors with the weighted averages for the selections in the input structure, one for each dimension.
+"""
+function weighted_averages(r::inv_out_2D)
+
+    wa_T1 = Vector(undef, length(r.selections))
+    wa_T2 = Vector(undef, length(r.selections))
+
+    z = r.F' .* r.filter'
+
+    x = range(0, 1, size(z, 1))
+    y = range(0, 1, size(z, 2))
+    points = [[i, j] for i in x, j in y]
+    mask = zeros(size(points))
+
+    for (i,s) in enumerate(r.selections)
+
+        mask .= [PolygonOps.inpolygon(p, s; in=1, on=1, out=0) for p in points]
+        spo = mask .* z
+
+        indir_dist = vec(sum(spo, dims=2))
+        dir_dist = vec(sum(spo, dims=1))
+
+        wa_T1[i] = indir_dist' *  r.X_indir / sum(spo)
+        wa_T2[i] = dir_dist' *  r.X_dir / sum(spo)
+
+        println("The weighted averages of selection $(collect('a':'z')[i]) are:")
+        println("<T₁> = $(round(wa_T1[i], sigdigits=2)), <T₂> = $(round(wa_T2[i], sigdigits=2)), "*
+                "<T₁>/<T₂> = $(round(wa_T1[i]/wa_T2[i], sigdigits=2))")
+        println()
+    end
+
+    return wa_T1, wa_T2
 end

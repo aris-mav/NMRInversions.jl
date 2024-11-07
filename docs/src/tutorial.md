@@ -26,8 +26,9 @@ data = import_spinsolve()
 !!! info
     Since we called the `import_spinsolve` function without an argument, 
     it'll open a file dialog for us to select the files we want to import.
-    (note that `import_spinsolve` requires two files, the `aqcu.par` file,
-    plus the file containing the experiment data.)
+    (note that `import_spinsolve` requires two files, the `aqcu.par` file
+    containing aqcuistion parameters, plus the `.dat`file containing the 
+    experiment data.)
 
 Now we have the data imported, the inversion can be performed using a single line of code!
 
@@ -39,15 +40,18 @@ results = invert(data)
     The `results` variable above is an `inv_out_1D` or `inv_out_2D` structure, 
     which contains all the relevant information produced by the `inversion` function.
     To access that information, we can look at the fields of the structure using the dot notation.
-    The field names can be shown by using the REPL help mode (typing ? at the julia> prompt), 
-    and typing the variable's name (in this case ?results). 
+    The field names contained in the structure can be shown by using the REPL help mode 
+    (typing ? at the julia> prompt), and typing the variable's name (in this case, `?results`). 
     Alternatively, running `@doc results` will also give you the same answers.
+
 The results can easily be visualised through the GLMakie extension of the package.
 
 ```julia
 using GLMakie
 plot(results)
 ```
+This will open a GUI with tools to interactively extract some information from the inversion results,
+by selecting regions and labelling them accordingly.
 
 !!! info
     The `plot` function of GLMakie is modified by this package 
@@ -56,15 +60,13 @@ plot(results)
     on how your plots look, it's best to create them from scratch 
     using all the tools available in GLMakie.
 
-Or, if the plot is all you need, one line of code is enough:
-
+The process above can also be achieved by a single line of code:
 ```julia
 using NMRInversions, GLMakie
 plot(invert(import_spinsolve()))
 ```
 
 Note that the workflow above can work for both 1D and 2D inversions!
-
 
 # Using the expfit function
 

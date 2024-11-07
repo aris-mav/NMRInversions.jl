@@ -151,3 +151,14 @@ simple plot by running `plot([results])`. The latter can be used with
 matrices of `inv_out_2D` structures, and the layout of the resulting plot will
 reflect the layout of the matrix.
 
+# Miscellaneous functions
+
+Once you have selected some peaks in your inversion results through the GUI,
+you might want to extract the weighted averages of these selected peaks,
+to get the underlying relaxation times or diffusion coefficients.
+The following functions do the job:
+
+```@docs
+weighted_averages(r::inv_out_1D)
+weighted_averages(r::inv_out_2D)
+```

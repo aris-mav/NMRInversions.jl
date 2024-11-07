@@ -199,7 +199,9 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
         elseif res.seq in [NMRInversions.PFG]
             Xlabel = ["<D> = ", " (m²/s)"]
         end
+
         wa = weighted_averages(res)
+
         for (i,s) in enumerate(res.selections)
             clr = only(
                 Makie.numbers_to_colors(
