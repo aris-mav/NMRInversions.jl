@@ -250,6 +250,7 @@ The arguments are:
 - `results` : The `inv_out_2D` matrix or vector containing the fit results.
 
 Keyword (optional) arguments:
+- `dims` : Dimensions of each plot (default: (400, 400)).
 - `title` : Title of the plot (default is the title in the inv_out_2D).
 - `colormap` : Color map of the plot (default: :viridis).
 - `contf` : Whether to use a filled contour plot (default: false).
@@ -326,6 +327,7 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
                          xlabelsize=labelsizes[1], ylabelsize=labelsizes[2],
                          limits=(x[1], x[end], y[1], y[end]),
                          xticklabelsize=ticksizes[1], yticklabelsize=ticksizes[2],
+                         xtickalign = 1.0, ytickalign = 1.0
                          )
 
     Makie.deactivate_interaction!(axmain_values, :rectanglezoom) # Disable zoom
