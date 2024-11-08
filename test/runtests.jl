@@ -34,7 +34,7 @@ function test_lcurve()
     noise_level = 0.001 * maximum(g)
     y = g + noise_level .* randn(length(x))
 
-    alphas = exp10.(range(log10(1e-5), log10(1e-1), 128))
+    alphas = exp10.(range(log10(1e-5), log10(1e0), 128))
     curvatures = zeros(length(alphas))
     xis = zeros(length(alphas))
     rhos = zeros(length(alphas))
@@ -76,9 +76,8 @@ function test_lcurve()
     #=    p3 = scatter!([rhos[argmin(curvatures)]], [xis[argmin(curvatures)]], label="α = $α");=#
     #=    p4 = scatter(x, y, label="data");=#
     #=    p4 = plot!(x, K * f, label="solution");=#
-    #=    plot(p1, p2, p3, p4)=#
+    #=    p = plot(p1, p2, p3, p4)=#
     #=end=#
-
 end
 
 function testT1T2()

@@ -27,8 +27,8 @@ data = import_spinsolve()
     Since we called the `import_spinsolve` function without an argument, 
     it'll open a file dialog for us to select the files we want to import.
     (note that `import_spinsolve` requires two files, the `aqcu.par` file
-    containing aqcuistion parameters, plus the `.dat`file containing the 
-    experiment data.)
+    containing aqcuistion parameters, plus the `.dat` or `.csv` file 
+    containing the experiment data.)
 
 Now we have the data imported, the inversion can be performed using a single line of code!
 

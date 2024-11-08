@@ -118,18 +118,32 @@ it's best to define some starting points close to these.
 
 
 # Plotting functions
+
 This package offers plotting capabilities, using its GLMakie extension.
 Simply use `using GLMakie` before or after `using NMRInversions`
 to load the package, and these functions become available.
 
 We basically take the `plot()` function offered by GLMakie and extend it to types from the package.
 
+For inversions results, if your `inv_out_1D` or `inv_out_2D` struct is saved as
+a variable named `r`, using `plot(r)` will run a GUI to interractively visualize
+your data and select regions to characterize.
+
+Using a matrix or vector of results (e.g. plot([r1, r2, r3]) will plot all of
+them on the same figure, but without the selection options.
+
 For example, for 1D inversions, we have:
 
 ```@docs
 plot(res::inv_out_1D)
 plot(res_mat::VecOrMat{inv_out_1D};kwargs...)
+```
 
+And for 2D inversions:
+
+```@docs
+plot(::NMRInversions.inv_out_2D)
+plot(results::AbstractVecOrMat{inv_out_2D}; kwargs...)
 ```
 
 For expfits, we have:
@@ -138,18 +152,6 @@ For expfits, we have:
 plot(::NMRInversions.expfit_struct)
 plot!(::Union{Makie.Figure,Makie.GridPosition}, ::NMRInversions.expfit_struct )
 ```
-
-And for 2D inversions, there's an interactive gui to characterize the inversion resutls:
-
-```@docs
-plot(::NMRInversions.inv_out_2D)
-plot(results::AbstractVecOrMat{inv_out_2D}; kwargs...)
-```
-Basically, if your `inv_out_2D` structure is a variable named `results`, 
-you can run the GUI by running `plots(results)`, or you can create a 
-simple plot by running `plot([results])`. The latter can be used with 
-matrices of `inv_out_2D` structures, and the layout of the resulting plot will
-reflect the layout of the matrix.
 
 # Miscellaneous functions
 

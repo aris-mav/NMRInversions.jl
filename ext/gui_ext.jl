@@ -250,20 +250,24 @@ The arguments are:
 - `results` : The `inv_out_2D` matrix or vector containing the fit results.
 
 Keyword (optional) arguments:
-- `title` : Title of the plot (default: "").
+- `title` : Title of the plot (default is the title in the inv_out_2D).
 - `colormap` : Color map of the plot (default: :viridis).
 - `contf` : Whether to use a filled contour plot (default: false).
 - `levels` : Number of contour levels (default: 40).
+- `labelsizes` : Size of the axis labels (default: (23, 23)).
+- `ticksizes` : Size of the axis ticks (default: (14, 14)).
+- `titlesize` : Size of the title (default: 17).
+- `titlefont` : Font of the title (default: :bold).
 """
 function Makie.plot(
-    res_mat::AbstractVecOrMat{NMRInversions.inv_out_2D};
+    res_mat::AbstractVecOrMat{NMRInversions.inv_out_2D}; dims = (400,400),
     kwargs...)
 
     if !isa(res_mat, AbstractMatrix)
         res_mat = permutedims(res_mat)
     end
 
-    f = Figure(size=(400, 400) .* reverse(size(res_mat)))
+    f = Figure(size=dims .* reverse(size(res_mat)))
 
     for (ind, res) in pairs(res_mat)
         plot!(f[Tuple(ind)...], res; title=res.title, kwargs...)
@@ -289,9 +293,15 @@ Keyword (optional) arguments:
 - `colormap` : Color map of the plot (default: :viridis).
 - `contf` : Whether to use a filled contour plot (default: false).
 - `levels` : Number of contour levels (default: 40).
+- `labelsizes` : Size of the axis labels (default: (23, 23)).
+- `ticksizes` : Size of the axis ticks (default: (14, 14)).
+- `titlesize` : Size of the title (default: 17).
+- `titlefont` : Font of the title (default: :bold).
 """
 function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInversions.inv_out_2D;
-    title="", colormap=:viridis,contf=false, levels = 40)
+                     title=res.title, colormap=:viridis, contf=false, levels = 40, 
+                     labelsizes = (23, 23), ticksizes = (14, 14), titlesize = 17, titlefont = :bold 
+                     )
 
     x = res.X_indir
     y = res.X_dir
@@ -302,20 +312,21 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
     # Make axes
 
     axmain = Axis(fig[3:10, 1:8])
-    axtop = Axis(fig[1:2, 1:8], limits=((xplot[1], xplot[end]), (0, nothing)), title=title, titlesize=17)
+    axtop = Axis(fig[1:2, 1:8], limits=((xplot[1], xplot[end]), (0, nothing)), 
+                 title=title, titlesize=titlesize, titlefont=titlefont)
     axright = Axis(fig[3:10, 9:10], limits=((0, nothing), (yplot[1], yplot[end])))
-
 
     hidedecorations!(axtop)
     hidedecorations!(axright)
     hidedecorations!(axmain)
 
     axmain_values = Axis(fig[3:10, 1:8],
-        xscale=log10, yscale=log10,
-        xlabel=L"T_1 \, \textrm{(s)}", ylabel=L"T_2 \,\textrm{(s)}",
-        xlabelsize=23, ylabelsize=23,
-        limits=(x[1], x[end], y[1], y[end])
-    )
+                         xscale=log10, yscale=log10,
+                         xlabel=L"T_1 \, \textrm{(s)}", ylabel=L"T_2 \,\textrm{(s)}",
+                         xlabelsize=labelsizes[1], ylabelsize=labelsizes[2],
+                         limits=(x[1], x[end], y[1], y[end]),
+                         xticklabelsize=ticksizes[1], yticklabelsize=ticksizes[2],
+                         )
 
     Makie.deactivate_interaction!(axmain_values, :rectanglezoom) # Disable zoom
     Makie.deactivate_interaction!(axmain, :rectanglezoom) # Disable zoom

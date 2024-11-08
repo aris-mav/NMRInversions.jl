@@ -257,7 +257,6 @@ function weighted_averages(r::inv_out_1D)
     wa = Vector(undef, length(r.selections))
     for (i,s) in enumerate(r.selections)
         wa[i] = r.f[s[1]:s[2]]' * r.X[s[1]:s[2]] / sum(r.f[s[1]:s[2]]) 
-        println("The weighted average of peak $(i) is: $(round(wa[i], sigdigits=2))")
     end
     return wa
 end
