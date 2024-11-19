@@ -10,12 +10,11 @@ import Optimization, OptimizationOptimJL
 
 """
 to do list:
-- fix L curve method 
 - add gcv for reci method
 - differentiate between Mitchell GCV and optimization GCV
-- fix readresults and writeresults
-- introduce faf, flip angle fraction, to the kernel. 1 would be a perfect pulse, 0 would be no pulse.
+- introduce faf, flip angle fraction, to the kernel functions. 1 would be a perfect pulse, 0 would be no pulse.
 - add precompilation
+
 """
 
 ## Include the package files 

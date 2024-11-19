@@ -271,7 +271,7 @@ function Makie.plot(
     f = Figure(size=dims .* reverse(size(res_mat)))
 
     for (ind, res) in pairs(res_mat)
-        plot!(f[Tuple(ind)...], res; title=res.title, kwargs...)
+        plot!(f[Tuple(ind)...], res;  kwargs...)
     end
 
     return f
@@ -301,7 +301,7 @@ Keyword (optional) arguments:
 """
 function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInversions.inv_out_2D;
                      title=res.title, colormap=:viridis, contf=false, levels = 40, 
-                     labelsizes = (23, 23), ticksizes = (14, 14), titlesize = 17, titlefont = :bold 
+                     labelsizes = (23, 23), ticksizes = (15, 15), titlesize = 17, titlefont = :bold 
                      )
 
     x = res.X_indir
