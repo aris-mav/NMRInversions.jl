@@ -36,6 +36,7 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.expfit_struct}; kwar
     return f
 
 end
+end
 
 """
     plot!(fig, res...; names, markersize, normeq)
