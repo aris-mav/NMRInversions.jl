@@ -33,7 +33,7 @@ to remove the "noisy" singular values.
 """
 function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::Vector{<:Real})
 
-    if x < X
+    if length(x) < length(X)
         usv = svd(create_kernel(seq, x , X))
         K_new = Diagonal(usv.S) * usv.V'
         g_new = usv.U' * g
