@@ -69,10 +69,10 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
 
     else
         error("alpha must be a real number or a smoothing_optimizer type.")
-
+ 
     end
 
-    x_fit = collect(range(0, x[end] + 0.1 * x[end], 128))
+    x_fit = exp10.(range(log10(1e-8), log10(1.1 * x[end]), 512))
     y_fit = create_kernel(seq, x_fit, X) * f
 
     isreal(y) ? SNR = NaN : SNR = calc_snr(y)

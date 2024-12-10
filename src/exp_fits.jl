@@ -149,10 +149,13 @@ function expfit(
     # Calculate the residuals
     r = mexp(seq, u, x) - y
 
+    xfit = exp10.(range(log10(1e-8), log10(1.1 * maximum(x)), 512))
+    yfit = mexp(seq, u, xfit)
+
     if length(u0) == 2
-        return expfit_struct(seq, x, y, u, u0, r, eq, eq, "")
+        return expfit_struct(seq, x, y, xfit, yfit, u, u0, r, eq, eq, "")
     else
-        return expfit_struct(seq, x, y, u, u0, r, eq, eqn, "")
+        return expfit_struct(seq, x, y, xfit, yfit, u, u0, r, eq, eqn, "")
     end
 
 end
@@ -166,8 +169,9 @@ Arguments:
 
 - `n` : Integer specifying the number of exponential terms.
 - `data` : `input1D` structure containing the data to be fitted.
+
 """
-function expfit(n::Union{Int, Vector{<:Real}}, res::NMRInversions.input1D; kwargs...)
-    return expfit(n, res.seq, res.x, res.y; kwargs...)
+function expfit(n::Union{Int, Vector{<:Real}}, data::NMRInversions.input1D; kwargs...)
+    return expfit(n, data.seq, data.x, data.y; kwargs...)
 end
 

@@ -72,9 +72,8 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::expfit_st
     end
 
     for (i, r) in enumerate(res)
-        xfit = collect(range(0, 1.1 * maximum(r.x), 500))
         scatter!(ax, r.x, r.y, markersize=markersize, label= r.title )
-        lines!(ax, xfit, mexp(r.seq, r.u, xfit), label=getfield(r, normeq == true ? :eqn : :eq))
+        lines!(ax, r.xfit, r.yfit, label=getfield(r, normeq == true ? :eqn : :eq))
     end
 
     axislegend(ax, position=(res[1].seq == IR ? :rb : :rt), nbanks=2)
@@ -119,7 +118,7 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; selecti
     linkxaxes!(ax1, ax3)
 
     for r in res_mat
-        draw_on_axes(ax1, ax2,ax3, r, selections = selections)
+        draw_on_axes(ax1, ax2, ax3, r, selections = selections)
     end
 
     return fig
@@ -196,11 +195,14 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
 
     c = length(ax2.scene.plots)
 
-    scatter!(ax1, res.x, res.y, colormap=:tab10, colorrange=(1, 10), color=c)
+    scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=c)
     lines!(ax1, res.xfit, res.yfit, colormap=:tab10, colorrange=(1, 10), color=c)
     lines!(ax2, res.X, res.f, colormap=:tab10, colorrange=(1, 10), color=c)
-    scatter!(ax3, res.x, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax3, res.x, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
+    if length(res.x) == length(res.r)
+        scatter!(ax3, res.x, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
+        lines!(ax3, res.x, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
+    end
+
 
     if selections
 
