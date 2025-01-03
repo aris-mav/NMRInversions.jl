@@ -30,12 +30,65 @@ function gcv_score(α, r, s, x; next_alpha=true)
     end
 end
 
+function gcv_cost(α::Real, 
+                  svds::svd_kernel_struct, 
+                  solver::Union{regularization_solver, Type{<:regularization_solver}})
+
+    #=display("Testing α = $(round(α,sigdigits=3))")=#
+    f, r = solve_regularization(svds.K, svds.g, α, solver)
+    return gcv_score(α, r, svds.S, (svds.V' * f), next_alpha = false) 
+end
 
 """
-Solve repeatedly until the GCV score stops decreasing.
+Compute the curvature of the L-curve at a given point.
+(Hansen 2010 page 92-93)
+
+- `f` : solution vector
+- `r` : residuals
+- `α` : smoothing term
+- `A` : Augmented kernel matrix (`K` and `αI` stacked vertically)
+- `b` : Augmented residuals (`r` and `0` stacked vertically)
+
+"""
+function l_curvature(f, r, α, A, b)
+
+    ξ = f'f
+    ρ = r'r
+    λ = √α
+
+    z = NMRInversions.solve_ls(A, b)
+
+    ∂ξ∂λ = (4 / λ) * f'z
+
+    ĉ = 2 * (ξ * ρ / ∂ξ∂λ) * (α * ∂ξ∂λ * ρ + 2 * ξ * λ * ρ + λ^4 * ξ * ∂ξ∂λ) / ((α * ξ^2 + ρ^2)^(3 / 2))
+
+    return ĉ
+
+end
+
+function l_cost(K, g, α, solver)
+
+    display("Testing α = $(round(α,sigdigits=3))")
+
+    f, r = NMRInversions.solve_regularization(K, g, α, solver)
+
+    A = sparse([K; √(α) * LinearAlgebra.I ])
+    b = sparse([r; zeros(size(A, 1) - size(r, 1))])
+
+    return l_curvature(f, r, α, A, b)
+
+end
+
+
+
+
+"""
+Solve repeatedly until the GCV score stops decreasing, following Mitchell 2012 paper.
 Select the solution with minimum gcv score and return it, along with the residuals.
 """
-function solve_gcv(svds::svd_kernel_struct, solver::Union{regularization_solver, Type{<:regularization_solver}})
+function find_alpha(svds::svd_kernel_struct, 
+                   solver::Union{regularization_solver, Type{<:regularization_solver}},
+                   mode::gcv_mitchell)
 
     s̃ = svds.S
     ñ = length(s̃)
@@ -82,29 +135,68 @@ end
 
 
 """
-Compute the curvature of the L-curve at a given point.
-(Hansen 2010 page 92-93)
+Find alpha via univariate optimization.
+"""
+function find_alpha(svds::svd_kernel_struct,
+                   solver::Union{regularization_solver, Type{<:regularization_solver}},
+                   mode::find_alpha_univariate
+                   )
 
-- `f` : solution vector
-- `r` : residuals
-- `α` : smoothing term
-- `A` : Augmented kernel matrix (`K` and `αI` stacked vertically)
-- `b` : Augmented residuals (`r` and `0` stacked vertically)
+    local f
+    if mode.search_method == :gcv
+        f = x -> gcv_cost(x, svds, solver)
+
+    elseif mode.search_method == :lcurve
+        f = x -> l_cost(svds.K, svds.g, x, solver)
+
+    end
+
+    sol = optimize(
+        f,
+        mode.lower, mode.upper,
+        mode.algorithm,
+        abs_tol = mode.abs_tol
+    )
+
+    α = sol.minimizer
+    display("Converged at α =$(round(α,sigdigits=3)), after $(sol.f_calls) calls.")
+
+    f, r = NMRInversions.solve_regularization(svds.K, svds.g, α, solver)
+
+    return f, r, α
+
+end
 
 """
-function l_curvature(f, r, α, A, b)
+Find alpha using Fminbox optimization.
+"""
+function find_alpha(svds::svd_kernel_struct,
+                    solver::Union{regularization_solver, Type{<:regularization_solver}},
+                    mode::find_alpha_box 
+                    )
 
-    ξ = f'f
-    ρ = r'r
-    λ = √α
+    local f
+    if mode.search_method == :gcv
+        f = x -> gcv_cost(first(x), svds, solver)
 
-    z = NMRInversions.solve_ls(A, b)
+    elseif mode.search_method == :lcurve
 
-    ∂ξ∂λ = (4 / λ) * f'z
+        f = x -> l_cost(svds.K, svds.g, first(x), solver)
+    end
 
-    ĉ = 2 * (ξ * ρ / ∂ξ∂λ) * (α * ∂ξ∂λ * ρ + 2 * ξ * λ * ρ + λ^4 * ξ * ∂ξ∂λ) / ((α * ξ^2 + ρ^2)^(3 / 2))
+    sol = optimize(
+        f,
+        [0], [Inf], [mode.start],
+        Fminbox(mode.algorithm),
+        mode.opts
+    )
 
-    return ĉ
+    α = sol.minimizer[1]
+
+    display("Converged at α =$(round(α,sigdigits=3)), after $(sol.f_calls) calls.")
+    f, r = NMRInversions.solve_regularization(svds.K, svds.g, α, solver)
+
+    return f, r, α
 
 end
 
@@ -113,30 +205,27 @@ end
 Test `n` alpha values between `lower` and `upper` and select the one 
 which is at the heel of the L curve, accoding to Hansen 2010.
 """
-function solve_l_curve(K, g, solver, lower, upper, n)
+function find_alpha(svds::svd_kernel_struct,
+                   solver::Union{regularization_solver, Type{<:regularization_solver}},
+                   mode::lcurve_range
+                   )
 
-    alphas = exp10.(range(log10(lower), log10(upper), n))
+    alphas = exp10.(range(log10(mode.lowest_value), 
+                          log10(mode.highest_value), 
+                          mode.number_of_steps))
+
     curvatures = zeros(length(alphas))
 
     for (i, α) in enumerate(alphas)
-        display("Testing α = $(round(α,sigdigits=3))")
 
-        f, r = NMRInversions.solve_regularization(K, g, α, solver)
-
-        A = sparse([K; √(α) * LinearAlgebra.I ])
-        b = sparse([r; zeros(size(A, 1) - size(r, 1))])
-
-        c = l_curvature(f, r, α, A, b)
-
-        curvatures[i] = c
+        curvatures[i] = l_cost(svds.K, svds.g, α, solver)
 
     end
 
     α = alphas[argmin(curvatures)]
     display("The optimal α is $(round(α,sigdigits=3))")
 
-    f, r = NMRInversions.solve_regularization(K, g, α, solver)
-
+    f, r = NMRInversions.solve_regularization(svds.K, svds.g, α, solver)
     return f, r, α
 
 end

@@ -2,8 +2,6 @@ using Test
 using NMRInversions
 using SparseArrays
 using LinearAlgebra
-using Optimization, OptimizationOptimJL
-
 
 function test1D(seq::Type{<:pulse_sequence1D})
 
@@ -17,11 +15,10 @@ function test1D(seq::Type{<:pulse_sequence1D})
     g = K * f_custom
     y = g + 0.001 * maximum(g) .* randn(length(x))
 
-    results = invert(seq, x, y, alpha=gcv, lims=(-5,1,128), normalize=false)
+    results = invert(seq, x, y, alpha=gcv(), lims=(-5,1,128), normalize=false)
 
     return norm(results.f - f_custom) < 1.0
 end
-
 
 
 function test_lcurve()

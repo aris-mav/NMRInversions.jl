@@ -23,10 +23,11 @@ Alternatiively, a vector of values can be used directly, if more freedom is need
 
 """
 function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
-    lims::Union{Tuple{Real, Real, Int}, AbstractVector, Type{<:pulse_sequence1D}}=seq, 
-    alpha::Union{Real, smoothing_optimizer, Type{<:smoothing_optimizer}}=gcv, 
-    solver::Union{regularization_solver, Type{<:regularization_solver}}=brd,
-    normalize::Bool = true)
+                lims::Union{Tuple{Real, Real, Int}, AbstractVector, Type{<:pulse_sequence1D}}=seq, 
+                alpha::Union{Real, alpha_optimizer}=gcv(), 
+                solver::Union{regularization_solver, Type{<:regularization_solver}}=brd(),
+                normalize::Bool = true
+                )
 
     if normalize
         y = y ./ y[argmax(real(y))]
@@ -51,32 +52,23 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
     end
  
     ker_struct = create_kernel(seq, x, X, y)
-    α = 1.0 #placeholder, will be replaced below 
+    α = 0.0 #placeholder, will be replaced below 
 
     if isa(alpha, Real)
 
         α = alpha
-
         f, r = solve_regularization(ker_struct.K, ker_struct.g, α, solver)
 
-    elseif alpha == gcv
-
-        f, r, α = solve_gcv(ker_struct, solver)
-
-    elseif isa(alpha, lcurve)
-        f, r, α = solve_l_curve(ker_struct.K, ker_struct.g, solver, 
-                                 alpha.lowest_value, alpha.highest_value, alpha.number_of_steps)
-
     else
-        error("alpha must be a real number or a smoothing_optimizer type.")
- 
+
+        f, r, α = find_alpha(ker_struct, solver, alpha)
+
     end
 
     x_fit = exp10.(range(log10(1e-8), log10(1.1 * x[end]), 512))
     y_fit = create_kernel(seq, x_fit, X) * f
 
     isreal(y) ? SNR = NaN : SNR = calc_snr(y)
-
 
     if seq == PFG
         X .= X ./ 1e9
@@ -131,8 +123,8 @@ function invert(
     seq::Type{<:pulse_sequence2D}, x_direct::AbstractVector, x_indirect::AbstractVector, Data::AbstractMatrix;
     lims1::Union{Tuple{Real, Real, Int}, AbstractVector}=(-5, 1, 100), 
     lims2::Union{Tuple{Real, Real, Int}, AbstractVector}=(-5, 1, 100),
-    alpha::Union{Real, smoothing_optimizer, Type{<:smoothing_optimizer}}=gcv, 
-    solver::Union{regularization_solver, Type{<:regularization_solver}}=brd,
+    alpha::Union{Real, alpha_optimizer} = gcv(), 
+    solver::Union{regularization_solver, Type{<:regularization_solver}}=brd(),
     normalize::Bool=true)
 
     if normalize
@@ -160,15 +152,8 @@ function invert(
         α = alpha
         f, r = solve_regularization(ker_struct.K, ker_struct.g, α, solver)
 
-    elseif alpha == gcv
-        f, r, α = solve_gcv(ker_struct, solver)
-
-    elseif isa(alpha, lcurve)
-        f, r, α = solve_l_curve(ker_struct.K, ker_struct.g, solver, 
-                                alpha.lowest_value, alpha.highest_value, alpha.number_of_steps)
-
     else
-        error("alpha must be a real number or a smoothing_optimizer type.")
+        f, r, α = find_alpha(ker_struct, solver, alpha)
 
     end
 

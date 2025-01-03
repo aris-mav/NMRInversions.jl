@@ -1,4 +1,4 @@
-## The following are custom types for multiple dispatch purposes
+## The following are custom types, defined mainly for multiple dispatch purposes
 
 # Pulse sequences
 abstract type pulse_sequence1D end
@@ -39,10 +39,16 @@ It can be used wherever the `seq` argument is required.
 struct IRCPMG <: pulse_sequence2D end
 
 
+"""
+PFG - CPMG pulse sequence for 2D D-T2 experiments.
+It can be used wherever the `seq` argument is required.
+"""
 struct PFGCPMG <: pulse_sequence2D end
+
 export pulse_sequence1D, pulse_sequence2D, IR, SR, CPMG, PFG, IRCPMG, PFGCPMG
 
-# Supported solvers 
+
+"Supported solvers for regularization"
 abstract type regularization_solver end 
 
 """
@@ -50,11 +56,12 @@ abstract type regularization_solver end
 Solver for tikhonov (L2) regularization, following [this paper](https://doi.org/10.1109/78.995059)
 from Venkataramanan et al.
 Very fast, but only uses the identity as tiknohonov matrix.
-No options required, it just works.
 It can be used as a "solver" for the invert function.
 """
-struct brd <: regularization_solver end
-
+struct brd <: regularization_solver 
+    algorithm::Optim.SecondOrderOptimizer
+    brd() = new(NewtonTrustRegion())
+end
 
 struct ripqp <: regularization_solver end
 
@@ -75,13 +82,15 @@ a technique which was followed in the cited study.
 struct pdhgm <: regularization_solver
     σ::Real
     τ::Real
+    pdhgm() = new(0.1, 10.0)
+    pdhgm(σ::Real, τ::Real) = new(σ, τ)
 end
 
 
 """
     optim_nnls(order)
 Simple non-negative least squares method for tikhonov (L2) regularization, 
-implemented using OptimizationOptimJl.
+implemented using Optim.jl.
 All around effective, but can be slow for large problems, such as 2D inversions.
 It can be used as a "solver" for invert function.
 Order is an integer that determines the tikhonov matrix 
@@ -91,6 +100,8 @@ of the results.
 """
 struct optim_nnls <: regularization_solver 
     order::Int
+    optim_nnls() = new(0)
+    optim_nnls(x::Int) = new(x)
 end
 
 """
@@ -110,39 +121,73 @@ end
 
 export regularization_solver, brd, ripqp, pdhgm, optim_nnls, jump_nnls
 
-# Supported methods to determine regularization α parameter
-abstract type smoothing_optimizer end
+
+"Supported methods to determine the α parameter in tikhonov regularization"
+abstract type alpha_optimizer end
 
 """
-    gcv
-Generalized cross validation for finding the optimal regularization parameter α.
+    gcv_mitchell
+Generalized cross validation for finding the optimal regularization parameter α,
+following the method in Mitchell 2012.
 """
-struct gcv <: smoothing_optimizer end
-
-
-"""
-    lcurve(a,b,n)
-L-curve method for finding the optimal regularization parameter α.
-It will test a set of logarithmically-spaced values, 
-starting from `a`, ending in `b`, and consisting of `n` values.
-The optimal value will be chosen based on the maximum curvature of the L curve,
-as described in Hansen 2010, "Discrete Inverse Problems".
-
-This is usually less reliable than the `gcv` method, 
-but it's nice to have multiple options.
-
-Note that the first time you use this in every session, 
-it will take about a minute to compile the code.
-This might be optimized in the future, if there's demand for it.
+struct gcv_mitchell <: alpha_optimizer end
 
 """
-struct lcurve <: smoothing_optimizer 
+Finding the optimal regularization parameter α,
+using univariate optimization algorithm. Brent() is the default option, 
+GoldenSection() can be used as an alternative.
+"""
+struct find_alpha_univariate <: alpha_optimizer
+    search_method::Symbol
+    lower::Real
+    upper::Real
+    algorithm::Optim.UnivariateOptimizer
+    abs_tol::Real
+end
+
+"""
+Finding the optimal regularization parameter α,
+using univariate optimization algorithm. 
+Brent() is the default option, but
+GoldenSection() can be used as an alternative.
+"""
+struct find_alpha_box <: alpha_optimizer
+    search_method::Symbol
+    start::Real
+    algorithm::Optim.FirstOrderOptimizer
+    opts::Optim.Options
+end
+
+"""
+"""
+struct lcurve_range <: alpha_optimizer 
     lowest_value::Real
     highest_value::Real
     number_of_steps::Int
 end
 
-export smoothing_optimizer, gcv, lcurve
+"Constructors for gcv"
+gcv() = gcv_mitchell()
+
+gcv(start::Real; algorithm = LBFGS(), opts = Optim.Options()) = 
+    find_alpha_box(:gcv, Float64(start), algorithm, opts)
+
+gcv(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3) = 
+    find_alpha_univariate(:gcv, Float64(lower), Float64(upper), algorithm, abs_tol)
+
+" Constructors for lcurve"
+lcurve(lowest_value::Real, highest_value::Real, number_of_steps::Int,) = 
+    lcurve_range(lowest_value::Real, highest_value::Real, number_of_steps::Int)
+
+lcurve(start::Real; algorithm = LBFGS()) = 
+    find_alpha_box(:lcurve, Float64(start), algorithm, Optim.Options())
+
+lcurve(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3) = 
+    find_alpha_univariate(:lcurve, Float64(lower), Float64(upper), algorithm, abs_tol)
+
+
+
+export alpha_optimizer, gcv, lcurve
 
 
 export svd_kernel_struct
