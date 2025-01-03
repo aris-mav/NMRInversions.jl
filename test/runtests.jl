@@ -3,22 +3,14 @@ using NMRInversions
 using SparseArrays
 using LinearAlgebra
 
-function test1D(seq::Type{<:pulse_sequence1D})
 
-    x = exp10.(range(log10(1e-4), log10(5), 32)) # acquisition range
-
-    X = exp10.(range(-5, 1, 128)) # T range
-
-    K = create_kernel(seq, x, X)
-    f_custom = [0.5exp.(-(x)^2 / 3) + exp.(-(x - 1.3)^2 / 0.5) for x in range(-5, 5, length(X))]
-
-    g = K * f_custom
-    y = g + 0.001 * maximum(g) .* randn(length(x))
-
-    results = invert(seq, x, y, alpha=gcv(), lims=(-5,1,128), normalize=false)
-
-    return norm(results.f - f_custom) < 1.0
-end
+seq = IR
+x = exp10.(range(log10(1e-4), log10(5), 32)) # acquisition range
+X = exp10.(range(-5, 1, 128)) # T range
+K = create_kernel(seq, x, X)
+f_custom = [0.5exp.(-(x)^2 / 3) + exp.(-(x - 1.3)^2 / 0.5) for x in range(-5, 5, length(X))]
+g = K * f_custom
+y = g + 0.001 * maximum(g) .* randn(length(x))
 
 
 function test_lcurve()
@@ -137,7 +129,7 @@ function test_phase_correction(plots=false)
         display(plot(p1, p2, p3, p4))
     end
 
-    display("The correction error is $(2π - (ϕd + ϕc)) radians")
+    display("The correction error is $(round(2π - (ϕd + ϕc), sigdigits=2)) radians")
 
     return abs(2π - (ϕd + ϕc)) < 0.05
 end
@@ -156,11 +148,17 @@ end
 
 
 @testset "NMRInversions.jl" begin
-    # Write your tests here.
-    @test test1D(IR)
+    @test norm(invert(
+        seq, x, y, alpha=gcv(), lims=(-5,1,128), normalize=false
+    ).f - f_custom) < 1.0
+    @test norm(invert(
+        seq, x, y, alpha=gcv(1), lims=(-5,1,128), normalize=false
+    ).f - f_custom) < 1.0
+    @test norm(invert(
+        seq, x, y, alpha=lcurve(1e-5, 10), lims=(-5,1,128), normalize=false
+    ).f - f_custom) < 1.0
     @test testT1T2()
     @test test_expfit()
     @test test_phase_correction()
 
 end
-
