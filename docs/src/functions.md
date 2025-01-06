@@ -107,7 +107,17 @@ The following methods can be used as inputs for the `alpha` argument in the
 `invert` function:
 
 ```@docs
+gcv()
+gcv(::Real; kwargs...)
+gcv(::Real, ::Real ; kwargs...)
+lcurve(::Real, ::Real, ::Int)
+lcurve(::Real; kwargs...)
+lcurve(::Real, ::Real ; kwargs...)
 ```
+
+The `gcv()` method (from Mithcell 2012) usually involves the least amount of 
+function calls and it is thus much faster, thus used as the default option.
+If you want more precision, the univariate or box methods should be used instead.
 
 # Exponential fit functions
 
