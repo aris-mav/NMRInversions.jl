@@ -1,4 +1,3 @@
-
 export mexp
 """
     mexp(seq, u, x)
@@ -61,7 +60,7 @@ Arguments:
 - `y` : acquisition y parameter (magnetization).
 
 Optional arguments:
-- `solver` : OptimizationOptimJL solver, defeault choice is BFGS().
+- `solver` : Optim solver, defeault choice is IPNewton().
 - `normalize` : Normalize the data before fitting? (default is true).
 - `L` : An integer specifying which norm of the residuals you want to minimize (default is 2).
 
@@ -91,7 +90,7 @@ function expfit(
     seq::Type{<:NMRInversions.pulse_sequence1D}, 
     x::Vector, 
     y::Vector;
-    solver=OptimizationOptimJL.BFGS(),
+    solver= IPNewton(),
     normalize::Bool=true,
     L::Int = 2
 )
@@ -116,10 +115,11 @@ function expfit(
 
     end
 
-    # Solve the optimization
-    optf = Optimization.OptimizationFunction(mexp_loss, Optimization.AutoForwardDiff())
-    prob = Optimization.OptimizationProblem(optf, u0, (x, y, seq, L), lb=zeros(length(u0)), ub=Inf .* ones(length(u0)))
-    u = OptimizationOptimJL.solve(prob, solver, maxiters=5000, maxtime=100)
+    u = optimize(
+        u -> mexp_loss(u, (x, y, seq, L)), 
+        zeros(length(u0)), Inf .* ones(length(u0)), u0, 
+        solver
+    ).minimizer
 
     # Determine what's the x-axis of the seq (time or bfactor)
     seq == NMRInversions.PFG ? x_ax = "b" : x_ax = "t"

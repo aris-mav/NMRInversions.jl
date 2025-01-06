@@ -70,54 +70,6 @@ function selections(res::inv_out_2D)
 
 end
 
-function calc_weighted_averages(F::Matrix, dir::Vector, indir::Vector)
-
-    T1 = vec(sum(F, dims=2)) ⋅ indir / sum(F)
-    T2 = vec(sum(F, dims=1)) ⋅ dir / sum(F)
-
-    return [T1, T2]
-end
-
-
-function entropy(u::AbstractArray, p::Tuple)
-
-    phc0 = u[1]
-    phc1 = u[2]
-    R⁰ = p[1]
-    I⁰ = p[2]
-    γ = p[3]
-
-    n = length(R⁰)
-    ϕ = phc0 .+ phc1 .* collect(range(1, n) ./ n)
-
-    R, _ = phase_shift(R⁰, I⁰, ϕ)
-
-    h = abs.(diff(R)) ./ sum(abs.(diff(R)))
-
-    return -sum(h .* log.(h)) + γ * sum((R .^ 2)[findall(x -> x < 0, R)])
-
-end
-
-
-function minimize_entropy(Re, Im, γ)
-
-    optf = Optimization.OptimizationFunction(entropy)
-    prob = Optimization.OptimizationProblem(optf, [0.1, 0.1], (Re, Im, γ))# lb=[0.0001, 0.0001], ub=[2π, 2π])
-
-    uopt = OptimizationOptimJL.solve(prob, OptimizationOptimJL.SimulatedAnnealing())
-
-    n = length(Re)
-    ϕ = uopt[1] .+ uopt[2] .* collect(range(1, n) ./ n)
-
-    Rₙ, Iₙ = phase_shift(Re, Im, ϕ)
-
-    p = plot(a[:, 1], Rₙ, label="Real")
-    p = plot!(a[:, 1], Iₙ, label="Imaginary")
-    display(p)
-
-    return Rₙ, Iₙ
-
-end
 
 
 """
@@ -197,9 +149,7 @@ function autophase(re, im, startingpoint::Real) # startingpoint is a value betwe
 
     ϕ₀ = ϕ_range[argmin(abs.(Re1_vs_φ .- startingpoint * maximum(Re1_vs_φ)))]
 
-    optf = Optimization.OptimizationFunction(im_cost, Optimization.AutoForwardDiff())
-    prob = Optimization.OptimizationProblem(optf, [ϕ₀], (re, im), lb=[ϕ₀ - 1], ub=[ϕ₀ + 1], x_tol=1e-5)
-    ϕ = OptimizationOptimJL.solve(prob, OptimizationOptimJL.BFGS())[1]
+    ϕ = optimize(u -> im_cost(u,(re, im)), [ϕ₀ - 1], [ϕ₀ + 1], [ϕ₀]).minimizer[1]
 
     Rₙ, Iₙ = phase_shift(re, im, ϕ)
 
