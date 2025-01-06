@@ -107,12 +107,6 @@ The following methods can be used as inputs for the `alpha` argument in the
 `invert` function:
 
 ```@docs
-gcv()
-gcv(start; kwargs...)
-gcv(lower, upper ; kwargs...)
-lcurve(lowest_value, highest_value, number_of_steps)
-lcurve(start; kwargs...)
-lcurve(lower, upper ; kwargs...)
 ```
 
 # Exponential fit functions
