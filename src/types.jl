@@ -78,6 +78,10 @@ of the algorithm. A good compromise between the two was found when σ = 0.1 and 
 The best values of σ and τ will depend slightly on the scaling of the signal. 
 Therefore, it is best to normalize the NMR signal to a maximum of 1,
 a technique which was followed in the cited study.
+
+Note that for this method, the role of α is inverted, with larger α values
+leading to less smoothing, not more. For that reason, `alpha=gcv()` (Mitchell method)
+will not work. Please use `alpha=gcv(starting_value)` or `alpha=gcv(lower_limit, upper_limit)', or some lcurve method instead.
 """
 struct pdhgm <: regularization_solver
     σ::Real
@@ -89,19 +93,26 @@ end
 
 """
     optim_nnls(order)
-Simple non-negative least squares method for tikhonov (L2) regularization, 
+Simple non-negative least squares method for regularization, 
 implemented using Optim.jl.
 All around effective, but can be slow for large problems, such as 2D inversions.
 It can be used as a "solver" for invert function.
-Order is an integer that determines the tikhonov matrix 
+
+`order` is an integer that determines the tikhonov matrix 
 (for more info look Hansen's 2010 book on inverse problems). 
 Order `n` means that the penalty term will be the n'th derivative
 of the results. 
+
+`L` detemines which norm of the penalty term will be minimized. 
+Default is 2 (tikhonov regularization).
+
 """
 struct optim_nnls <: regularization_solver 
     order::Int
-    optim_nnls() = new(0)
-    optim_nnls(x::Int) = new(x)
+    L::Int
+    optim_nnls() = new(0, 2)
+    optim_nnls(x::Int) = new(x, 2)
+    optim_nnls(x::Int, y::Int) = new(x, y)
 end
 
 """
@@ -166,22 +177,100 @@ struct lcurve_range <: alpha_optimizer
     number_of_steps::Int
 end
 
-"Constructors for gcv"
+"""
+    gcv()
+Constructor for the gcv method described in Mitchell 2012.
+No arguments required.
+"""
 gcv() = gcv_mitchell()
 
+"""
+    gcv(start; kwargs...)
+Constructor for finding the optimal alpha value via gcv score
+box optimization, given a starting value.
+
+ Necessary (positional) arguments:
+- `start` is the starting alpha value. 
+Choose something sensible, usually a value between 0.1 and 10 would work well.
+
+ Optional (keyword) arguments:
+- `algorithm` determines which method will be used by Optim.jl to solve the problem.
+Default is LBFGS(). Only first order optimizers can be chosen here. 
+For more details, refer to Optim.jl documentation.
+- `opts` an Optim.Options() structure which can provide some preferences to the solver.
+Please have a look [here](https://julianlsolvers.github.io/Optim.jl/v1.10/user/config/).
+"""
 gcv(start::Real; algorithm = LBFGS(), opts = Optim.Options()) = 
     find_alpha_box(:gcv, Float64(start), algorithm, opts)
 
+
+"""
+    gcv(lower, upper ; kwargs...)
+Constructor for finding the optimal alpha value via gcv score
+univariate optimization, given some lower and upper bounds.
+
+ Necessary (positional) arguments:
+- `lower` is the lower bound, or lowest alpha value the algorighm will consider.
+- `upper` is the upper bound, or highest alpha value the algorighm will consider.
+
+ Optional (keyword) arguments:
+- `algorithm` determines which method will be used by Optim.jl to solve the problem.
+Default is `Brent()` and the only alternative is `GoldenSection()`, which is normally slower.
+- `abs_tol` determines what's the smallest change in alpha the algorithm
+should care about. Default is 1e-3.
+"""
 gcv(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3) = 
     find_alpha_univariate(:gcv, Float64(lower), Float64(upper), algorithm, abs_tol)
 
-" Constructors for lcurve"
+
+"""
+    lcurve(lowest_value, highest_value, number_of_steps)
+Constructor for testing all L-curve curvatures between some bounds and 
+picking the optimal.
+
+- `lowest_value` is the lowest alpha value.
+- `highest_value` is the highest alpha value.
+- `number_of_steps` is the number of alpha values that will be tested.
+
+This is a very crude and rather slow method, mostly for demonstration purposes.
+"""
 lcurve(lowest_value::Real, highest_value::Real, number_of_steps::Int,) = 
     lcurve_range(lowest_value::Real, highest_value::Real, number_of_steps::Int)
 
-lcurve(start::Real; algorithm = LBFGS()) = 
-    find_alpha_box(:lcurve, Float64(start), algorithm, Optim.Options())
+"""
+    lcurve(start; kwargs...)
+Constructor for finding the optimal alpha value via lcurve curvature
+box optimization, given a starting value.
 
+ Necessary (positional) arguments:
+- `start` is the starting alpha value. 
+Choose something sensible, usually a value between 0.1 and 10 would work well.
+
+ Optional (keyword) arguments:
+- `algorithm` determines which method will be used by Optim.jl to solve the problem.
+Default is LBFGS(). Only first order optimizers can be chosen here. 
+For more details, refer to Optim.jl documentation.
+- `opts` an Optim.Options() structure which can provide some preferences to the solver.
+Please have a look [here](https://julianlsolvers.github.io/Optim.jl/v1.10/user/config/).
+"""
+lcurve(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_tol = 1e-3)) = 
+    find_alpha_box(:lcurve, Float64(start), algorithm, opts)
+
+"""
+    lcurve(lower, upper ; kwargs...)
+Constructor for finding the optimal alpha value via lcurve curvature
+univariate optimization, given some lower and upper bounds.
+
+ Necessary (positional) arguments:
+- `lower` is the lower bound, or lowest alpha value the algorighm will consider.
+- `upper` is the upper bound, or highest alpha value the algorighm will consider.
+
+ Optional (keyword) arguments:
+- `algorithm` determines which method will be used by Optim.jl to solve the problem.
+Default is `Brent()` and the only alternative is `GoldenSection()`, which is normally slower.
+- `abs_tol` determines what's the smallest change in alpha the algorithm
+should care about. Default is 1e-3.
+"""
 lcurve(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3) = 
     find_alpha_univariate(:lcurve, Float64(lower), Float64(upper), algorithm, abs_tol)
 

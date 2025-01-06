@@ -17,7 +17,9 @@ logarithmically spaced values
 (default is (-5, 1, 128) for relaxation and (-10, -7, 128) for diffusion). 
 Alternatiively, a vector of values can be used directly, if more freedom is needed 
 (e.g. `lims=exp10.(range(-4, 1, 128))`).
-- `alpha` determines the smoothing term. Use a real number for a fixed alpha.  No selection will lead to automatically determining alpha through the defeault method, which is `gcv`.
+- `alpha` determines the smoothing term. Use a real number for a fixed alpha.  
+No selection will lead to automatically determining alpha through the 
+defeault method, which is `gcv()`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.
 - `normalize` will normalize `y` to 1 at the max value of `y`. Default is `true`.  
 
@@ -30,7 +32,7 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
                 )
 
     if normalize
-        y = y ./ y[argmax(real(y))]
+        y = y ./ y[argmax(abs.(real(y)))]
     end
 
     if isa(lims, Tuple)

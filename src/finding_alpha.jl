@@ -68,8 +68,6 @@ end
 
 function l_cost(K, g, α, solver)
 
-    display("Testing α = $(round(α,sigdigits=3))")
-
     f, r = NMRInversions.solve_regularization(K, g, α, solver)
 
     A = sparse([K; √(α) * LinearAlgebra.I ])
@@ -78,8 +76,6 @@ function l_cost(K, g, α, solver)
     return l_curvature(f, r, α, A, b)
 
 end
-
-
 
 
 """

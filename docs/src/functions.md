@@ -98,6 +98,22 @@ invert(::Type{<:pulse_sequence2D}, ::AbstractVector, ::AbstractVector, ::Abstrac
 invert(::input2D)
 ```
 
+# Finding alpha
+Here we provide two options for finding the optimal value for alpha, 
+namely Generalized Cross Validation (GCV) or L-curve. 
+Generally gcv seems slightly more reliable in NMR, but it's far from 
+perfect, so it's good to have alternatives and cross-check.
+The following methods can be used as inputs for the `alpha` argument in the
+`invert` function:
+
+```@docs
+gcv()
+gcv(start; kwargs...)
+gcv(lower, upper ; kwargs...)
+lcurve(lowest_value, highest_value, number_of_steps)
+lcurve(start; kwargs...)
+lcurve(lower, upper ; kwargs...)
+```
 
 # Exponential fit functions
 

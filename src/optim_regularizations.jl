@@ -41,7 +41,7 @@ function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, so
     A = sparse([K; √(α) .* NMRInversions.Γ(size(K, 2), solver.order)])
     b = sparse([g; zeros(size(A, 1) - size(g, 1))])
 
-    f = solve_nnls(A, b)
+    f = solve_nnls(A, b, L = solver.L)
 
     r = K * f - g
 
@@ -52,13 +52,14 @@ end
 """
 Solve a least squares problem, with nonnegativity constraints.
 """
-function solve_nnls(A::AbstractMatrix, b::AbstractVector)
+function solve_nnls(A::AbstractMatrix, b::AbstractVector ;
+                    start = ones(size(A, 2)),
+                    L = 2)
 
     x = Optim.optimize(
-        x -> obj_ls(x, (A,b)), 
-        zeros(size(A, 2)), Inf .* ones(size(A, 2)), ones(size(A, 2)),
+        x -> norm( A*x - b, L), 
+        zeros(size(A, 2)), fill(Inf, size(A, 2)), start,
         autodiff = :forward,
-        Optim.Options(x_tol = 1e-8)
     ).minimizer
 
     return x
@@ -71,15 +72,11 @@ Solve a least squares problem, without nonnegativity constraints.
 function solve_ls(A::AbstractMatrix, b::AbstractVector)
 
     x = optimize(
-        x -> obj_ls(x, (A,b)), 
+        x -> norm( A*x - b, 2), 
         fill(-Inf, size(A, 2)), fill(Inf, size(A, 2)),
         ones(size(A, 2)),
         autodiff = :forward
     ).minimizer
 
     return x
-end
-
-function obj_ls(x, p)
-    return sum((p[1] * x - p[2]).^2)
 end

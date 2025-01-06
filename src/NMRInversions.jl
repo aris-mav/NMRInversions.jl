@@ -10,8 +10,6 @@ using Optim
 
 """
 to do list:
-- add gcv for reci method
-- differentiate between Mitchell GCV and optim GCV
 - introduce faf, flip angle fraction, to the kernel functions. 1 would be a perfect pulse, 0 would be no pulse.
 - add precompilation
 
