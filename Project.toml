@@ -1,7 +1,7 @@
 name = "NMRInversions"
 uuid = "55c20db2-0166-4687-95c3-62a9c7afb29b"
 authors = ["Aristarchos Mavridis <aris.mav@hotmail.com>"]
-version = "0.9.4"
+version = "0.9.5"
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
