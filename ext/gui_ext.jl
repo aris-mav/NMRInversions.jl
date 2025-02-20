@@ -102,20 +102,20 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; selecti
     if res.seq in [NMRInversions.IR]
         ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)")
         ax2 = Axis(fig[1:5, 6:10], xlabel="T₁ (s)", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)")
+        ax3 = Axis(fig[6:10,1:5], xlabel= "index", ylabel="Residuals (a.u.)")
 
     elseif res.seq in [NMRInversions.CPMG]
         ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)")
         ax2 = Axis(fig[1:5, 6:10], xlabel="T₂ (s)", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)")
+        ax3 = Axis(fig[6:10,1:5], xlabel= "index", ylabel="Residuals (a.u.)")
 
     elseif res.seq in [NMRInversions.PFG]
         ax1 = Axis(fig[1:5, 1:5], xlabel="b factor (s/m² e-9)", ylabel="Signal (a.u.)")
         ax2 = Axis(fig[1:5, 6:10], xlabel="D (m²/s)", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "b factor (s/m² e-9)", ylabel="Residuals (a.u.)")
+        ax3 = Axis(fig[6:10,1:5], xlabel= "index", ylabel="Residuals (a.u.)")
     end
 
-    linkxaxes!(ax1, ax3)
+    #=linkxaxes!(ax1, ax3)=#
 
     for r in res_mat
         draw_on_axes(ax1, ax2, ax3, r, selections = selections)
@@ -198,10 +198,7 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
     scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=c)
     lines!(ax1, res.xfit, res.yfit, colormap=:tab10, colorrange=(1, 10), color=c)
     lines!(ax2, res.X, res.f, colormap=:tab10, colorrange=(1, 10), color=c)
-    if length(res.x) == length(res.r)
-        scatter!(ax3, res.x, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
-        lines!(ax3, res.x, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
-    end
+    lines!(ax3, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
 
 
     if selections
