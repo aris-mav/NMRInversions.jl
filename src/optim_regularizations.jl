@@ -17,19 +17,21 @@ function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, so
     return f, r
 end
 
-function objective_f(c::AbstractVector, p=(α, data, K))
+function objective_f(c::AbstractVector, p::Tuple{<:Real, AbstractVector, AbstractMatrix } )
     G = copy(p[3])
     G[:, (p[3]'*c.<=0)] .= 0
-    f = 0.5 * c' * ((p[1] * I + (G * p[3]')) * c) - c' * p[2]
+
+    0.5 * c' * ((p[1] * I + (G * p[3]')) * c) - c' * p[2]
+
 end
 
-function gradient_f!(gradient, c, p=(α, data, K))
+function gradient_f!(gradient, c, p::Tuple{<:Real, AbstractVector, AbstractMatrix })
     G = copy(p[3])
     G[:, (p[3]'*c.<=0)] .= 0
     gradient .= (p[1] * I + G * p[3]') * c - p[2]
 end
 
-function hessian_f!(H, c, p=(α, data, K))
+function hessian_f!(H, c, p::Tuple{<:Real, AbstractVector, AbstractMatrix })
     G = copy(p[3])
     G[:, (p[3]'*c.<=0)] .= 0
     H .= p[1] * I + G * p[3]'
