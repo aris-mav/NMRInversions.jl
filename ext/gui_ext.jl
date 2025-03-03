@@ -626,7 +626,14 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
     end ## BUTTON CLICKS
 
+    @async begin
+        sleep(0.1)  # Give time for the window to open
+        resetb.clicks[] += 1 # Reset the plot so resizing doesn't crash on mac
+    end
+    
     gui
+    
+
 end
 
 end
