@@ -216,8 +216,8 @@ univariate optimization, given some lower and upper bounds.
  Optional (keyword) arguments:
 - `algorithm` determines which method will be used by Optim.jl to solve the problem.
 Default is `Brent()` and the only alternative is `GoldenSection()`, which is normally slower.
-- `abs_tol` determines what's the smallest change in alpha the algorithm
-should care about. Default is 1e-3.
+- `abs_tol` determines what's the smallest change in alpha the algorithm should care about.
+Default is 1e-3.
 """
 gcv(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3) = 
     find_alpha_univariate(:gcv, Float64(lower), Float64(upper), algorithm, abs_tol)
@@ -268,8 +268,8 @@ univariate optimization, given some lower and upper bounds.
  Optional (keyword) arguments:
 - `algorithm` determines which method will be used by Optim.jl to solve the problem.
 Default is `Brent()` and the only alternative is `GoldenSection()`, which is normally slower.
-- `abs_tol` determines what's the smallest change in alpha the algorithm
-should care about. Default is 1e-3.
+- `abs_tol` determines what's the smallest change in alpha the algorithm should care about.
+Default is 1e-3.
 """
 lcurve(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3) = 
     find_alpha_univariate(:lcurve, Float64(lower), Float64(upper), algorithm, abs_tol)

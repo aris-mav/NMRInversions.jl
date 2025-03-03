@@ -15,11 +15,11 @@ The output is an `inv_out_1D` structure.
 so that it starts from 10^a, ends in 10^b and consists of c 
 logarithmically spaced values 
 (default is (-5, 1, 128) for relaxation and (-10, -7, 128) for diffusion). 
-Alternatiively, a vector of values can be used directly, if more freedom is needed 
+Alternatively, a vector of values can be used directly, if more freedom is needed 
 (e.g. `lims=exp10.(range(-4, 1, 128))`).
 - `alpha` determines the smoothing term. Use a real number for a fixed alpha.  
 No selection will lead to automatically determining alpha through the 
-defeault method, which is `gcv()`.
+default method, which is `gcv()`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.
 - `normalize` will normalize `y` to 1 at the max value of `y`. Default is `true`.  
 
@@ -116,7 +116,7 @@ The output is an `inv_out_2D` structure.
 - `lims2` determines the output "range" of the inversion in the indirect dimension (e.g. T₁ times in IRCPMG)
  In both cases above, you can use a tuple specifying the limits of the range, or a vector of values, same as the `lims` argument in the 1D inversion.
 
-- `alpha` determines the smoothing term. Use a real number for a fixed alpha.  No selection will lead to automatically determining alpha through the defeault method, which is `gcv`.
+- `alpha` determines the smoothing term. Use a real number for a fixed alpha.  No selection will lead to automatically determining alpha through the default method, which is `gcv`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.
 - `normalize` will normalize `Data` to 1 at the max value of `Data`. Default is `true`.
 

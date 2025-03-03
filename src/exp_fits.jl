@@ -60,7 +60,7 @@ Arguments:
 - `y` : acquisition y parameter (magnetization).
 
 Optional arguments:
-- `solver` : Optim solver, defeault choice is IPNewton().
+- `solver` : Optim solver, default choice is IPNewton().
 - `normalize` : Normalize the data before fitting? (default is true).
 - `L` : An integer specifying which norm of the residuals you want to minimize (default is 2).
 
@@ -163,7 +163,7 @@ end
 
 """
     expfit(n, data; kwargs...)
-Similar to the `invert` fucntion, `expfit` can be called using an `input1D` structure.
+Similar to the `invert` function, `expfit` can be called using an `input1D` structure.
 
 Arguments:
 
