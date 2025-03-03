@@ -33,15 +33,9 @@ to remove the "noisy" singular values.
 """
 function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::Vector{<:Real})
 
-    if length(x) < length(X)
-        usv = svd(create_kernel(seq, x , X))
-        K_new = Diagonal(usv.S) * usv.V'
-        g_new = usv.U' * g
-    else
-        usv = svd(create_kernel(seq, x , X),full=true)
-        K_new = [Diagonal(usv.S) ; zeros(size(usv.U,1)-length(usv.S),length(usv.S))] * usv.V'
-        g_new = usv.U' * g
-    end
+    usv = svd(create_kernel(seq, x , X))
+    K_new = Diagonal(usv.S) * usv.V'
+    g_new = usv.U' * g
 
     return svd_kernel_struct(K_new, g_new, usv.U, usv.S, usv.V)
 
