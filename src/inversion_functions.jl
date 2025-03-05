@@ -1,6 +1,6 @@
 """
 # Inversion for 1D pulse sequences:
-    invert(seq, x, y ; lims, alpha, solver)
+    invert(seq, x, y ; lims, alpha, solver, normalize)
 
 This function will build a kernel and use it to perform an inversion using the algorithm of your choice.
 The output is an `inv_out_1D` structure.
@@ -99,7 +99,7 @@ end
 
 """
 # Inversion for 2D pulse sequences:
-    invert(seq, x_direct, x_indirect, X_direct, X_indirect, Data; lims1, lims2, alpha, solver)
+    invert(seq, x_direct, x_indirect, Data; lims1, lims2, alpha, solver, normalize)
 
 This function will build a kernel and use it to perform an inversion using the algorithm of your choice.
 The output is an `inv_out_2D` structure.
