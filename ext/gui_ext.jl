@@ -160,6 +160,7 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     button_label = Button(fig[8,6:10], label = "Save selection")
     button_reset = Button(fig[9,6:10], label = "Reset selections")
     button_save = Button(fig[10,6:10], label = "Save and exit")
+    button_ignore = Button(fig[11,6:10], label = "Ignore selection")
 
     on(button_label.clicks) do _
         push!(res.selections, slider.interval[])
@@ -185,6 +186,14 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         savedir = NMRInversions.save_file(res.title, filterlist = "png")
         f = plot([res], selections = true)
         save(savedir, f)
+    end
+
+    on(button_ignore.clicks) do _
+        delete_range!(res, slider.interval[])
+        empty!(fig.content[1])
+        empty!(fig.content[2])
+        empty!(fig.content[3])
+        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
     end
 
     return fig
