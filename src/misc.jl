@@ -247,3 +247,16 @@ function weighted_averages(r::inv_out_2D)
 
     return wa_T1, wa_T2
 end
+
+
+"""
+    delete_range!(results::inv_res_1D , range)
+set selected range of f to 0, and update results
+"""
+function delete_range!(results::inv_res_1D , range)
+
+    # turn the section of `f` corresponding to the range to 0
+    # new_g = K*f
+    # results .= new_results
+
+end
