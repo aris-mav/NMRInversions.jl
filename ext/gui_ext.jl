@@ -132,6 +132,7 @@ Run the GUI to plot the 1D inversion results and select peaks you want to label.
 """
 function Makie.plot(res::NMRInversions.inv_out_1D)
 
+    original_res = deepcopy(res)
     fig = plot([res], selections = true)
 
     slider = IntervalSlider(fig[6,6:10], range = [1:length(res.X)...], startvalues = (1, length(res.X)))
@@ -174,6 +175,7 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
 
     on(button_reset.clicks) do _
         empty!(res.selections)
+        res = deepcopy(original_res)
         empty!(fig.content[1])
         empty!(fig.content[2])
         empty!(fig.content[3])
@@ -189,10 +191,10 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     end
 
     on(button_ignore.clicks) do _
-        delete_range!(res, slider.interval[])
         empty!(fig.content[1])
         empty!(fig.content[2])
         empty!(fig.content[3])
+        delete_range!(res, slider.interval[])
         draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
     end
 
