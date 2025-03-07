@@ -159,9 +159,9 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     vlines!(fig.content[2], int_high, color=:red)
 
     button_label = Button(fig[8,6:10], label = "Save selection")
-    button_reset = Button(fig[9,6:10], label = "Reset selections")
-    button_save = Button(fig[10,6:10], label = "Save and exit")
-    button_ignore = Button(fig[11,6:10], label = "Ignore selection")
+    button_ignore = Button(fig[9,6:10], label = "Ignore selection")
+    button_reset = Button(fig[10,6:10], label = "Reset selections")
+    button_save = Button(fig[11,6:10], label = "Save and exit")
 
     on(button_label.clicks) do _
         push!(res.selections, slider.interval[])
@@ -196,6 +196,8 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         empty!(fig.content[3])
         delete_range!(res, slider.interval[])
         draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
+        vlines!(fig.content[2], int_low, color=:red)
+        vlines!(fig.content[2], int_high, color=:red)
     end
 
     return fig
