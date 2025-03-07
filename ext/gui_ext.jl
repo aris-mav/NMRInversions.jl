@@ -173,6 +173,16 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         vlines!(fig.content[2], int_high, color=:red)
     end
 
+    on(button_ignore.clicks) do _
+        empty!(fig.content[1])
+        empty!(fig.content[2])
+        empty!(fig.content[3])
+        delete_range!(res, slider.interval[])
+        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
+        vlines!(fig.content[2], int_low, color=:red)
+        vlines!(fig.content[2], int_high, color=:red)
+    end
+
     on(button_reset.clicks) do _
         empty!(res.selections)
         res = deepcopy(original_res)
@@ -190,15 +200,6 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         save(savedir, f)
     end
 
-    on(button_ignore.clicks) do _
-        empty!(fig.content[1])
-        empty!(fig.content[2])
-        empty!(fig.content[3])
-        delete_range!(res, slider.interval[])
-        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
-        vlines!(fig.content[2], int_low, color=:red)
-        vlines!(fig.content[2], int_high, color=:red)
-    end
 
     return fig
 end
