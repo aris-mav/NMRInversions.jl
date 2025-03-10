@@ -251,7 +251,7 @@ end
 
 """
     delete_range!(results::inv_res_1D , range)
-Set selected range of f to 0, and update results.
+Set selected range of f to 0, and update fitted curve and residuals.
 """
 function delete_range!(results::inv_out_1D, range)
 
