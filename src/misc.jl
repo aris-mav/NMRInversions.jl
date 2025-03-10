@@ -253,13 +253,19 @@ end
     delete_range!(results::inv_res_1D , range)
 Set selected range of f to 0, and update results.
 """
-function delete_range!(results::inv_out_1D , range)
+function delete_range!(results::inv_out_1D, range)
 
-    # turn the section of `f` corresponding to the range to 0
-    # new_g = K*f
-    # results .= new_results
+    results.f[range[1]:range[2]] .= 0 
 
-    results.f[range[1]:range[2]] .= 0
-    # display(results.f)
+    K = create_kernel(results.seq, results.xfit, results.X)
+    g = K * results.f
+    results.yfit = g
+
+    # pick indices from yfit that are closest to the original x values 
+    closest_indices = [findmin(abs.(results.xfit .- x))[2] for x in results.x]
+    aligned_g = g[closest_indices]
+
+    results.r = results.y - aligned_g
+
 
 end
