@@ -132,6 +132,7 @@ Run the GUI to plot the 1D inversion results and select peaks you want to label.
 """
 function Makie.plot(res::NMRInversions.inv_out_1D)
 
+    original_res = deepcopy(res)
     fig = plot([res], selections = true)
 
     slider = IntervalSlider(fig[6,6:10], range = [1:length(res.X)...], startvalues = (1, length(res.X)))
@@ -158,8 +159,9 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     vlines!(fig.content[2], int_high, color=:red)
 
     button_label = Button(fig[8,6:10], label = "Save selection")
-    button_reset = Button(fig[9,6:10], label = "Reset selections")
-    button_save = Button(fig[10,6:10], label = "Save and exit")
+    button_delete = Button(fig[9,6:10], label = "Delete selection")
+    button_reset = Button(fig[10,6:10], label = "Reset selections")
+    button_save = Button(fig[11,6:10], label = "Save and exit")
 
     on(button_label.clicks) do _
         push!(res.selections, slider.interval[])
@@ -171,8 +173,19 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         vlines!(fig.content[2], int_high, color=:red)
     end
 
+    on(button_delete.clicks) do _
+        empty!(fig.content[1])
+        empty!(fig.content[2])
+        empty!(fig.content[3])
+        delete_range!(res, slider.interval[])
+        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
+        vlines!(fig.content[2], int_low, color=:red)
+        vlines!(fig.content[2], int_high, color=:red)
+    end
+
     on(button_reset.clicks) do _
         empty!(res.selections)
+        res = deepcopy(original_res)
         empty!(fig.content[1])
         empty!(fig.content[2])
         empty!(fig.content[3])
@@ -186,6 +199,7 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         f = plot([res], selections = true)
         save(savedir, f)
     end
+
 
     return fig
 end
@@ -622,8 +636,11 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
         end
 
     end ## BUTTON CLICKS
-
+    
+    
     gui
+    
+
 end
 
 end

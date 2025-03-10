@@ -247,3 +247,24 @@ function weighted_averages(r::inv_out_2D)
 
     return wa_T1, wa_T2
 end
+
+
+"""
+    delete_range!(results::inv_res_1D , range)
+Set selected range of f to 0, and update fitted curve and residuals.
+"""
+function delete_range!(results::inv_out_1D, range)
+
+    results.f[range[1]:range[2]] .= 0 
+
+    K = create_kernel(results.seq, results.xfit, results.X)
+    g = K * results.f
+    results.yfit = g
+
+    # pick indices from xfit that are closest to the measured x values 
+    closest_indices = [findmin(abs.(results.xfit .- x))[2] for x in results.x]
+    aligned_g = g[closest_indices]
+
+    results.r = results.y - aligned_g
+
+end
