@@ -159,7 +159,7 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     vlines!(fig.content[2], int_high, color=:red)
 
     button_label = Button(fig[8,6:10], label = "Save selection")
-    button_ignore = Button(fig[9,6:10], label = "Ignore selection")
+    button_delete = Button(fig[9,6:10], label = "Delete selection")
     button_reset = Button(fig[10,6:10], label = "Reset selections")
     button_save = Button(fig[11,6:10], label = "Save and exit")
 
@@ -173,7 +173,7 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         vlines!(fig.content[2], int_high, color=:red)
     end
 
-    on(button_ignore.clicks) do _
+    on(button_delete.clicks) do _
         empty!(fig.content[1])
         empty!(fig.content[2])
         empty!(fig.content[3])

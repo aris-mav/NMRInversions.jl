@@ -267,5 +267,4 @@ function delete_range!(results::inv_out_1D, range)
 
     results.r = results.y - aligned_g
 
-
 end
