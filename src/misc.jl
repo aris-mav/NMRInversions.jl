@@ -261,7 +261,7 @@ function delete_range!(results::inv_out_1D, range)
     g = K * results.f
     results.yfit = g
 
-    # pick indices from yfit that are closest to the original x values 
+    # pick indices from xfit that are closest to the measured x values 
     closest_indices = [findmin(abs.(results.xfit .- x))[2] for x in results.x]
     aligned_g = g[closest_indices]
 
