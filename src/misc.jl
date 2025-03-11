@@ -255,8 +255,10 @@ Set selected range of f to 0, and update fitted curve and residuals.
 """
 function delete_range!(results::inv_out_1D, range)
 
+    
+    
     results.f[range[1]:range[2]] .= 0 
-
+    
     K = create_kernel(results.seq, results.xfit, results.X)
     g = K * results.f
     results.yfit = g
@@ -266,5 +268,8 @@ function delete_range!(results::inv_out_1D, range)
     aligned_g = g[closest_indices]
 
     results.r = results.y - aligned_g
+
+    # more accurate residuals method needs debugging.
+    # results.r = results.g - results.ker_struct.K * results.f
 
 end

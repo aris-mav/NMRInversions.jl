@@ -353,6 +353,7 @@ A structure containing the following fields:
 - `X`, the x values of the inversion results.
 - `f`, the inversion results.
 - `r`, the residuals.
+- `ker_struct`, the kernel struct.
 - `SNR`, the signal-to-noise ratio.
 - `α`, the regularization parameter.
 - `selections`, a vector of tuples whose elements are indicate the first and last index of the selected peaks. 
@@ -370,6 +371,7 @@ mutable struct inv_out_1D
     r::Vector
     SNR::Real
     alpha::Real
+    ker_struct::svd_kernel_struct
     selections::Vector{Tuple}
     title::String
 end
