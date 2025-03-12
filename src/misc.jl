@@ -250,26 +250,34 @@ end
 
 
 """
-    delete_range!(results::inv_res_1D , range)
-Set selected range of f to 0, and update fitted curve and residuals.
+    filter_selection!(res::inv_res_1D , range)
+Apply filter to selected region of `f`, scaling it accordingly and updating fitted curve and residuals.
 """
-function delete_range!(results::inv_out_1D, range)
+function filter_selection!(res::inv_out_1D, range)
 
-    
-    
-    results.f[range[1]:range[2]] .= 0 
-    
-    K = create_kernel(results.seq, results.xfit, results.X)
-    g = K * results.f
-    results.yfit = g
+    integral = sum(res.filter)
+    res.filter[range[1]:range[2]] .= 0
+    new_integral = sum(res.filter)
+    scale = integral / new_integral
+    res.filter .= res.filter .* scale
 
+    res.f .= res.filter .* res.f
+    
+    K = create_kernel(res.seq, res.xfit, res.X)
+    g = K * res.f
+    res.yfit = g
+    
     # pick indices from xfit that are closest to the measured x values 
-    closest_indices = [findmin(abs.(results.xfit .- x))[2] for x in results.x]
+    closest_indices = [findmin(abs.(res.xfit .- x))[2] for x in res.x]
     aligned_g = g[closest_indices]
 
-    results.r = results.y - aligned_g
+    res.r = aligned_g - res.y
 
     # more accurate residuals method needs debugging.
-    # results.r = results.g - results.ker_struct.K * results.f
+
+    # f, r = solve_regularization(res.ker_struct.K, res.ker_struct.g, res.alpha, res.solver) # ?
+
+    # res.r = res.ker_struct.g - res.ker_struct.K * res.f
+
 
 end

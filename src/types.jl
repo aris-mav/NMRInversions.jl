@@ -356,7 +356,8 @@ A structure containing the following fields:
 - `ker_struct`, the kernel struct.
 - `SNR`, the signal-to-noise ratio.
 - `α`, the regularization parameter.
-- `selections`, a vector of tuples whose elements are indicate the first and last index of the selected peaks. 
+- `selections`, a vector of tuples whose elements indicate the first and last index of the selected peaks.
+- `filter`, a vector representing the mask used to filter and scale the data.
 - `title`, a title describing the data.
 
 """
@@ -372,7 +373,9 @@ mutable struct inv_out_1D
     SNR::Real
     alpha::Real
     ker_struct::svd_kernel_struct
+    solver::regularization_solver
     selections::Vector{Tuple}
+    filter::Vector
     title::String
 end
 
