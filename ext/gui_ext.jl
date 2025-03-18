@@ -185,7 +185,6 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     on(button_reset.clicks) do _
         empty!(res.selections)
         res.filter = ones(length(res.X))
-        filter_selection!(res, (0,0))
         empty!(fig.content[1])
         empty!(fig.content[2])
         empty!(fig.content[3])
@@ -207,12 +206,17 @@ end
 
 function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections = false)
 
+    # apply filter to f and update fitted curve and residuals
+    f_prime = res.filter .* res.f
+    yfit_prime = create_kernel(res.seq, res.xfit, res.X) * f_prime
+    r_prime = create_kernel(res.seq, res.x, res.X) * f_prime - res.y
+
     c = length(ax2.scene.plots)
     scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax1, res.xfit, res.yfit, colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax2, res.X, res.f .* res.filter, colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax3, res.x, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
-    scatter!(ax3, res.x, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
+    lines!(ax1, res.xfit, yfit_prime, colormap=:tab10, colorrange=(1, 10), color=c)
+    lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=c)
+    lines!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=c)
+    scatter!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=c)
 
 
     if selections

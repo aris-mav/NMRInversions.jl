@@ -251,25 +251,14 @@ end
 
 """
     filter_selection!(res::inv_res_1D , range)
-Apply selected range to the filter, scaling accordingly and updating fitted curve and residuals.
-If range is (0,0), the filter is not changed, but results are updated.
+Apply selected range to the filter, scaling it to keep the integral of `f` constant.
 """
 function filter_selection!(res::inv_out_1D, range)
 
-    # scaling to keep area under curve constant
     integral = sum(res.f)
-    if range != (0,0)
-        res.filter[range[1]:range[2]] .= 0
-        new_integral = sum(res.f .* res.filter)
-        scale = new_integral != 0 ? integral / new_integral : 0
-        res.filter .= res.filter .* scale
-    end
-    f_scaled = res.filter .* res.f
-    
-    # update fitted curve and residuals
-    K = create_kernel(res.seq, res.xfit, res.X)
-    g = K * f_scaled
-    res.yfit = g
-    res.r = create_kernel(res.seq, res.x, res.X) * f_scaled - res.y
+    res.filter[range[1]:range[2]] .= 0
+    new_integral = sum(res.f .* res.filter)
+    scale = new_integral != 0 ? integral / new_integral : 0
+    res.filter .= res.filter .* scale
 
 end
