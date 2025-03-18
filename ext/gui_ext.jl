@@ -133,7 +133,6 @@ Run the GUI to plot the 1D inversion results and select peaks you want to label.
 function Makie.plot(res::NMRInversions.inv_out_1D)
 
     original_res = deepcopy(res)
-    res.filter = ones(length(res.X))
 
     fig = plot([res], selections = true)
 
@@ -213,7 +212,6 @@ end
 function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections = false)
 
     c = length(ax2.scene.plots)
-
     scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=c)
     lines!(ax1, res.xfit, res.yfit, colormap=:tab10, colorrange=(1, 10), color=c)
     lines!(ax2, res.X, res.f, colormap=:tab10, colorrange=(1, 10), color=c)

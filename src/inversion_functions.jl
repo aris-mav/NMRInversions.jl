@@ -76,7 +76,7 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
         X .= X ./ 1e9
     end
 
-    return inv_out_1D(seq, x, y, x_fit, y_fit, X, f, r, SNR, α, ker_struct, solver, [],[],"")
+    return inv_out_1D(seq, x, y, x_fit, y_fit, X, f, r, SNR, α, ker_struct, solver, [], ones(length(X)),"")
 
 end
 

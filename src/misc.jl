@@ -255,11 +255,13 @@ Apply filter to selected region of `f`, scaling it accordingly and updating fitt
 """
 function filter_selection!(res::inv_out_1D, range)
 
-    integral = sum(res.filter)
+    integral = sum(res.f)
     res.filter[range[1]:range[2]] .= 0
-    new_integral = sum(res.filter)
-    scale = integral / new_integral
+    new_integral = sum(res.f .* res.filter)
+    scale = new_integral != 0 ? integral / new_integral : 0
     res.filter .= res.filter .* scale
+    # integral3 = sum(res.f)
+    # @show integral, new_integral, integral3, scale
 
     res.f .= res.filter .* res.f
     
@@ -267,17 +269,14 @@ function filter_selection!(res::inv_out_1D, range)
     g = K * res.f
     res.yfit = g
     
+    # alternatively, 
     # pick indices from xfit that are closest to the measured x values 
-    closest_indices = [findmin(abs.(res.xfit .- x))[2] for x in res.x]
-    aligned_g = g[closest_indices]
+    # closest_indices = [findmin(abs.(res.xfit .- x))[2] for x in res.x]
+    # aligned_g = g[closest_indices]
 
-    res.r = aligned_g - res.y
+    # res.r = aligned_g - res.y
 
-    # more accurate residuals method needs debugging.
-
-    # f, r = solve_regularization(res.ker_struct.K, res.ker_struct.g, res.alpha, res.solver) # ?
-
-    # res.r = res.ker_struct.g - res.ker_struct.K * res.f
+    res.r = create_kernel(res.seq, res.x, res.X) * res.f - res.y
 
 
 end
