@@ -59,11 +59,11 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
     if isa(alpha, Real)
 
         α = alpha
-        f, r = solve_regularization(ker_struct.K, ker_struct.g, α, solver)
+        f, _ = solve_regularization(ker_struct.K, ker_struct.g, α, solver)
 
     else
 
-        f, r, α = find_alpha(ker_struct, solver, alpha)
+        f, _, α = find_alpha(ker_struct, solver, alpha)
 
     end
 
@@ -71,6 +71,8 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
     y_fit = create_kernel(seq, x_fit, X) * f
 
     isreal(y) ? SNR = NaN : SNR = calc_snr(y)
+    
+    r = create_kernel(seq, x, X) * f - y
 
     if seq == PFG
         X .= X ./ 1e9

@@ -102,20 +102,20 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; selecti
     if res.seq in [NMRInversions.IR]
         ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)")
         ax2 = Axis(fig[1:5, 6:10], xlabel="T₁ (s)", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "index", ylabel="Residuals (a.u.)")
+        ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)")
 
     elseif res.seq in [NMRInversions.CPMG]
         ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)")
         ax2 = Axis(fig[1:5, 6:10], xlabel="T₂ (s)", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "index", ylabel="Residuals (a.u.)")
+        ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)")
 
     elseif res.seq in [NMRInversions.PFG]
         ax1 = Axis(fig[1:5, 1:5], xlabel="b factor (s/m² e-9)", ylabel="Signal (a.u.)")
         ax2 = Axis(fig[1:5, 6:10], xlabel="D (m²/s)", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "index", ylabel="Residuals (a.u.)")
+        ax3 = Axis(fig[6:10,1:5], xlabel= "b factor (s/m² e-9)", ylabel="Residuals (a.u.)")
     end
 
-    #=linkxaxes!(ax1, ax3)=#
+    linkxaxes!(ax1, ax3)
 
     for r in res_mat
         draw_on_axes(ax1, ax2, ax3, r, selections = selections)
@@ -157,10 +157,10 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     vlines!(fig.content[2], int_low, color=:red)
     vlines!(fig.content[2], int_high, color=:red)
 
-    button_label = Button(fig[8,6:10], label = "Save selection")
-    button_filter = Button(fig[9,6:10], label = "Filter selection")
-    button_reset = Button(fig[10,6:10], label = "Reset selections")
-    button_save = Button(fig[11,6:10], label = "Save and exit")
+    button_label = Button(fig[8,6:10], label = "Label current selection")
+    button_filter = Button(fig[9,6:10], label = "Filter-out current selection")
+    button_reset = Button(fig[10,6:8], label = "Reset selections")
+    button_save = Button(fig[10,8:10], label = "Save and exit")
 
     on(button_label.clicks) do _
         push!(res.selections, slider.interval[])
@@ -211,7 +211,8 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
     scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=c)
     lines!(ax1, res.xfit, res.yfit, colormap=:tab10, colorrange=(1, 10), color=c)
     lines!(ax2, res.X, res.f .* res.filter, colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax3, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
+    lines!(ax3, res.x, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
+    scatter!(ax3, res.x, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
 
 
     if selections
