@@ -159,10 +159,10 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     vlines!(fig.content[2], int_low, color=:red)
     vlines!(fig.content[2], int_high, color=:red)
 
-    button_label = Button(fig[8,6:10], label = "Save selection")
-    button_filter = Button(fig[9,6:10], label = "Filter selection")
-    button_reset = Button(fig[10,6:10], label = "Reset selections")
-    button_save = Button(fig[11,6:10], label = "Save and exit")
+    button_label = Button(fig[8,6:10], label = "Label current selection")
+    button_filter = Button(fig[9,6:10], label = "Filter-out current selection")
+    button_reset = Button(fig[10,6:8], label = "Reset selections")
+    button_save = Button(fig[10,8:10], label = "Save and exit")
 
     on(button_label.clicks) do _
         push!(res.selections, slider.interval[])
