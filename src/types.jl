@@ -341,7 +341,7 @@ end
 
 export inv_out_1D
 """
-    inv_out_1D(seq, x, y, xfit, yfit, X, f, r, SNR, α, selections, title)
+    inv_out_1D(seq, x, y, xfit, yfit, X, f, r, SNR, α, selections, filter, title)
 
 Output of the invert function for 1D pulse sequences.
 A structure containing the following fields:
@@ -353,7 +353,6 @@ A structure containing the following fields:
 - `X`, the x values of the inversion results.
 - `f`, the inversion results.
 - `r`, the residuals.
-- `ker_struct`, the kernel struct.
 - `SNR`, the signal-to-noise ratio.
 - `α`, the regularization parameter.
 - `selections`, a vector of tuples whose elements indicate the first and last index of the selected peaks.
@@ -372,8 +371,6 @@ mutable struct inv_out_1D
     r::Vector
     SNR::Real
     alpha::Real
-    ker_struct::svd_kernel_struct
-    solver::regularization_solver
     selections::Vector{Tuple}
     filter::Vector
     title::String

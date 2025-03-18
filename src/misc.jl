@@ -251,32 +251,25 @@ end
 
 """
     filter_selection!(res::inv_res_1D , range)
-Apply filter to selected region of `f`, scaling it accordingly and updating fitted curve and residuals.
+Apply selected range to the filter, scaling accordingly and updating fitted curve and residuals.
+If range is (0,0), the filter is not changed, but results are updated.
 """
 function filter_selection!(res::inv_out_1D, range)
 
+    # scaling to keep area under curve constant
     integral = sum(res.f)
-    res.filter[range[1]:range[2]] .= 0
-    new_integral = sum(res.f .* res.filter)
-    scale = new_integral != 0 ? integral / new_integral : 0
-    res.filter .= res.filter .* scale
-    # integral3 = sum(res.f)
-    # @show integral, new_integral, integral3, scale
-
-    res.f .= res.filter .* res.f
+    if range != (0,0)
+        res.filter[range[1]:range[2]] .= 0
+        new_integral = sum(res.f .* res.filter)
+        scale = new_integral != 0 ? integral / new_integral : 0
+        res.filter .= res.filter .* scale
+    end
+    f_scaled = res.filter .* res.f
     
+    # update fitted curve and residuals
     K = create_kernel(res.seq, res.xfit, res.X)
-    g = K * res.f
+    g = K * f_scaled
     res.yfit = g
-    
-    # alternatively, 
-    # pick indices from xfit that are closest to the measured x values 
-    # closest_indices = [findmin(abs.(res.xfit .- x))[2] for x in res.x]
-    # aligned_g = g[closest_indices]
-
-    # res.r = aligned_g - res.y
-
-    res.r = create_kernel(res.seq, res.x, res.X) * res.f - res.y
-
+    res.r = create_kernel(res.seq, res.x, res.X) * f_scaled - res.y
 
 end

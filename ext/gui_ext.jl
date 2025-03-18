@@ -132,8 +132,6 @@ Run the GUI to plot the 1D inversion results and select peaks you want to label.
 """
 function Makie.plot(res::NMRInversions.inv_out_1D)
 
-    original_res = deepcopy(res)
-
     fig = plot([res], selections = true)
 
     slider = IntervalSlider(fig[6,6:10], range = [1:length(res.X)...], startvalues = (1, length(res.X)))
@@ -178,9 +176,7 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         empty!(fig.content[1])
         empty!(fig.content[2])
         empty!(fig.content[3])
-
         filter_selection!(res, slider.interval[])
-
         draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
         vlines!(fig.content[2], int_low, color=:red)
         vlines!(fig.content[2], int_high, color=:red)
@@ -188,8 +184,8 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
 
     on(button_reset.clicks) do _
         empty!(res.selections)
-        res = deepcopy(original_res)
         res.filter = ones(length(res.X))
+        filter_selection!(res, (0,0))
         empty!(fig.content[1])
         empty!(fig.content[2])
         empty!(fig.content[3])
@@ -214,7 +210,7 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
     c = length(ax2.scene.plots)
     scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=c)
     lines!(ax1, res.xfit, res.yfit, colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax2, res.X, res.f, colormap=:tab10, colorrange=(1, 10), color=c)
+    lines!(ax2, res.X, res.f .* res.filter, colormap=:tab10, colorrange=(1, 10), color=c)
     lines!(ax3, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
 
 
