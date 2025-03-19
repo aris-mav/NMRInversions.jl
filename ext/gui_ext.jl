@@ -208,8 +208,10 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
 
     # apply filter to f and update fitted curve and residuals
     f_prime = res.filter .* res.f
-    yfit_prime = create_kernel(res.seq, res.xfit, res.X) * f_prime
-    r_prime = create_kernel(res.seq, res.x, res.X) * f_prime - res.y
+    yfit_prime = create_kernel(
+        res.seq, res.xfit, (res.seq == PFG ? res.X .* 1e9 : res.X)) * f_prime
+    r_prime = create_kernel(
+        res.seq, res.x, (res.seq == PFG ? res.X .* 1e9 : res.X)) * f_prime - res.y
 
     c = length(ax2.scene.plots)
     scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=c)
@@ -248,11 +250,11 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
                 ax2, 
                 res.X[s[1]:s[2]],
                 zeros(length(res.f[s[1]:s[2]])),
-                res.f[s[1]:s[2]],
+                (res.f .* res.filter)[s[1]:s[2]],
                 color = clr, alpha = 0.5
             )
 
-            height = (1 - (i-1) * 0.1) * maximum(res.f) 
+            height = (1 - (i-1) * 0.1) * maximum(res.f .* res.filter) 
             text!(
                 ax2, res.X[2], height, 
                 text = Xlabel[1]*"$(round(wa[i], sigdigits = 2))"*Xlabel[2], 
