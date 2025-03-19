@@ -35,7 +35,6 @@ export import_spinsolve, import_geospec
 # The following functions are defined here and modified from extension files
 function select_peaks end
 function pubfig end
-function filter_selection! end
-export select_peaks, pubfig, filter_selection!
+export select_peaks, pubfig
 
 end
