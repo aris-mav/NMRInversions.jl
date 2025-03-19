@@ -102,20 +102,20 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; selecti
     if res.seq in [NMRInversions.IR]
         ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)")
         ax2 = Axis(fig[1:5, 6:10], xlabel="T₁ (s)", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "index", ylabel="Residuals (a.u.)")
+        ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)")
 
     elseif res.seq in [NMRInversions.CPMG]
         ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)")
         ax2 = Axis(fig[1:5, 6:10], xlabel="T₂ (s)", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "index", ylabel="Residuals (a.u.)")
+        ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)")
 
     elseif res.seq in [NMRInversions.PFG]
         ax1 = Axis(fig[1:5, 1:5], xlabel="b factor (s/m² e-9)", ylabel="Signal (a.u.)")
         ax2 = Axis(fig[1:5, 6:10], xlabel="D (m²/s)", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "index", ylabel="Residuals (a.u.)")
+        ax3 = Axis(fig[6:10,1:5], xlabel= "b factor (s/m² e-9)", ylabel="Residuals (a.u.)")
     end
 
-    #=linkxaxes!(ax1, ax3)=#
+    linkxaxes!(ax1, ax3)
 
     for r in res_mat
         draw_on_axes(ax1, ax2, ax3, r, selections = selections)
@@ -157,9 +157,10 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     vlines!(fig.content[2], int_low, color=:red)
     vlines!(fig.content[2], int_high, color=:red)
 
-    button_label = Button(fig[8,6:10], label = "Save selection")
-    button_reset = Button(fig[9,6:10], label = "Reset selections")
-    button_save = Button(fig[10,6:10], label = "Save and exit")
+    button_label = Button(fig[8,6:10], label = "Label current selection")
+    button_filter = Button(fig[9,6:10], label = "Filter-out current selection")
+    button_reset = Button(fig[10,6:8], label = "Reset selections")
+    button_save = Button(fig[10,8:10], label = "Save and exit")
 
     on(button_label.clicks) do _
         push!(res.selections, slider.interval[])
@@ -171,8 +172,19 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         vlines!(fig.content[2], int_high, color=:red)
     end
 
+    on(button_filter.clicks) do _
+        empty!(fig.content[1])
+        empty!(fig.content[2])
+        empty!(fig.content[3])
+        filter_range!(res, slider.interval[])
+        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
+        vlines!(fig.content[2], int_low, color=:red)
+        vlines!(fig.content[2], int_high, color=:red)
+    end
+
     on(button_reset.clicks) do _
         empty!(res.selections)
+        res.filter = ones(length(res.X))
         empty!(fig.content[1])
         empty!(fig.content[2])
         empty!(fig.content[3])
@@ -187,18 +199,26 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         save(savedir, f)
     end
 
+
     return fig
 end
 
 
 function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections = false)
 
-    c = length(ax2.scene.plots)
+    # apply filter to f and update fitted curve and residuals
+    f_prime = res.filter .* res.f
+    yfit_prime = create_kernel(
+        res.seq, res.xfit, (res.seq == PFG ? res.X .* 1e9 : res.X)) * f_prime
+    r_prime = create_kernel(
+        res.seq, res.x, (res.seq == PFG ? res.X .* 1e9 : res.X)) * f_prime - res.y
 
+    c = length(ax2.scene.plots)
     scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax1, res.xfit, res.yfit, colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax2, res.X, res.f, colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax3, res.r, colormap=:tab10, colorrange=(1, 10), color=c)
+    lines!(ax1, res.xfit, yfit_prime, colormap=:tab10, colorrange=(1, 10), color=c)
+    lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=c)
+    lines!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=c)
+    scatter!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=c)
 
 
     if selections
@@ -230,11 +250,11 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
                 ax2, 
                 res.X[s[1]:s[2]],
                 zeros(length(res.f[s[1]:s[2]])),
-                res.f[s[1]:s[2]],
+                (res.f .* res.filter)[s[1]:s[2]],
                 color = clr, alpha = 0.5
             )
 
-            height = (1 - (i-1) * 0.1) * maximum(res.f) 
+            height = (1 - (i-1) * 0.1) * maximum(res.f .* res.filter) 
             text!(
                 ax2, res.X[2], height, 
                 text = Xlabel[1]*"$(round(wa[i], sigdigits = 2))"*Xlabel[2], 
@@ -622,8 +642,11 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
         end
 
     end ## BUTTON CLICKS
-
+    
+    
     gui
+    
+
 end
 
 end

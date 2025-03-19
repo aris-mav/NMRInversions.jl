@@ -247,3 +247,19 @@ function weighted_averages(r::inv_out_2D)
 
     return wa_T1, wa_T2
 end
+
+
+export filter_range!
+"""
+    filter_range!(res::inv_res_1D , range)
+Apply selected range to the filter, scaling it to keep the integral of `f` constant.
+"""
+function filter_range!(res::inv_out_1D, range)
+
+    integral = sum(res.f)
+    res.filter[range[1]:range[2]] .= 0
+    new_integral = sum(res.f .* res.filter)
+    scale = new_integral != 0 ? integral / new_integral : 0
+    res.filter .= res.filter .* scale
+
+end
