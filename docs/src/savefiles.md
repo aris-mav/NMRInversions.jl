@@ -1,5 +1,4 @@
-
-# Introduction
+# Saving data
 
 Julia provides the Serialization.jl package to save and load data in a binary format.
 This provides us with a straightforward way to save our results in a file, and

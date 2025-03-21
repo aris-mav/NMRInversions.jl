@@ -1,4 +1,4 @@
-# Intro
+# Functions
 This page contains the documentation for various useful 
 functions in the NMRInversions package.
 
