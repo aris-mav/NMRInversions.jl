@@ -3,14 +3,14 @@ This page contains the documentation for various useful
 functions in the NMRInversions package.
 
 !!! tip
-    From the julia command line, you can enter '?', 
+    From the Julia command line, you can enter '?', 
     followed by the name of any function, struct, 
     or object you want to learn more about (try it!).
-    After typing `using NMRInversions` in the julia console, 
+    After typing `using NMRInversions` in the Julia console, 
     this feature will work for all the functions mentioned below.
 
 !!! info 
-    In julia, function definitions look like this:
+    In Julia, function definitions look like this:
     ```
     foo(x, y, z ; a, b)
     ``` 
@@ -85,7 +85,7 @@ invert(::Type{<:pulse_sequence1D}, ::AbstractArray, ::Vector)
 invert(::input1D)
 ```
 
-Due to julia's multiple dispatch, 
+Due to Julia's multiple dispatch, 
 it is possible to define a function with the same name
 but different arguments, to achieve different results.
 

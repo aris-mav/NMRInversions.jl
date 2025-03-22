@@ -44,7 +44,6 @@ porous rocks, catalyst supports and biological tissues, among many others.
 However, many users of such experimental techniques are not fully familiar with
 the technical aspects of the numerical inversion involved in the data processing, 
 and sometimes find it challenging to write their own algorithms.
-
 This package can cover the needs of users who would like a very simple interface for everyday data processing, 
 while retaining the ability to dive into the details and have control over every step of the process
 if needed.
