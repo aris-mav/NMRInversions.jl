@@ -1,11 +1,11 @@
 ---
-title: 'NMRInversions.jl, a julia package for time-domain Nuclear Magnetic Resonance'
+title: 'NMRInversions.jl, a Julia package for time-domain Nuclear Magnetic Resonance'
 date: 04 November 2024 
 tags:
   - Magnetic Resonance
   - NMR relaxation
   - NMR diffusion
-  - julia
+  - Julia
   - Inverse problems
   - Numerical inversion
 authors:
@@ -28,7 +28,7 @@ bibliography: paper.bib
 
 This package provides a library of functions as a user-friendly interface 
 for performing time-domain Nuclear Magnetic Resonance (NMR) data processing and visualizations.
-It is aimed towards NMR users who are not necessarily familiar with the julia programming language,
+It is aimed towards NMR users who are not necessarily familiar with the Julia programming language,
 or even programming in general.
 
 Functionality includes importing data from various NMR instrument formats,
@@ -41,32 +41,32 @@ NMR relaxation and diffusion methods are popular in various fields of science
 and engineering, with applications including studying the properties of 
 porous rocks, catalyst supports and biological tissues, among many others.
 
-However, many users of such experimental techniques are not fully familliar with
-the technical aspects of the numerical inversioninvolved in the data processing, 
+However, many users of such experimental techniques are not fully familiar with
+the technical aspects of the numerical inversion involved in the data processing, 
 and sometimes find it challenging to write their own algorithms.
 
 This package can cover the needs of users who would like a very simple interface for everyday data processing, 
 while retaining the ability to dive into the details and have control over every step of the process
 if needed.
 
-The julia programming language [@bezanson2017julia] is an excellent option for such a package, since it 
-provides user-friendly, high level syntax which is similar to MATLAB, whitout any 
+The Julia programming language [@bezanson2017Julia] is an excellent option for such a package, since it 
+provides user-friendly, high level syntax which is similar to MATLAB, without any 
 compromise when it comes to computational performance. 
 It's a thriving ecosystem for scientific computing applications, 
-with several optimization libaries able to tackle the problems arising in NMR applications. 
+with several optimization libraries able to tackle the problems arising in NMR applications. 
 
 Julia's capabilities can enable easy integration with the latest advances from the literature, 
 without the need for writing solvers in low-level languages for performance purposes, 
-in line with julia's philosophy of solving the "two language problem".
+in line with Julia's philosophy of solving the "two language problem".
 
-Additionally, julia's "multiple dispatch" 
+Additionally, Julia's "multiple dispatch" 
 allow us to use the same function names for different 
 operations, depending on the function inputs.
 This enables our package to be more user-friendly, as it 
-reduces the ammount of functions that need to be memorized.
+reduces the number of functions that need to be memorized by the user.
 
 Instrument manufactures often provide algorithms similar to the ones provided in this package, however, 
-they are often part of graphical user interfaces, which don't offer costumization opportunities, 
+they are often part of graphical user interfaces, which don't offer customization opportunities, 
 and lack the flexibility of writing scripts to efficiently process large sets of data. 
 
 Furthermore, general efforts should be made in improving the reproducibility of scientific research, 
@@ -101,7 +101,7 @@ Mathematical notation in the source code mostly follows the aforementioned sourc
 # Acknowledgements
 The authors would like to acknowledge funding from bp-ICAM and the EPSRC, 
 and support from the ICAM69 project mentors, Mark Sankey and Kuhan Chellappah. 
-Furthermore, A. Mavridis would like to thank the julia community for numerous 
+Furthermore, A. Mavridis would like to thank the Julia community for numerous 
 helpful discussions around the topic.
 
 # References
