@@ -1,5 +1,6 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 DocumenterTools = "35a29f4d-8980-5a13-9543-d66fff28ecb8"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"

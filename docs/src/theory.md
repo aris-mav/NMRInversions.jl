@@ -1,14 +1,16 @@
 # Theory
 
 What follows is a rough explanation of what this package is about.
-If you're looking for more rigor, please refer to the sources in the 
-References section. If you believe something mentioned below is wrong, 
-please [submit an issue](https://github.com/arismavridis/NMRInversions.jl/issues/new).
+If you're looking for more rigor, please refer to sources 
+[Hansen2010, Mitchell2012, Song2002, Venka2002](@cite)
+in the 
+[References](references.md) section. If you believe something mentioned below is wrong
+or misleading, please [submit an issue](https://github.com/arismavridis/NMRInversions.jl/issues/new).
 
 ## Exponentials in NMR
 For NMR relxation and diffusion experiments in liquids, we expect
 the results we get to look more or less like an exponential decay 
-or recovery, as described by the BPP theory.
+or recovery, as described by the BPP theory [BPP](@cite).
 
 To obtain useful information from NMR experiments, we can use different 
 exponential forms, according to the pulse sequence used.
@@ -111,12 +113,12 @@ However the resulting ``f`` would be terrible for a few reasons:
 
 - Even small amounts of noise in the data would mess up the results due to the very large 
   [condition number](https://en.wikipedia.org/wiki/Condition_number) of the ``K`` matrix. 
-- Since there **will** be some amount of noise in ``g``, we would not want our fit curve 
-  (``Kf``) to be exactly equal to the data (``g``), since that would involve fiting the 
-  noise.
+- Since there **will** be some amount of noise in ``g``, we would not even want our fit 
+  curve (``Kf``) to be exactly equal to the data (``g``), since that would involve fiting 
+  the noise.
 - Negative values in ``f`` would be okay with this method, which does not make much 
   sense since we can't have negative amounts of relaxation times 
-  ([unless you have a reason to allow that](https://doi.org/10.1103/PhysRevE.98.043308)).
+  (unless you have a reason to allow that [Chand2018](@cite)).
 
 This is a textbook example of an [inverse problem](https://en.wikipedia.org/wiki/Inverse_problem).
 
