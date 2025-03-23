@@ -1,5 +1,3 @@
-## Intro
-
 This page will give you a basic idea about how to use the NMRInversions package.
 For more details, it's best to refer to the [functions](functions.md) page.
 
@@ -9,7 +7,7 @@ For more details, it's best to refer to the [functions](functions.md) page.
     from a terminal with `julia file.jl`, or through an IDE such as VSCode.
 
 
-# Performing an inversion
+## Performing an inversion
 
 Suppose we're working with data coming from a Spinsolve instrument
 Then we can do the following:
@@ -67,6 +65,8 @@ plot(invert(import_spinsolve()))
 ```
 
 Note that the workflow above can work for both 1D and 2D inversions!
+
+## Examples with plots
 
 This is how some full examples would look like:
 
@@ -140,7 +140,7 @@ plot([results  results ; resutls results])
 Of course, it would be more interesting if it wasn't four
 copies of the same results, but you get the point.
 
-# Using the expfit function
+## Using the expfit function
 
 In a similar way, we can perform various exponential 
 fits to the imported data using the `expfit` function.
@@ -148,13 +148,15 @@ fits to the imported data using the `expfit` function.
 ```julia
 using NMRInversions, GLMakie
 
-data = import_spinsolve()
+path = ".../NMRInversions.jl/example_data/csv_files/Chesire_sandstone_IR.csv"
+data = import_csv(IR, path)
 
 a = expfit(1, data)  # mono-exponential fit
 b = expfit(2, data)  # bi-exponential fit
 
 plot(a,b)  # Visualize both on the same plot
-
-a.eqn  # Print the equation of the mono-exponential fit
-b.eqn  # Print the equation of the bi-exponential fit
 ```
+![Resulting plot](./assets/exp_fit.png)
+
+Of course, these fits are not very good, that's why we'd use inversions 
+instead.
