@@ -133,7 +133,7 @@ If you have multiple results, you can pass them as a matrix or vector
 into the `plot()` function as:
 
 ```julia
-plot([results  results ; resutls results])
+plot([results  results ; results results])
 ```
 ![Resulting plot](./assets/multiple_plots.png)
 
@@ -143,7 +143,7 @@ copies of the same results, but you get the point.
 ## Using the expfit function
 
 In a similar way, we can perform various exponential 
-fits to the imported data using the `expfit` function.
+fits with the imported data using the `expfit` function.
 
 ```julia
 using NMRInversions, GLMakie
