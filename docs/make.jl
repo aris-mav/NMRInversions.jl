@@ -1,5 +1,12 @@
 using Documenter, NMRInversions, GLMakie
 
+using DocumenterCitations
+
+bib = CitationBibliography(
+    joinpath(@__DIR__, "src", "refs.bib");
+    style=:numeric
+)
+
 makedocs(sitename="NMRInversions.jl",
          authors = "Aristarchos Mavridis",
 
@@ -18,7 +25,11 @@ makedocs(sitename="NMRInversions.jl",
                 "Saving data" => "savefiles.md",
                 "References" => "references.md"
                ],
-         checkdocs=:none
+         checkdocs=:none,
+         format = Documenter.HTML(
+         assets=String["assets/citations.css"],
+         ),
+         plugins=[bib]
         )
 
 deploydocs(
