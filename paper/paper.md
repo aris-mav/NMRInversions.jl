@@ -32,7 +32,7 @@ It is aimed towards NMR users who are not necessarily familiar with the Julia pr
 or even programming in general.
 
 Functionality includes importing data from various NMR instrument formats,
-performing phase-correction on raw data, fitting exponential decays using numerical inversions, 
+performing phase-correction on raw data, fitting multi-exponential curves ,
 and visualizing the results in a straightforward manner.
 
 # Statement of need
@@ -40,24 +40,22 @@ and visualizing the results in a straightforward manner.
 NMR relaxation and diffusion methods are popular in various fields of science 
 and engineering, with applications including studying the properties of 
 porous rocks, catalyst supports and biological tissues, among many others.
-
-However, many users of such experimental techniques are not fully familiar with
-the technical aspects of the numerical inversion involved in the data processing, 
-and sometimes find it challenging to write their own algorithms.
-This package can cover the needs of users who would like a very simple interface for everyday data processing, 
-while retaining the ability to dive into the details and have control over every step of the process
-if needed.
+The numerical inversion algorithms involved in the data processing can be quite 
+daunting towards users who are not very familiar with linear algebra, optimization,
+or programming environments.
+This package can cover the needs of users who would like a very simple interface for 
+everyday data processing, without assuming any knowledge on the topic, while retaining 
+the ability to dive into the details and have control over every step of the process 
+if needed, once experience is acquired.
 
 The Julia programming language [@bezanson2017Julia] is an excellent option for such a package, since it 
 provides user-friendly, high level syntax which is similar to MATLAB, without any 
 compromise when it comes to computational performance. 
 It's a thriving ecosystem for scientific computing applications, 
 with several optimization libraries able to tackle the problems arising in NMR applications. 
-
 Julia's capabilities can enable easy integration with the latest advances from the literature, 
 without the need for writing solvers in low-level languages for performance purposes, 
 in line with Julia's philosophy of solving the "two language problem".
-
 Additionally, Julia's "multiple dispatch" 
 allow us to use the same function names for different 
 operations, depending on the function inputs.
