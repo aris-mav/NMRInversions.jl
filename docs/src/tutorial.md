@@ -111,7 +111,7 @@ plot(results)
 ```
 ![Resulting plot](./assets/2D_gui.png)
 
-Similarly, now we can select regions by clicking at points within 
+Similarly, now we can select regions by left-clicking at points within 
 the plot which enclose a region of interest. Then, we can :
 
 - `Label current selection` will highlight the selected polygon 
