@@ -1,4 +1,3 @@
-# Functions
 This page contains the documentation for various useful 
 functions in the NMRInversions package.
 
@@ -41,7 +40,7 @@ functions in the NMRInversions package.
     but the name of each argument must be specified.
     For more information, please refer to [this link](https://docs.julialang.org/en/v1/manual/functions/).
 
-# Importing data functions
+## Importing data 
 This package offers some functions to import NMR experiment data of various formats.
 Alternatively, you can of course import your data however you see fit.
 If a format you're working with is not yet supported, 
@@ -76,7 +75,7 @@ import_geospec(::String)
 ```
 
 
-# Inversion functions
+## Inversion 
 The most important function is `invert()`, which is the main function of the package.
 It works as follows:
 
@@ -98,7 +97,7 @@ invert(::Type{<:pulse_sequence2D}, ::AbstractVector, ::AbstractVector, ::Abstrac
 invert(::input2D)
 ```
 
-# Finding alpha
+## Finding alpha
 Here we provide two options for finding the optimal value for alpha, 
 namely Generalized Cross Validation (GCV) or L-curve. 
 Generally gcv seems slightly more reliable in NMR, but it's far from 
@@ -121,7 +120,7 @@ If you want more precision, the univariate or box methods should be used instead
 Note that `gcv()` will NOT work for `pdhgm()` solver, so you'll have to choose 
 an alternative explicitly when using that solver.
 
-# Exponential fit functions
+## Exponential fits 
 
 For 1D data, we can use the `expfit` function to perform multiexponential fits.
 We can use the function by specifying either the number of exponential components,
@@ -139,7 +138,7 @@ it's best to define some starting points close to these.
 
 
 
-# Plotting functions
+## Plotting 
 
 This package offers plotting capabilities, using its GLMakie extension.
 Simply use `using GLMakie` before or after `using NMRInversions`
@@ -175,7 +174,7 @@ plot(::NMRInversions.expfit_struct)
 plot!(::Union{Makie.Figure,Makie.GridPosition}, ::NMRInversions.expfit_struct )
 ```
 
-# Miscellaneous functions
+## Miscellaneous 
 
 Once you have selected some peaks in your inversion results through the GUI,
 you might want to extract the weighted averages of these selected peaks,

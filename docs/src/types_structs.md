@@ -1,6 +1,3 @@
-
-# Types and Structures
-
 In order to take advantage of Julia's multiple dispatch, 
 we need to define some structures which can be used as input to our functions.
 

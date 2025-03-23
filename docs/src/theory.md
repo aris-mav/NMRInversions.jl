@@ -1,5 +1,3 @@
-# Theory
-
 What follows is a rough explanation of what this package is about.
 If you're looking for more rigor, please refer to sources 
 [Hansen2010, Mitchell2012, Song2002, Venka2002](@cite)
