@@ -8,7 +8,7 @@ function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, so
         f, g!, h!,
         ones(size(K, 1)),
         NewtonTrustRegion(),
-        Optim.Options(x_tol = 1e-8)
+        Optim.Options(x_abstol = 1e-8)
     ).minimizer
 
     f = vec(max.(0, (K' * c)))
