@@ -32,17 +32,21 @@ It is aimed towards NMR users who are not necessarily familiar with the Julia pr
 or even programming in general.
 
 Functionality includes importing data from various NMR instrument formats,
-performing phase-correction on raw data, fitting multi-exponential curves ,
-and visualizing the results in a straightforward manner.
+performing phase-correction on raw data, fitting multi-exponential curves,
+and interactively visualizing the results in a straightforward manner.
 
 # Statement of need
 
 NMR relaxation and diffusion methods are popular in various fields of science 
 and engineering, with applications including studying the properties of 
 porous rocks, catalyst supports and biological tissues, among many others.
-The numerical inversion algorithms involved in the data processing can be quite 
-daunting towards users who are not very familiar with linear algebra, optimization,
-or programming environments.
+In order to extract useful information from such measurements, numerical 
+inversions are often used to uncover the different relaxation times 
+or diffusion coefficients contributing to the experimental data.
+
+However, working with the aforementioned inversion methods can be quite daunting towards 
+users who are not very familiar with linear algebra, optimization methods, or programming 
+environments in general.
 This package can cover the needs of users who would like a very simple interface for 
 everyday data processing, without assuming any knowledge on the topic, while retaining 
 the ability to dive into the details and have control over every step of the process 
