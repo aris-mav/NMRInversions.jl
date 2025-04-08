@@ -1,9 +1,13 @@
 Welcome to the NMRInversions.jl package!
 
+The goal is to provide an easy-to-use interface to process NMR 
+relaxation and diffusion data, completely free/open-source, and fully 
+written in Julia.
+
 Functionality includes :
-- Importing NMR data of various formats.
-- Performing numerical inversions with sensible default settings.
-- Interactive visualization through the Makie extension.
+- Importing NMR data from various instrument manufacturers.
+- Performing numerical inversions and exponential fits with sensible default settings.
+- Interactive visualization of results, through the GLMakie extension.
 
 Hopefully this documentation will provide all the information you need to get started.
 
@@ -16,3 +20,7 @@ Hopefully this documentation will provide all the information you need to get st
   [submit an issue](https://github.com/aris-mav/NMRInversions.jl/issues).
 - If you would like to contribute to the package, you may start with one of 
   the [existing issues](https://github.com/aris-mav/NMRInversions.jl/issues).
+  Please feel free to create a [pull request](https://docs.github.com/en/pull-requests)
+  if you'd like to implement a feature, or start a 
+  [discussion](https://github.com/aris-mav/NMRInversions.jl/discussions) 
+  if you're unsure about anything or need further guidance.
