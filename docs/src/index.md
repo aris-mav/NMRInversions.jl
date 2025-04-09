@@ -1,52 +1,39 @@
-Welcome to the NMRInversions.jl package!
+Welcome to NMRInversions.jl!
+
+The goal is to provide an easy-to-use interface to process NMR 
+relaxation and diffusion data, completely free/open-source, and fully 
+written in Julia.
+
+Functionality includes :
+- Importing NMR data from various instrument manufacturers.
+- Performing numerical inversions and exponential fits with sensible default settings.
+- Interactive visualization of results, through the GLMakie extension.
+
+Who would want to use this package :
+- Researchers in chemistry, physics, and materials science who rely on NMR 
+  to study molecular dynamics, diffusion and interactions. 
+  NMRInversions.jl simplifies the process of data analysis, allowing researchers 
+  to focus on their scientific questions rather than the intricacies of data processing.
+- Professionals in various fields such as food science, subsurface applications, 
+  or materials engineering can utilize this package to analyze NMR data for quality 
+  control, product development, and research purposes. 
+- Students learning about NMR techniques can benefit from a straightforward tool 
+  that helps them understand data processing and analysis. 
+  Educators can use the package as a teaching aid in courses related to NMR or 
+  inverse problems.
 
 Hopefully this documentation will provide all the information you need to get started.
 
-!!! info "Installing julia"
-    You can download the julia programming language by following [this link](https://julialang.org/downloads/).
-    Afterwards, you can either use the julia console (aka REPL) 
-    by finding the julia .exe file in your computer, or you can use VScode,
-    which provides an environment similar to MATLAB with the use of the 
-    [julia extension](https://www.julia-vscode.org/)
-    (follow link for installation instructions). 
-    Of course, if you already have a preferred development workflow 
-    and you know what you're doing, by all means go for it.
-
-!!! info "Installing the package"
-    The package can be installed by running the following command on the julia console:
-    ```
-    using Pkg ; Pkg.add("NMRInversions")
-    ```
-    This usually takes a while, but it needs to be done only once 
-    (unless you swap environment, more on that 
-    [here](https://pkgdocs.julialang.org/v1/environments/)).
-
-    Afterwards, you can use the package by running 
-    ```
-    using NMRInversions
-    ```
-    in your julia console, every time you start a new session.
-    
-
-    Whenever a new version comes up, you can run:
-    ```
-    using Pkg ; Pkg.update("NMRInversions")
-    ```
-    to update the package.
-
-!!! info "GLMakie extension"
-    The package provides an extension for interactive visualization,
-    using the GLMakie package. To gain access to these capabilities,
-    you also need to install GLMakie:
-    ```
-    using Pkg ; Pkg.add("GLMakie")
-    ```
-    And to use it, you need to run
-    ```
-    using GLMakie
-    ```
-    in order to access the plotting functions.
-    
-
-For more details on how to use the package, you can start by refering to the [tutorial](tutorial.md) section.
-
+- The [Theory](theory.md) section should provide some info on what the package is really about.
+- For more details on how to use it, you can start by refering to the examples in the  
+  [tutorial](tutorial.md).
+- To understand how things really work, have a look at the 
+  [Functions](functions.md) and [Types and Structures](types_structs.md) sections.
+- If you have any problems or questions, please feel free to 
+  [submit an issue](https://github.com/aris-mav/NMRInversions.jl/issues).
+- If you would like to contribute to the package, you may start with one of 
+  the [existing issues](https://github.com/aris-mav/NMRInversions.jl/issues).
+  Please feel free to create a [pull request](https://docs.github.com/en/pull-requests)
+  if you'd like to implement a feature, or start a 
+  [discussion](https://github.com/aris-mav/NMRInversions.jl/discussions) 
+  if you're unsure about anything or need further guidance.

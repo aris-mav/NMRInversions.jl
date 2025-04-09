@@ -1,5 +1,3 @@
-# Saving data
-
 Julia provides the Serialization.jl package to save and load data in a binary format.
 This provides us with a straightforward way to save our results in a file, and
 load them later if we need to check what's inside them.
@@ -8,7 +6,7 @@ load them later if we need to check what's inside them.
     Serialization.jl is part of the standard library, and thus it can be used
     without installation.
 
-# Saving results 
+## Saving results 
 
 Assuming that we have a variable `results` which contains our data,
 (e.g., `results` is a `inv_out_2D` structure),
@@ -30,7 +28,7 @@ results = deserialize("results.dat")
 Note that we use a .dat extension above, but you can use whatever 
 extension you like, as long as it makes sense to you.
 
-# Saving plots
+## Saving plots
 
 You can use the 'save' function provided by `GLMakie` to save plots.
 

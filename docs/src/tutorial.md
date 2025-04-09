@@ -1,5 +1,3 @@
-## Intro
-
 This page will give you a basic idea about how to use the NMRInversions package.
 For more details, it's best to refer to the [functions](functions.md) page.
 
@@ -9,7 +7,7 @@ For more details, it's best to refer to the [functions](functions.md) page.
     from a terminal with `julia file.jl`, or through an IDE such as VSCode.
 
 
-# Performing an inversion
+## Performing an inversion
 
 Suppose we're working with data coming from a Spinsolve instrument
 Then we can do the following:
@@ -68,21 +66,97 @@ plot(invert(import_spinsolve()))
 
 Note that the workflow above can work for both 1D and 2D inversions!
 
-# Using the expfit function
+## Examples with plots
 
-In a similar way, we can perform various exponential 
-fits to the imported data using the `expfit` function.
+This is how some full examples would look like:
 
 ```julia
 using NMRInversions, GLMakie
 
-data = import_spinsolve()
+path = ".../NMRInversions.jl/example_data/csv_files/graphene_CPMG.csv"
+data = import_csv(IR, path)
+results = invert(data)
+plot(results)
+```
+The resulting plot will look like:
+
+![Resulting plot](./assets/1D_gui.png)
+
+Notice that benath the ``T_2`` distribution there's a slider.
+You can move the ends of it to select a region within the limits
+defined by the red veritical lines.
+Then you can use the following options:
+- `Label current selection` will highlight the selected region 
+  and add some text in the plot with the weighed average ``T_2``
+  of that region.
+- `Filter-out current selection` will remove the selected region 
+  from the distribution, and it will update the fit and the residuals 
+  accordingly on the plot.
+- `Reset selections` gets you back where you started, removes any 
+  selections and brings back filtered-out regions.
+- `Save and exit` will bring up a window so that you can save your 
+   plot as a .png (without the buttons and the slider).
+
+Let's look at a 2D example as well:
+
+
+```julia
+using NMRInversions, GLMakie
+
+paths = [".../NMRInversions.jl/example_data/spinsolve_IRCPMG/T1IRT2.dat",
+         ".../NMRInversions.jl/example_data/spinsolve_IRCPMG/aqcu.par"]
+data = import_spinsolve(paths)
+results = invert(data)
+plot(results)
+```
+![Resulting plot](./assets/2D_gui.png)
+
+Similarly, now we can select regions by left-clicking at points within 
+the plot which enclose a region of interest. Then, we can :
+
+- `Label current selection` will highlight the selected polygon 
+  with a dashed line and add some text in the plot with the weighed 
+  average ``T_1/T_2`` of that region, as well as the volume fraction of it.
+- `Filter-out unselected` will remove everything outside the polygon.
+- `Cancel current selection` will discard the current polygon in 
+   case you do not like what you selected.
+- `Reset everything` will get you back to the original state, 
+   removing selections and restoring filtered-out regions.
+- `Save and exit` will bring up a window so that you can save your 
+   plot as a .png (without the buttons).
+
+There are also some options to change the appearance of the plot, in 
+terms of colormap, contour levels and toggling between filled and non-filled
+contours. You can also add a title to the plot, which will be saved.
+
+If you have multiple results, you can pass them as a matrix or vector 
+into the `plot()` function as:
+
+```julia
+plot([results  results ; results results])
+```
+![Resulting plot](./assets/multiple_plots.png)
+
+Of course, it would be more interesting if it wasn't four
+copies of the same results, but you get the point.
+
+## Using the expfit function
+
+In a similar way, we can perform various exponential 
+fits with the imported data using the `expfit` function.
+
+```julia
+using NMRInversions, GLMakie
+
+path = ".../NMRInversions.jl/example_data/csv_files/Chesire_sandstone_IR.csv"
+data = import_csv(IR, path)
 
 a = expfit(1, data)  # mono-exponential fit
 b = expfit(2, data)  # bi-exponential fit
 
 plot(a,b)  # Visualize both on the same plot
-
-a.eqn  # Print the equation of the mono-exponential fit
-b.eqn  # Print the equation of the bi-exponential fit
 ```
+![Resulting plot](./assets/exp_fit.png)
+
+Of course, these fits are not very good, that's why we'd use inversions 
+instead.
