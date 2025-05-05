@@ -54,7 +54,7 @@ abstract type regularization_solver end
 """
     brd
 Solver for tikhonov (L2) regularization, following [this paper](https://doi.org/10.1109/78.995059)
-from Venkataramanan et al.
+[Venka2002](@cite).
 Very fast, but only uses the identity as tiknohonov matrix.
 It can be used as a "solver" for the invert function.
 """
@@ -69,7 +69,7 @@ struct ripqp <: regularization_solver end
     pdhgm(σ, τ)
 Primal dual hybrid gradient method for L1 regularization, 
 following [this paper](https://doi.org/10.1016/j.jmr.2017.05.010)
-from Reci et al. / Journal of Magnetic Resonance 281 (2017) 188–198
+[Reci2017](@cite)
 It can be used as a "solver" for the invert function.
 
 The particular choice of σ and τ is heuristic. 
