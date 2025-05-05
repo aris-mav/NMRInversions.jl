@@ -31,9 +31,3 @@ Hopefully this documentation will provide all the information you need to get st
   [Functions](functions.md) and [Types and Structures](types_structs.md) sections.
 - If you have any problems or questions, please feel free to 
   [submit an issue](https://github.com/aris-mav/NMRInversions.jl/issues).
-- If you would like to contribute to the package, you may start with one of 
-  the [existing issues](https://github.com/aris-mav/NMRInversions.jl/issues).
-  Please feel free to create a [pull request](https://docs.github.com/en/pull-requests)
-  if you'd like to implement a feature, or start a 
-  [discussion](https://github.com/aris-mav/NMRInversions.jl/discussions) 
-  if you're unsure about anything or need further guidance.
