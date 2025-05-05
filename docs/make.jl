@@ -34,5 +34,5 @@ makedocs(sitename="NMRInversions.jl",
         )
 
 deploydocs(
-    repo = "git@github.com/aris-mav/NMRInversions.jl.git",
+    repo = "github.com/aris-mav/NMRInversions.jl.git",
 )
