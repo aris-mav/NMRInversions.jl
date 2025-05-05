@@ -18,6 +18,7 @@ makedocs(sitename="NMRInversions.jl",
                  ],
 
          pages=["Overview" => "index.md",
+                "Installation" => "installation.md",
                 "Theory" => "theory.md",
                 "Tutorial" => "tutorial.md",
                 "Functions" => "functions.md",
