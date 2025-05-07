@@ -10,14 +10,14 @@ The keyword (optional) arguments are:
 - `selections` : Whether to highlight the selections in the plots (default is `false`).
 
 """
-function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; selections = false)
+function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; selections = false , yscale = identity)
 
     fig = Figure(size=(700, 600))
 
     res = res_mat[1]
     # Make axes
     if res.seq in [NMRInversions.IR]
-        ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)")
+        ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)", yscale = yscale)
         ax2 = Axis(fig[1:5, 6:10], xlabel="T₁ (s)", xscale=log10)
         ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)")
 
@@ -37,6 +37,8 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; selecti
     for r in res_mat
         draw_on_axes(ax1, ax2, ax3, r, selections = selections)
     end
+
+    ax1.yscale = yscale
 
     return fig
 end
@@ -74,9 +76,13 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     vlines!(fig.content[2], int_low, color=:red)
     vlines!(fig.content[2], int_high, color=:red)
 
-    button_label = Button(fig[8,6:10], label = "Label current selection")
-    button_filter = Button(fig[9,6:10], label = "Filter-out current selection")
-    button_reset = Button(fig[10,6:8], label = "Reset selections")
+    button_label = Button(fig[8,6:8], label = "Label selection")
+    button_filter = Button(fig[8,8:10], label = "Filter-out selection")
+
+    button_reset = Button(fig[9,6:10], label = "Reset selections")
+
+    log_y = false
+    button_yscale = Button(fig[10,6:8], label = "Change y scale")
     button_save = Button(fig[10,8:10], label = "Save and exit")
 
     on(button_label.clicks) do _
@@ -112,10 +118,20 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
 
     on(button_save.clicks) do _
         savedir = NMRInversions.save_file(res.title, filterlist = "png")
-        f = plot([res], selections = true)
+        f = plot([res], selections = true, yscale = log_y ? log10 : identity)
         save(savedir, f)
     end
 
+    on(button_yscale.clicks) do _
+        if log_y
+            fig.content[1].yscale = identity
+            log_y = false
+        else
+            fig.content[1].yscale = log10
+            log_y = true
+        end
+
+    end
 
     return fig
 end
