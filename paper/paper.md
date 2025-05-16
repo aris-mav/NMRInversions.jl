@@ -57,7 +57,7 @@ everyday data processing, without assuming any knowledge on the topic, while ret
 the ability to dive into the details and have control over every step of the process 
 if needed, once experience is acquired.
 
-The Julia programming language [@bezanson2017Julia] is an excellent option for such a package, since it 
+The Julia programming language [@bezanson2017julia] is an excellent option for such a package, since it 
 provides user-friendly, high level syntax which is similar to MATLAB, without any 
 compromise when it comes to computational performance. 
 It's a thriving ecosystem for scientific computing applications, 
