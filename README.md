@@ -4,9 +4,7 @@
     <img width=400 src="./logo/logo.svg"/>
 </p>
 
-<p align="center">
 [![CI](https://github.com/aris-mav/NMRInversions.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/aris-mav/NMRInversions.jl/actions/workflows/CI.yml)
-</p>
 
 This package can be used to easily perform numerical inversions for 1D and 2D NMR relaxation and diffusion measurements.
 
