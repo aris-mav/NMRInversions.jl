@@ -37,7 +37,7 @@ and interactively visualizing the results in a straightforward manner.
 
 It should be noted that the aforementioned inversions should not be confused with 
 harmonic inversions [@mandel1997] used in NMR spectroscopy. These can be handled by 
-other packages such as "harminv" (https://github.com/NanoComp/harminv), 
+other packages such as "harminv" [@harminvcite], 
 and are not yet implemented in NMRInversions.jl at the time of writing.
 
 # Statement of need
