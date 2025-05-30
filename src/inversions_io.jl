@@ -146,15 +146,14 @@ function spinsolve_read_PFGCPMG(acqufile, datafile)
     
     n_echoes = parse(Int32 ,read_acqu(acqufile, "nrEchoes"))
     t_echo = parse(Float64, read_acqu(acqufile, "echoTime")) * 1e-6
-    Δ = parse(Int32, read_acqu(acqufile, "bDelta")) * 1e-6
-    δ = parse(Int32, read_acqu(acqufile, "lDelta")) * 1e-6
+    Δ = parse(Int32, read_acqu(acqufile, "bDelta")) * 1e-3
+    δ = parse(Int32, read_acqu(acqufile, "lDelta")) * 1e-3
     steps = parse(Int32, read_acqu(acqufile, "nrSteps"))
-    gradmax = parse(Int32, read_acqu(acqufile, "bDelta")) * 1e-6
-    g = range(0,steps,steps) * (gradmax / steps)
+    gradmax = parse(Int32, read_acqu(acqufile, "gradMax")) * 1e-3
+    g = range(0,steps,steps+1)[2:end] * (gradmax / steps) 
 
-    γ = 0
-    if read_acqu(acqufile, "nucleus") == "1H-1H"
-        γ = 267.52218744e6; # (rad s^-1 T^-1) 
+    γ = if read_acqu(acqufile, "nucleus") == "1H-1H"
+        267.52218744e6; # (rad s^-1 T^-1) 
     else
         error("Unrecognised Nucleus in aqcu.par")
     end 
@@ -206,7 +205,6 @@ function import_geospec(filedir::String=pick_file(pwd()))
 
     y_re = data[:, 3]
     y_im = data[:, 4]
-
 
     typedict = Dict(
         3 => CPMG,
