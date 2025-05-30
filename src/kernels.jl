@@ -91,6 +91,9 @@ function create_kernel(seq::Type{<:pulse_sequence2D},
     if seq == IRCPMG
         K_dir = create_kernel(CPMG, x_direct, X_direct)
         K_indir = create_kernel(IR, x_indirect, X_indirect)
+    elseif seq == PFGCPMG
+        K_dir = create_kernel(CPMG, x_direct, X_direct)
+        K_indir = create_kernel(PFG, x_indirect, X_indirect)
     else
         error("2D inversion not yet implemented for $(seq)")
     end
