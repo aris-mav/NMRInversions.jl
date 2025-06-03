@@ -89,6 +89,10 @@ function import_spinsolve(files=pick_multi_file(pwd()))
         seq = CPMG
     elseif exp in ["PGSTE", "PGSE"]
         seq = PFG
+    elseif exp == "DT2"
+        seq = PFGCPMG
+    else
+        error("Unrecognised pulse sequence")
     end
 
     if seq in [IR, CPMG, PFG]
@@ -97,64 +101,80 @@ function import_spinsolve(files=pick_multi_file(pwd()))
 
     elseif seq in [IRCPMG]
 
-        # Read experiment parameters
-        acqu = readdlm(acqufile)
-        #=n_echoes = acqu[21, 3]=#
-        #=t_echo = acqu[12, 3] * 1e-6=#
-        #=τ_steps = acqu[36, 3]=#
-        #=τ_min = acqu[20, 3] * 1e-3=#
-        #=τ_max = acqu[19, 3] * 1e-3=#
-        #=experiment = acqu[13, 3]=#
+        return spinsolve_read_IRCPMG(acqufile, datafile)
 
-        n_echoes = parse(Int32 ,read_acqu(acqufile, "nrEchoes"))
-        t_echo = parse(Float64, read_acqu(acqufile, "echoTime")) * 1e-6
-        τ_steps = parse(Int32, read_acqu(acqufile, "tauSteps"))
-        τ_min = parse(Float64, read_acqu(acqufile, "minTau")) * 1e-3
-        τ_max = parse(Float64, read_acqu(acqufile, "maxTau")) * 1e-3
+    elseif seq in [PFGCPMG]
 
-        Raw = readdlm(datafile, ' ')
-
-        if size(Raw, 2) == 1
-            Raw = readdlm(datafile, ',')
-        end
-
-        Data = collect(transpose(complex.(Raw[:, 1:2:end], Raw[:, 2:2:end])))
-
-        ## Make time arrays
-        # Time array in direct dimension
-        t_direct = collect(1:n_echoes) * t_echo
-
-        # Time array in direct dimension
-        if  read_acqu(acqufile, "logspace") == "yes" # if log spacing is selected, do log array
-
-            t_indirect = exp10.(range(log10(τ_min), log10(τ_max), τ_steps))
-        else                   # otherwise, do a linear array
-
-            t_indirect = collect(range(τ_min, τ_max, τ_steps))
-        end
-
-        return input2D(seq, t_direct, t_indirect, Data)
-
+        return spinsolve_read_PFGCPMG(acqufile, datafile)
     end
 
 end
 
+function spinsolve_read_IRCPMG(acqufile, datafile)
+    
+    n_echoes = parse(Int32 ,read_acqu(acqufile, "nrEchoes"))
+    t_echo = parse(Float64, read_acqu(acqufile, "echoTime")) * 1e-6
+    τ_steps = parse(Int32, read_acqu(acqufile, "tauSteps"))
+    τ_min = parse(Float64, read_acqu(acqufile, "minTau")) * 1e-3
+    τ_max = parse(Float64, read_acqu(acqufile, "maxTau")) * 1e-3
 
-#=function import_bruker(dir::String=pick_folder(pwd()))=#
-#==#
-#=    # read BYTORDA in aqcus and DTYPA from the the the files=#
-#=    BYTORDA = read_acqu(dir, "BYTORDA")=#
-#=    DTYPA = read_acqu(dir, "DTYPA")=#
-#==#
-#=    a = []=#
-#=    open("ser") do io=#
-#=        while !eof(io)=#
-#=            push!(a, read(io, Float64))=#
-#=        end=#
-#=    end=#
-#==#
-#=end=#
+    Raw = readdlm(datafile, ' ')
 
+    if size(Raw, 2) == 1
+        Raw = readdlm(datafile, ',')
+    end
+
+    Data = collect(transpose(complex.(Raw[:, 1:2:end], Raw[:, 2:2:end])))
+
+    ## Make time arrays
+    # Time array in direct dimension
+    t_direct = collect(1:n_echoes) * t_echo
+
+    # Time array in direct dimension
+    if  read_acqu(acqufile, "logspace") == "yes" # if log spacing is selected, do log array
+
+        t_indirect = exp10.(range(log10(τ_min), log10(τ_max), τ_steps))
+    else                   # otherwise, do a linear array
+
+        t_indirect = collect(range(τ_min, τ_max, τ_steps))
+    end
+
+    return input2D(IRCPMG, t_direct, t_indirect, Data)
+end
+
+function spinsolve_read_PFGCPMG(acqufile, datafile)
+    
+    n_echoes = parse(Int32 ,read_acqu(acqufile, "nrEchoes"))
+    t_echo = parse(Float64, read_acqu(acqufile, "echoTime")) * 1e-6
+
+    ramp = parse(Float64, read_acqu(acqufile, "gradRamp")) * 1e-3
+    Δ = parse(Float64, read_acqu(acqufile, "bDelta")) * 1e-3
+    δ = ramp + parse(Float64, read_acqu(acqufile, "lDelta")) * 1e-3
+    steps = parse(Int32, read_acqu(acqufile, "nrSteps"))
+    gradmax = parse(Float64, read_acqu(acqufile, "gradMax")) * 1e-3
+
+    g = range(0.001, gradmax ,steps) 
+
+    γ = if read_acqu(acqufile, "nucleus") == "1H-1H"
+        267.52218744e6; # (rad s^-1 T^-1) 
+    else
+        error("Unrecognised Nucleus in aqcu.par")
+    end 
+
+    t_direct = collect(1:n_echoes) * t_echo
+    bfactor = g.^2 .* (γ^2 * δ^2 * (Δ - δ/3))
+
+    Raw = readdlm(datafile, ' ')
+
+    if size(Raw, 2) == 1
+        Raw = readdlm(datafile, ',')
+    end
+
+    Data = collect(transpose(complex.(Raw[:, 1:2:end], Raw[:, 2:2:end])))
+
+    return input2D(PFGCPMG, t_direct, bfactor, Data)
+
+end
 
 
 export import_geospec
@@ -188,7 +208,6 @@ function import_geospec(filedir::String=pick_file(pwd()))
 
     y_re = data[:, 3]
     y_im = data[:, 4]
-
 
     typedict = Dict(
         3 => CPMG,

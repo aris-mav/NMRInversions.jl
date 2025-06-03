@@ -124,8 +124,8 @@ The output is an `inv_out_2D` structure.
 """
 function invert(
     seq::Type{<:pulse_sequence2D}, x_direct::AbstractVector, x_indirect::AbstractVector, Data::AbstractMatrix;
-    lims1::Union{Tuple{Real, Real, Int}, AbstractVector}=(-5, 1, 100), 
-    lims2::Union{Tuple{Real, Real, Int}, AbstractVector}=(-5, 1, 100),
+    lims1::Union{Tuple{Real, Real, Int}, AbstractVector, Type{<:pulse_sequence2D}}=seq, 
+    lims2::Union{Tuple{Real, Real, Int}, AbstractVector, Type{<:pulse_sequence2D}}=seq,
     alpha::Union{Real, alpha_optimizer} = gcv(), 
     solver::Union{regularization_solver, Type{<:regularization_solver}}=brd(),
     normalize::Bool=true)
@@ -134,13 +134,21 @@ function invert(
         Data = Data ./ Data[argmax(real(Data))]
     end
 
-    if isa(lims1, Tuple)
+    if isa(lims1, Type{<:pulse_sequence2D})
+        X_direct = exp10.(range(-5,1,100))
+    elseif isa(lims1, Tuple)
         X_direct = exp10.(range(lims1...))
     elseif isa(lims1, AbstractVector)
         X_direct = lims1
     end
 
-    if isa(lims2, Tuple)
+    if isa(lims2, Type{<:pulse_sequence2D})
+        if lims2 == IRCPMG
+            X_indirect = exp10.(range(-5,1,100))
+        elseif lims2 == PFGCPMG
+            X_indirect = exp10.(range(-11, -8, 128))
+        end
+    elseif isa(lims2, Tuple)
         X_indirect = exp10.(range(lims2...))
     elseif isa(lims2, AbstractVector)
         X_indirect = lims2

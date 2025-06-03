@@ -65,6 +65,7 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
                      labelsizes = (23, 23), ticksizes = (15, 15), titlesize = 17, titlefont = :bold 
                      )
 
+    seq = res.seq
     x = res.X_indir
     y = res.X_dir
 
@@ -82,9 +83,15 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
     hidedecorations!(axright)
     hidedecorations!(axmain)
 
+    xlbl = if seq == IRCPMG
+        L"T_1 \, \textrm{(s)}"
+    elseif seq == PFGCPMG
+        L"D \, \textrm{(m^2/s)}"
+    end
+
     axmain_values = Axis(fig[3:10, 1:8],
                          xscale=log10, yscale=log10,
-                         xlabel=L"T_1 \, \textrm{(s)}", ylabel=L"T_2 \,\textrm{(s)}",
+                         xlabel=xlbl, ylabel=L"T_2 \,\textrm{(s)}",
                          xlabelsize=labelsizes[1], ylabelsize=labelsizes[2],
                          limits=(x[1], x[end], y[1], y[end]),
                          xticklabelsize=ticksizes[1], yticklabelsize=ticksizes[2],
@@ -126,7 +133,9 @@ function draw_on_axes(axmain, axtop, axright, res, clmap,contf,levels)
     #=band!(axright, Point2f.(zeros(length(y)), y), Point2f.(vec(sum(z, dims=1)), y) ,colormap=clmap, colorrange=(1, 10), alpha=0.5)=#
 
     # Plot diagonal line
-    lines!(axmain, [(0, 0), (1, 1)], color=:black, linewidth=1)
+    if res.seq == IRCPMG
+        lines!(axmain, [(0, 0), (1, 1)], color=:black, linewidth=1)
+    end
 
     #Create a matrix for all the discrete points in the space
     points = [[i, j] for i in x, j in y]
@@ -144,25 +153,30 @@ function draw_on_axes(axmain, axtop, axright, res, clmap,contf,levels)
         #draw current polygon
         lines!(axmain, Point2f.(polygon), linestyle=:dash, colormap=:tab10, colorrange=(1, 10), color=i, alpha=0.9)
 
-        T1 = indir_dist ⋅ res.X_indir / sum(spo)
-        T2 = dir_dist ⋅ res.X_dir / sum(spo)
+        # estimate weithted average in direct and indirect dimensions
+        inwa = indir_dist ⋅ res.X_indir / sum(spo)
+        dwa = dir_dist ⋅ res.X_dir / sum(spo)
 
         # Plot peak label
         xc = vec(sum(spo, dims=2)) ⋅ x / sum(spo)
         yc = vec(sum(spo, dims=1)) ⋅ y / sum(spo)
+
+        lbl = if res.seq == IRCPMG
+            " : T₁/T₂ = $(round(inwa/dwa , digits=1)) \n     Volume = $(round(sum(spo)/sum(z) *100 ,digits = 1))%"
+        elseif res.seq == PFGCPMG
+            " : D = $(round(inwa, sigdigits=3)), T₂ = $(round(dwa, sigdigits=3))\n     Volume = $(round(sum(spo)/sum(z) *100 ,digits = 1))%"
+        end
 
         sc = scatter!(axmain, xc, yc, markersize=15,
             marker=collect('a':'z')[i],
             colormap=:tab10, colorrange=(1, 10),
             color=i,
             glowcolor=:white, glowwidth=4,
-            label=" : T₁/T₂ = $(round(T1/T2 , digits=1)) \n    Volume = $(round(sum(spo)/sum(z) *100 ,digits = 1))%")
-
+            label=lbl)
 
         text!(axmain, 2.5 * (1 / 100), (99 - 13 * (i - 1)) * (1 / 100),
             text=
-            collect('a':'z')[i] *
-            " : T₁/T₂ = $(round(T1/T2 , digits=1)) \n     Volume = $(round(sum(spo)/sum(z) *100 ,digits = 1))%",
+            collect('a':'z')[i] * lbl,
             align=(:left, :top), colormap=:tab10, colorrange=(1, 10), color=i)
 
         # lines!(axtop, indir_dist[], linestyle=:dash, colormap=:tab10, colorrange=(1, 10), color=i, alpha=0.5)
@@ -198,7 +212,7 @@ Run the GUI to plot the results and select peaks you want to label.
 function Makie.plot(res::NMRInversions.inv_out_2D)
     # begin
     gui = Figure(size=(900, 500))
-    Makie.plot!(gui[2:10, 1:9], res)
+    plot!(gui[2:10, 1:9], res)
 
     axmain = gui.content[1]
     axtop = gui.content[2]
