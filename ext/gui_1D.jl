@@ -18,19 +18,21 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; selecti
     # Make axes
     if res.seq in [NMRInversions.IR]
         ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)", yscale = yscale)
-        ax2 = Axis(fig[1:5, 6:10], xlabel="T₁ (s)", xscale=log10)
+        ax2 = Axis(fig[1:5, 6:10], xlabel=L"T_1 \, \textrm{(s)}", xscale=log10)
         ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)")
 
     elseif res.seq in [NMRInversions.CPMG]
         ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)")
-        ax2 = Axis(fig[1:5, 6:10], xlabel="T₂ (s)", xscale=log10)
+        ax2 = Axis(fig[1:5, 6:10], xlabel=L"T_2 \, \textrm{(s)}", xscale=log10)
         ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)")
 
     elseif res.seq in [NMRInversions.PFG]
         ax1 = Axis(fig[1:5, 1:5], xlabel="b factor (s/m² e-9)", ylabel="Signal (a.u.)")
-        ax2 = Axis(fig[1:5, 6:10], xlabel="D (m²/s)", xscale=log10)
+        ax2 = Axis(fig[1:5, 6:10], xlabel=L"D \, \textrm{(m^2/s)}" , xscale=log10)
         ax3 = Axis(fig[6:10,1:5], xlabel= "b factor (s/m² e-9)", ylabel="Residuals (a.u.)")
     end
+
+    ax2.xlabelsize = 18
 
     linkxaxes!(ax1, ax3)
 
@@ -78,12 +80,24 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
 
     button_label = Button(fig[8,6:8], label = "Label selection")
     button_filter = Button(fig[8,8:10], label = "Filter-out selection")
-
     button_reset = Button(fig[9,6:10], label = "Reset selections")
+    button_save = Button(fig[10,8:10], label = "Save and exit")
 
     log_y = false
-    button_yscale = Button(fig[10,6:8], label = "Change y scale")
-    button_save = Button(fig[10,8:10], label = "Save and exit")
+    if res.seq != IR
+        button_yscale = Button(fig[10,6:8], label = "Change y scale")
+
+        on(button_yscale.clicks) do _
+            if log_y
+                fig.content[1].yscale = identity
+                log_y = false
+            else
+                fig.content[1].yscale = log10
+                log_y = true
+            end
+
+        end
+    end
 
     on(button_label.clicks) do _
         push!(res.selections, slider.interval[])
@@ -122,16 +136,6 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         save(savedir, f)
     end
 
-    on(button_yscale.clicks) do _
-        if log_y
-            fig.content[1].yscale = identity
-            log_y = false
-        else
-            fig.content[1].yscale = log10
-            log_y = true
-        end
-
-    end
 
     return fig
 end
@@ -142,60 +146,60 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
     # apply filter to f and update fitted curve and residuals
     f_prime = res.filter .* res.f
     yfit_prime = create_kernel(
-        res.seq, res.xfit, (res.seq == PFG ? res.X .* 1e9 : res.X)) * f_prime
-    r_prime = create_kernel(
-        res.seq, res.x, (res.seq == PFG ? res.X .* 1e9 : res.X)) * f_prime - res.y
+        res.seq, res.xfit, (res.seq == PFG ? res.X .* 1e9 : res.X)
+    ) * f_prime
 
-    c = length(ax2.scene.plots)
-    scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax1, res.xfit, yfit_prime, colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=c)
-    scatter!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=c)
+    r_prime = create_kernel(
+        res.seq, res.x, (res.seq == PFG ? res.X .* 1e9 : res.X)
+    ) * f_prime - res.y
+
+    i = length(ax2.scene.plots)
+
+    scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=i)
+    lines!(ax1, res.xfit, yfit_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+    lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+    lines!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+    scatter!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
 
 
     if selections
 
         if res.seq in [NMRInversions.IR]
-            Xlabel = ["<T₁> = ", " (s)"]
+            Xlabel = ["<T₁> = ", " s, Area= "," %"]
         elseif res.seq in [NMRInversions.CPMG]
-            Xlabel = ["<T₂> = ", " (s)"]
+            Xlabel = ["<T₂> = ", " s, Area= "," %"]
         elseif res.seq in [NMRInversions.PFG]
-            Xlabel = ["<D> = ", " (m²/s)"]
+            Xlabel = ["<D> = ", " m²/s, Area= "," %"]
         end
 
-        wa = weighted_averages(res)
+        wa, areas = weighted_averages(res)
 
         for (i,s) in enumerate(res.selections)
-            clr = only(
-                Makie.numbers_to_colors(
-                    [i], 
-                    Makie.to_colormap(:tab10), 
-                    identity, 
-                    Vec2(1, 10), 
-                    Makie.automatic, 
-                    Makie.automatic, 
-                    RGBAf(0, 0, 0, 0)
-                )
-            )
-
             band!(
                 ax2, 
                 res.X[s[1]:s[2]],
                 zeros(length(res.f[s[1]:s[2]])),
                 (res.f .* res.filter)[s[1]:s[2]],
-                color = clr, alpha = 0.5
+                colormap=:tab10, colorrange=(1, 10), color=i,alpha = 0.5,
             )
+        end
+
+        for (i,_) in enumerate(res.selections)
 
             height = (1 - (i-1) * 0.1) * maximum(res.f .* res.filter) 
+
+            lbl = 
+                Xlabel[1]* "$(round(wa[i], sigdigits = 2))"* Xlabel[2]* 
+                "$(round(areas[i]*100, sigdigits = 2))"*Xlabel[3]
+
             text!(
                 ax2, res.X[2], height, 
-                text = Xlabel[1]*"$(round(wa[i], sigdigits = 2))"*Xlabel[2], 
-                align = (:left, :top), color = clr
+                text = lbl, 
+                align = (:left, :top), 
+                colormap=:tab10, colorrange=(1, 10), color=i,
+                glowcolor=:white, glowwidth=2
             )
-
-            #=vlines!(ax2, res.X[s[1]], color = clr, alpha = 0.8)=#
-            #=vlines!(ax2, res.X[s[2]],color = clr, alpha = 0.8)=#
         end
     end
+    ax2.limits = (minimum(res.X), maximum(res.X), 0 , 1.05 * maximum(res.f .* res.filter))
 end
