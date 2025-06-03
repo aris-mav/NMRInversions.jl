@@ -146,11 +146,14 @@ function spinsolve_read_PFGCPMG(acqufile, datafile)
     
     n_echoes = parse(Int32 ,read_acqu(acqufile, "nrEchoes"))
     t_echo = parse(Float64, read_acqu(acqufile, "echoTime")) * 1e-6
-    Δ = parse(Int32, read_acqu(acqufile, "bDelta")) * 1e-3
-    δ = parse(Int32, read_acqu(acqufile, "lDelta")) * 1e-3
+
+    ramp = parse(Float64, read_acqu(acqufile, "gradRamp")) * 1e-3
+    Δ = parse(Float64, read_acqu(acqufile, "bDelta")) * 1e-3
+    δ = ramp + parse(Float64, read_acqu(acqufile, "lDelta")) * 1e-3
     steps = parse(Int32, read_acqu(acqufile, "nrSteps"))
-    gradmax = parse(Int32, read_acqu(acqufile, "gradMax")) * 1e-3
-    g = range(0,steps,steps+1)[2:end] * (gradmax / steps) 
+    gradmax = parse(Float64, read_acqu(acqufile, "gradMax")) * 1e-3
+
+    g = range(0.001, gradmax ,steps) 
 
     γ = if read_acqu(acqufile, "nucleus") == "1H-1H"
         267.52218744e6; # (rad s^-1 T^-1) 
