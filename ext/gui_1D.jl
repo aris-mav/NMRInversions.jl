@@ -157,14 +157,14 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
     if selections
 
         if res.seq in [NMRInversions.IR]
-            Xlabel = ["<T₁> = ", " (s)"]
+            Xlabel = ["<T₁> = ", " (s)", "Volume= "," %"]
         elseif res.seq in [NMRInversions.CPMG]
-            Xlabel = ["<T₂> = ", " (s)"]
+            Xlabel = ["<T₂> = ", " (s)", "Volume= "," %"]
         elseif res.seq in [NMRInversions.PFG]
-            Xlabel = ["<D> = ", " (m²/s)"]
+            Xlabel = ["<D> = ", " (m²/s)", "Volume= "," %"]
         end
 
-        wa = weighted_averages(res)
+        wa, areas = weighted_averages(res)
 
         for (i,s) in enumerate(res.selections)
 

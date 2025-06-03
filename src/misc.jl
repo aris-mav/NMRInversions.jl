@@ -200,15 +200,24 @@ end
 export weighted_averages
 """
     weighted_averages(r::inv_out_1D)
-Return a vector with the weighted averages for the selections in the input structure.
+Return a vector with the weighted averages for 
+the selections in the input structure, and a 
+vector with the respective area fractions of 
+these selections.
 """
 function weighted_averages(r::inv_out_1D)
 
     wa = Vector(undef, length(r.selections))
+    areas = Vector(undef, length(r.selections))
+    total_area = sum(r.f)
+
     for (i,s) in enumerate(r.selections)
-        wa[i] = r.f[s[1]:s[2]]' * r.X[s[1]:s[2]] / sum(r.f[s[1]:s[2]]) 
+        area = sum(r.f[s[1]:s[2]])
+        wa[i] = r.f[s[1]:s[2]]' * r.X[s[1]:s[2]] / area
+        areas[i] = area / total_area
     end
-    return wa
+
+    return wa, areas
 end
 
 
@@ -216,10 +225,11 @@ end
     weighted_averages(r::inv_out_2D)
 Return two vectors with the weighted averages for the selections in the input structure, one for each dimension.
 """
-function weighted_averages(r::inv_out_2D)
+function weighted_averages(r::inv_out_2D; silent::Bool = true)
 
-    wa_T1 = Vector(undef, length(r.selections))
-    wa_T2 = Vector(undef, length(r.selections))
+    wa_indir = Vector(undef, length(r.selections))
+    wa_dir = Vector(undef, length(r.selections))
+    volumes = Vector(undef, length(r.selections))
 
     z = r.F' .* r.filter'
 
@@ -236,16 +246,19 @@ function weighted_averages(r::inv_out_2D)
         indir_dist = vec(sum(spo, dims=2))
         dir_dist = vec(sum(spo, dims=1))
 
-        wa_T1[i] = indir_dist' *  r.X_indir / sum(spo)
-        wa_T2[i] = dir_dist' *  r.X_dir / sum(spo)
+        wa_indir[i] = indir_dist' *  r.X_indir / sum(spo)
+        wa_dir[i] = dir_dist' *  r.X_dir / sum(spo)
+        volumes[i] = sum(spo)/sum(z)
 
-        println("The weighted averages of selection $(collect('a':'z')[i]) are:")
-        println("<T₁> = $(round(wa_T1[i], sigdigits=2)), <T₂> = $(round(wa_T2[i], sigdigits=2)), "*
-                "<T₁>/<T₂> = $(round(wa_T1[i]/wa_T2[i], sigdigits=2))")
-        println()
+        if !silent
+            println("The weighted averages of selection $(collect('a':'z')[i]) are:")
+            println("<T₁> = $(round(wa_indir[i], sigdigits=2)), <T₂> = $(round(wa_dir[i], sigdigits=2)), "*
+                    "<T₁>/<T₂> = $(round(wa_indir[i]/wa_dir[i], sigdigits=2))")
+            println()
+        end
     end
 
-    return wa_T1, wa_T2
+    return wa_indir, wa_dir, volumes
 end
 
 
