@@ -25,7 +25,7 @@ tikhonov_ripqp_ext = ["RipQP", "QuadraticModels"]
 
 [compat]
 DelimitedFiles = "1"
-GLMakie = "0.10, 0.11"
+GLMakie = "0.11"
 JuMP = "1"
 NativeFileDialog = "0.2"
 Optim = "1.10.0"
