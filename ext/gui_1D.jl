@@ -157,11 +157,11 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
     if selections
 
         if res.seq in [NMRInversions.IR]
-            Xlabel = ["<T₁> = ", " (s)", "Volume= "," %"]
+            Xlabel = ["<T₁> = ", " (s), Area= "," %"]
         elseif res.seq in [NMRInversions.CPMG]
-            Xlabel = ["<T₂> = ", " (s)", "Volume= "," %"]
+            Xlabel = ["<T₂> = ", " (s), Area= "," %"]
         elseif res.seq in [NMRInversions.PFG]
-            Xlabel = ["<D> = ", " (m²/s)", "Volume= "," %"]
+            Xlabel = ["<D> = ", " (m²/s), Area= "," %"]
         end
 
         wa, areas = weighted_averages(res)
@@ -179,7 +179,7 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
             height = (1 - (i-1) * 0.1) * maximum(res.f .* res.filter) 
             text!(
                 ax2, res.X[2], height, 
-                text = Xlabel[1]*"$(round(wa[i], sigdigits = 2))"*Xlabel[2], 
+                text = Xlabel[1]*"$(round(wa[i], sigdigits = 2))"*Xlabel[2]*"$(round(areas[i]*100, sigdigits = 2))"*Xlabel[3], 
                 align = (:left, :top), 
                 colormap=:tab10, colorrange=(1, 10), color=i
             )
