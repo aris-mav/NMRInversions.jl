@@ -160,6 +160,7 @@ function draw_on_axes(axmain, axtop, axright, res, clmap,contf,levels)
             " : T₁/T₂ = $(round(wa_indir[i]/wa_dir[i] , digits=1)) \n     Volume = $(round(volumes[i] *100 ,digits = 1))%"
         elseif res.seq == PFGCPMG
             " : D = $(round(wa_indir[i], sigdigits=3)), T₂ = $(round(wa_dir[i], sigdigits=3))\n     Volume = $(round(volumes[i] *100 ,digits = 1))%"
+
         end
 
         sc = scatter!(axmain, xc, yc, markersize=15,
