@@ -146,12 +146,12 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
     r_prime = create_kernel(
         res.seq, res.x, (res.seq == PFG ? res.X .* 1e9 : res.X)) * f_prime - res.y
 
-    c = length(ax2.scene.plots)
-    scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax1, res.xfit, yfit_prime, colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=c)
-    lines!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=c)
-    scatter!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=c)
+    i = length(ax2.scene.plots)
+    scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=i)
+    lines!(ax1, res.xfit, yfit_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+    lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+    lines!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+    scatter!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
 
 
     if selections
@@ -167,31 +167,21 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
         wa = weighted_averages(res)
 
         for (i,s) in enumerate(res.selections)
-            clr = only(
-                Makie.numbers_to_colors(
-                    [i], 
-                    Makie.to_colormap(:tab10), 
-                    identity, 
-                    Vec2(1, 10), 
-                    Makie.automatic, 
-                    Makie.automatic, 
-                    RGBAf(0, 0, 0, 0)
-                )
-            )
 
             band!(
                 ax2, 
                 res.X[s[1]:s[2]],
                 zeros(length(res.f[s[1]:s[2]])),
                 (res.f .* res.filter)[s[1]:s[2]],
-                color = clr, alpha = 0.5
+                colormap=:tab10, colorrange=(1, 10), color=i,alpha = 0.5
             )
 
             height = (1 - (i-1) * 0.1) * maximum(res.f .* res.filter) 
             text!(
                 ax2, res.X[2], height, 
                 text = Xlabel[1]*"$(round(wa[i], sigdigits = 2))"*Xlabel[2], 
-                align = (:left, :top), color = clr
+                align = (:left, :top), 
+                colormap=:tab10, colorrange=(1, 10), color=i
             )
 
             #=vlines!(ax2, res.X[s[1]], color = clr, alpha = 0.8)=#
