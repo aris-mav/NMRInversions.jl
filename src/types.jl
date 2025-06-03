@@ -92,7 +92,7 @@ end
 
 
 """
-    optim_nnls(order)
+    optim_nnls( ; order, L, boundary)
 Simple non-negative least squares method for regularization, 
 implemented using Optim.jl.
 All around effective, but can be slow for large problems, such as 2D inversions.
@@ -106,14 +106,21 @@ of the results.
 `L` detemines which norm of the penalty term will be minimized. 
 Default is 2 (tikhonov regularization).
 
+`boundary` is a boolean that detemines the boundary conditions. 
+If set to true, then the boundaries will be fixed to 0 (only 
+works with order greater than 0).
 """
+
 struct optim_nnls <: regularization_solver 
     order::Int
     L::Int
-    optim_nnls() = new(0, 2)
-    optim_nnls(x::Int) = new(x, 2)
-    optim_nnls(x::Int, y::Int) = new(x, y)
+    boundary::Bool
+    optim_nnls(;order=0, L=2 , boundary=0) = new(order,L,boundary)
+    optim_nnls(x::Int; L=2 , boundary=0) = new(x, L, boundary)
+    optim_nnls(x::Int, y::Int ; boundary=0) = new(x, y, boundary)
+    optim_nnls(x::Int, y::Int, z::Bool) = new(x, y, z)
 end
+
 
 """
     jump_nnls(order, solver)

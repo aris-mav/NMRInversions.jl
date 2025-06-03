@@ -40,7 +40,17 @@ end
 
 function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, solver::optim_nnls)
 
-    A = sparse([K; √(α) .* NMRInversions.Γ(size(K, 2), solver.order)])
+    tiknonovMatrix = NMRInversions.Γ(size(K, 2), solver.order)
+
+    if solver.boundary
+        tiknonovMatrix = [
+            [tiknonovMatrix[1,2:end] ; 0]'  
+            tiknonovMatrix
+            [0 ; tiknonovMatrix[end, 1:end-1]]'  
+        ]
+    end 
+    
+    A = sparse([K; √(α) .* tiknonovMatrix])
     b = sparse([g; zeros(size(A, 1) - size(g, 1))])
 
     f = solve_nnls(A, b, L = solver.L)
