@@ -141,30 +141,25 @@ function draw_on_axes(axmain, axtop, axright, res, clmap,contf,levels)
     points = [[i, j] for i in x, j in y]
     mask = zeros(size(points))
 
+    wa_indir, wa_dir, volumes = weighted_averages(res, silent = true)
+
     for (i, polygon) in enumerate(res.selections)
 
         # Selected points only
         mask .= [PolygonOps.inpolygon(p, polygon; in=1, on=1, out=0) for p in points]
         spo = mask .* z
 
-        indir_dist = vec(sum(spo, dims=2))
-        dir_dist = vec(sum(spo, dims=1))
-
         #draw current polygon
         lines!(axmain, Point2f.(polygon), linestyle=:dash, colormap=:tab10, colorrange=(1, 10), color=i, alpha=0.9)
-
-        # estimate weithted average in direct and indirect dimensions
-        inwa = indir_dist ⋅ res.X_indir / sum(spo)
-        dwa = dir_dist ⋅ res.X_dir / sum(spo)
 
         # Plot peak label
         xc = vec(sum(spo, dims=2)) ⋅ x / sum(spo)
         yc = vec(sum(spo, dims=1)) ⋅ y / sum(spo)
 
         lbl = if res.seq == IRCPMG
-            " : T₁/T₂ = $(round(inwa/dwa , digits=1)) \n     Volume = $(round(sum(spo)/sum(z) *100 ,digits = 1))%"
+            " : T₁/T₂ = $(round(wa_indir[i]/wa_dir[i] , digits=1)) \n     Volume = $(round(volumes[i] *100 ,digits = 1))%"
         elseif res.seq == PFGCPMG
-            " : D = $(round(inwa, sigdigits=3)), T₂ = $(round(dwa, sigdigits=3))\n     Volume = $(round(sum(spo)/sum(z) *100 ,digits = 1))%"
+            " : D = $(round(wa_indir[i], sigdigits=3)), T₂ = $(round(wa_dir[i], sigdigits=3))\n     Volume = $(round(volumes[i] *100 ,digits = 1))%"
         end
 
         sc = scatter!(axmain, xc, yc, markersize=15,
