@@ -201,5 +201,5 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
             )
         end
     end
-    ax2.limits = (minimum(res.X), maximum(res.X), 0 , 1.05 * maximum(res.f .* res.filter))
+    ax2.limits = (minimum(res.X), maximum(res.X),  -0.025 * maximum(res.f .* res.filter), 1.025 * maximum(res.f .* res.filter))
 end
