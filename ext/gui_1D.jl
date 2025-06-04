@@ -172,7 +172,7 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
             Xlabel = ["<D> = ", " m²/s, Area= "," %"]
         end
 
-        wa, areas = weighted_averages(res)
+        wa, areas = weighted_averages(res, silent = true)
 
         for (i,s) in enumerate(res.selections)
             band!(
