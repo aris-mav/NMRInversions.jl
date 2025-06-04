@@ -133,7 +133,7 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     on(button_save.clicks) do _
         savedir = NMRInversions.save_file(res.title, filterlist = "png")
         f = plot([res], selections = true, yscale = log_y ? log10 : identity)
-        save(savedir, f)
+        save(savedir, f, px_per_unit = 2.0)
     end
 
 
@@ -157,7 +157,7 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
 
     scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=i)
     lines!(ax1, res.xfit, yfit_prime, colormap=:tab10, colorrange=(1, 10), color=i)
-    lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+    !selections && lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=i)
     lines!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
     scatter!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
 
@@ -180,17 +180,31 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
                 res.X[s[1]:s[2]],
                 zeros(length(res.f[s[1]:s[2]])),
                 (res.f .* res.filter)[s[1]:s[2]],
-                colormap=:tab10, colorrange=(1, 10), color=i,alpha = 0.5,
+                colormap=:tab10, colorrange=(1, 10), color=i,alpha = 0.4,
             )
         end
 
-        for (i,_) in enumerate(res.selections)
+        lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+
+        for (i,s) in enumerate(res.selections)
 
             height = (1 - (i-1) * 0.1) * maximum(res.f .* res.filter) 
 
+            sel = collect('a':'z')[i]
+            h =(res.f .* res.filter)[argmin(abs.(res.X .- wa[i]))]/2
+
+            scatter!(ax2, 
+                     wa[i], 
+                     h,
+                     markersize=15,
+                     marker=sel,
+                     colormap=:tab10, colorrange=(1, 10),
+                     color=i,
+                     glowcolor=:white, glowwidth=4)
+
             lbl = 
-                Xlabel[1]* "$(round(wa[i], sigdigits = 2))"* Xlabel[2]* 
-                "$(round(areas[i]*100, sigdigits = 2))"*Xlabel[3]
+                " " * sel *" : "* Xlabel[1]* "$(round(wa[i], sigdigits = 2))"* 
+                Xlabel[2]* "$(round(areas[i]*100, sigdigits = 2))"*Xlabel[3]
 
             text!(
                 ax2, res.X[2], height, 
