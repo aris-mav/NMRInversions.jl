@@ -238,7 +238,9 @@ end
 
 """
     weighted_averages(r::inv_out_2D)
-Return two vectors with the weighted averages for the selections in the input structure, one for each dimension.
+Return two vectors with the weighted averages 
+for the selections in the input structure, one for each dimension,
+as well as a vector with the volume fractions of these selections.
 """
 function weighted_averages(r::inv_out_2D; silent::Bool = false)
 
