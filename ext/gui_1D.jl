@@ -133,7 +133,7 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     on(button_save.clicks) do _
         savedir = NMRInversions.save_file(res.title, filterlist = "png")
         f = plot([res], selections = true, yscale = log_y ? log10 : identity)
-        save(savedir, f, px_per_unit = 2.0)
+        save(savedir, f, px_per_unit = 2.5)
     end
 
 
@@ -180,7 +180,7 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
                 res.X[s[1]:s[2]],
                 zeros(length(res.f[s[1]:s[2]])),
                 (res.f .* res.filter)[s[1]:s[2]],
-                colormap=:tab10, colorrange=(1, 10), color=i,alpha = 0.4,
+                colormap=:tab10, colorrange=(1, 10), color=i,alpha = 0.35,
             )
         end
 

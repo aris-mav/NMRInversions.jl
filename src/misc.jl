@@ -207,13 +207,14 @@ these selections.
 """
 function weighted_averages(r::inv_out_1D ; silent::Bool = false)
 
+    distribution = r.f .* r.filter
     wa = Vector(undef, length(r.selections))
     areas = Vector(undef, length(r.selections))
-    total_area = sum(r.f .* r.filter)
+    total_area = sum(distribution)
 
     for (i,s) in enumerate(r.selections)
-        area = sum((r.f .* r.filter)[s[1]:s[2]])
-        wa[i] = (r.f .* r.filter)[s[1]:s[2]]' * r.X[s[1]:s[2]] / area
+        area = sum(distribution[s[1]:s[2]])
+        wa[i] = distribution[s[1]:s[2]]' * r.X[s[1]:s[2]] / area
         areas[i] = area / total_area
 
         lbl = if r.seq in [IR, SR]
