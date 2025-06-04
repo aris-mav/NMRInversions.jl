@@ -205,16 +205,31 @@ the selections in the input structure, and a
 vector with the respective area fractions of 
 these selections.
 """
-function weighted_averages(r::inv_out_1D)
+function weighted_averages(r::inv_out_1D ; silent::Bool = false)
 
     wa = Vector(undef, length(r.selections))
     areas = Vector(undef, length(r.selections))
-    total_area = sum(r.f)
+    total_area = sum(r.f .* r.filter)
 
     for (i,s) in enumerate(r.selections)
-        area = sum(r.f[s[1]:s[2]])
+        area = sum((r.f .* r.filter)[s[1]:s[2]])
         wa[i] = r.f[s[1]:s[2]]' * r.X[s[1]:s[2]] / area
         areas[i] = area / total_area
+
+        lbl = if r.seq in [IR, SR]
+            ["<T₁>","s"]
+        elseif r.seq == CPMG
+            ["<T₂>","s"]
+        elseif r.seq == PFG
+            ["<D>", "m²/s"]
+        end
+
+        if !silent
+            println("Selection $(collect('a':'z')[i]) :")
+            println(lbl[1] * " = $(round(wa[i], sigdigits=4)) "*lbl[2])
+            println("Area = $(round(areas[i], sigdigits=4) * 100) %")
+            println()
+        end
     end
 
     return wa, areas
@@ -225,7 +240,7 @@ end
     weighted_averages(r::inv_out_2D)
 Return two vectors with the weighted averages for the selections in the input structure, one for each dimension.
 """
-function weighted_averages(r::inv_out_2D; silent::Bool = true)
+function weighted_averages(r::inv_out_2D; silent::Bool = false)
 
     wa_indir = Vector(undef, length(r.selections))
     wa_dir = Vector(undef, length(r.selections))
@@ -250,10 +265,21 @@ function weighted_averages(r::inv_out_2D; silent::Bool = true)
         wa_dir[i] = dir_dist' *  r.X_dir / sum(spo)
         volumes[i] = sum(spo)/sum(z)
 
+        dir_lbl = ["<T₂>","s"]
+        ind_lbl = if r.seq == IRCPMG
+            ["<T₁>","s"]
+        elseif r.seq == PFGCPMG
+            ["<D>", "m²/s"]
+        end
+
         if !silent
-            println("The weighted averages of selection $(collect('a':'z')[i]) are:")
-            println("<T₁> = $(round(wa_indir[i], sigdigits=2)), <T₂> = $(round(wa_dir[i], sigdigits=2)), "*
-                    "<T₁>/<T₂> = $(round(wa_indir[i]/wa_dir[i], sigdigits=2))")
+            println("Selection $(collect('a':'z')[i]) :")
+            println(ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) "*ind_lbl[2])
+            println(dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) "*dir_lbl[2])
+            if r.seq == IRCPMG
+                println("<T₁>/<T₂> = $(round(wa_dir[i], sigdigits=4)) ")
+            end
+            println("Volume = $(round(volumes[i], sigdigits=4) * 100) %")
             println()
         end
     end
