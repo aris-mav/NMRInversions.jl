@@ -6,7 +6,7 @@ in the
 or misleading, please [submit an issue](https://github.com/arismavridis/NMRInversions.jl/issues/new).
 
 ## Exponentials in NMR
-For NMR relxation and diffusion experiments in liquids, we expect
+For NMR relaxation and diffusion experiments in liquids, we expect
 the results we get to look more or less like an exponential decay 
 or recovery, as described by the BPP theory [BPP](@cite).
 
@@ -24,7 +24,7 @@ Examples are :
 
 , where ``M`` is the magnetization (the "signal" you would record in such an 
 experiment, normalized so that its maximum value is 1), ``t`` is time, ``T_1`` 
-and ``T_2`` are relxatation time constants, ``b`` is the b-factor in the 
+and ``T_2`` are relaxation time constants, ``b`` is the b-factor in the 
 Stejskal-Tanner equations, and ``D`` is diffusion coefficient.
 
 This is all good if the sample you want to study is nice and simple 
@@ -71,7 +71,7 @@ This package covers this case using the `expfit(n, data)` function.
 However, in a lot of realistic scenarios, this method fails for a few reasons:
 
 - We don't always know exactly how many components our system is made out of.
-- There might be a virtually continuous range of relxatation times (or diffusion 
+- There might be a virtually continuous range of relaxation times (or diffusion 
   coefficients) within the system, e.g. a fluid within a rock sample with 
   many different pore sizes might have a different relaxation time for each pore size.
 - When we add too many degrees of freedom by introducing lots of free 
@@ -137,6 +137,6 @@ Low values of ``\alpha`` would result in noisy, unregularized solutions with spi
 ``T`` or ``D`` distributions, while large ``\alpha``'s would lead to very broad, over-
 smoothed distributions.
 
-The `invert` function in this pakage solves this problem, and autmatically finds the 
+The `invert` function in this package solves this problem, and automatically finds the 
 optimal value for ``\alpha`` using the GCV method. There is also an option to use the 
 `L-curve` method to find ``\alpha``, or supply a constant value for it.
