@@ -3,8 +3,8 @@ This provides us with a straightforward way to save our results in a file, and
 load them later if we need to check what's inside them.
 
 !!! info
-    Serialization.jl is part of the standard library, and thus it can be used
-    without installation.
+    Serialization.jl and DelimitedFiles.jl are both part of the 
+    standard library, and thus it can be used without installation.
 
 ## Saving results 
 
@@ -25,8 +25,31 @@ results = deserialize("results.dat")
 
 ```
 
-Note that we use a .dat extension above, but you can use whatever 
-extension you like, as long as it makes sense to you.
+Note that we use a ".dat" file extension above, but you can 
+use whatever extension you like (or none), as long as it 
+makes sense to you.
+
+Writing into plain-text files in delimited formats is also possible,
+using the `DelimitedFiles` library and the `writedlm` function.
+
+We have to choose which data to save. In this example below we 
+use the relaxation time (or diffusion coefficient) distribution.
+
+```julia
+using DelimitedFiles
+
+data_matrix = [results.X results.f]
+
+# The third parameter in the function below
+# determines the delimiter, in this case a comma
+writedlm("data.csv", data_matrix, ',')
+```
+
+This might be useful if you want to export the data into any
+non-julia software.
+For more elaborate formats, you could have a look at packages 
+such as [TOML.jl](https://docs.julialang.org/en/v1/stdlib/TOML/)
+or [JSON.jl](https://github.com/JuliaIO/JSON.jl).
 
 ## Saving plots
 
