@@ -41,9 +41,9 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
         X = lims
     elseif isa(lims, Type{<:pulse_sequence1D})
         if lims == PFG
-            X = exp10.(range(-11, -8, 128))
+            X = collect(logrange(minimum(x)/7 , maximum(x)*7 , 128)) * 1e-9
         else
-            X = exp10.(range(-5, 1, 128))
+            X = collect(logrange(minimum(x)/7 , maximum(x)*7 , 128)) 
         end
     end
 
@@ -135,7 +135,7 @@ function invert(
     end
 
     if isa(lims1, Type{<:pulse_sequence2D})
-        X_direct = exp10.(range(-5,1,100))
+        X_direct = collect(logrange(minimum(x_direct)/7 , maximum(x_direct)*7 , 64)) 
     elseif isa(lims1, Tuple)
         X_direct = exp10.(range(lims1...))
     elseif isa(lims1, AbstractVector)
@@ -144,8 +144,9 @@ function invert(
 
     if isa(lims2, Type{<:pulse_sequence2D})
         if lims2 == IRCPMG
-            X_indirect = exp10.(range(-5,1,100))
+            X_indirect = collect(logrange(minimum(x_indirect)/7 , maximum(x_indirect)*7 , 64)) 
         elseif lims2 == PFGCPMG
+            #=X_indirect = 1e-9 .* collect(logrange(minimum(x_indirect)/7 , maximum(x_indirect)*7 , 64)) =#
             X_indirect = exp10.(range(-11, -8, 128))
         end
     elseif isa(lims2, Tuple)
