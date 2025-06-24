@@ -73,7 +73,6 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
     yplot = collect(range(0, 1, length(y)))
 
     # Make axes
-
     axmain = Axis(fig[3:10, 1:8])
     axtop = Axis(fig[1:2, 1:8], limits=((xplot[1], xplot[end]), (0, nothing)), 
                  title=title, titlesize=titlesize, titlefont=titlefont)
@@ -88,15 +87,17 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
     elseif seq == PFGCPMG
         L"D \, \textrm{(m^2/s)}"
     end
+    ylbl = L"T_2 \,\textrm{(s)}"
 
     axmain_values = Axis(fig[3:10, 1:8],
                          xscale=log10, yscale=log10,
-                         xlabel=xlbl, ylabel=L"T_2 \,\textrm{(s)}",
+                         xlabel=xlbl, ylabel=ylbl,
                          xlabelsize=labelsizes[1], ylabelsize=labelsizes[2],
                          limits=(x[1], x[end], y[1], y[end]),
                          xticklabelsize=ticksizes[1], yticklabelsize=ticksizes[2],
                          xtickalign = 1.0, ytickalign = 1.0
                          )
+
 
     Makie.deactivate_interaction!(axmain_values, :rectanglezoom) # Disable zoom
     Makie.deactivate_interaction!(axmain, :rectanglezoom) # Disable zoom
@@ -108,6 +109,19 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
 
     draw_on_axes(axmain, axtop, axright, res, colormap,contf,levels)
 
+    # Plot diagonal line
+    if res.seq == IRCPMG
+        diag_low = max(x[1],y[1]) 
+        diag_high = min(x[end],y[end])  
+        lines!(
+            axmain_values, 
+            [
+                (diag_low, diag_low), 
+                (diag_high,diag_high)
+            ], 
+            color=:black, linewidth=1
+        )
+    end
 end
 
 function draw_on_axes(axmain, axtop, axright, res, clmap,contf,levels)
@@ -132,10 +146,6 @@ function draw_on_axes(axmain, axtop, axright, res, clmap,contf,levels)
     #=band!(axtop, x, zeros(length(x)), vec(sum(z, dims=2)) ,colormap=clmap, colorrange=(1, 10), color = 5 ,alpha=0.5)=#
     #=band!(axright, Point2f.(zeros(length(y)), y), Point2f.(vec(sum(z, dims=1)), y) ,colormap=clmap, colorrange=(1, 10), alpha=0.5)=#
 
-    # Plot diagonal line
-    if res.seq == IRCPMG
-        lines!(axmain, [(0, 0), (1, 1)], color=:black, linewidth=1)
-    end
 
     #Create a matrix for all the discrete points in the space
     points = [[i, j] for i in x, j in y]
@@ -171,14 +181,18 @@ function draw_on_axes(axmain, axtop, axright, res, clmap,contf,levels)
             label=lbl)
 
         text!(axmain, 2.5 * (1 / 100), (99 - 13 * (i - 1)) * (1 / 100),
-            text=
-            collect('a':'z')[i] * lbl,
-            align=(:left, :top), colormap=:tab10, colorrange=(1, 10), color=i)
+              text=
+              collect('a':'z')[i] * lbl,
+              align=(:left, :top), colormap=:tab10, colorrange=(1, 10), color=i,
+              #=glowcolor=:white, glowwidth=1,=#
+              )
 
         # lines!(axtop, indir_dist[], linestyle=:dash, colormap=:tab10, colorrange=(1, 10), color=i, alpha=0.5)
         # lines!(axright, dir_dist[], 1:length(res.X_dir), linestyle=:dash, colormap=:tab10, colorrange=(1, 10), color=i, alpha=0.5)
         # axislegend( axmain,  framevisible=false)
 
+        linkxaxes!(axmain, axtop)
+        linkyaxes!(axmain, axright)
     end
 
 end
@@ -188,6 +202,8 @@ function dynamic_plots(axmain, axtop, axright, selection, polygon)
     scatter!(axmain, selection, colormap=:tab10, colorrange=(1, 10), color=8)
     lines!(axmain, polygon, colormap=:tab10, colorrange=(1, 10), color=8)
 
+    linkxaxes!(axmain, axtop)
+    linkyaxes!(axmain, axright)
 end
 
 function draw_3d(ax3d, res, sp)
@@ -354,7 +370,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
             if savedir == ""
                 display("Please enter a name for your file on the file dialog.")
             else
-                save(savedir, f)
+                save(savedir, f, px_per_unit=2)
             end
         end
 
