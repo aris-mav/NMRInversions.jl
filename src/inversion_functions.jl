@@ -13,10 +13,12 @@ The output is an `inv_out_1D` structure.
  Optional (keyword) arguments:
 - `lims=(a,b,c)` will set the "limits" of the output X, 
 so that it starts from 10^a, ends in 10^b and consists of c 
-logarithmically spaced values 
-(default is (-5, 1, 128) for relaxation and (-10, -7, 128) for diffusion). 
+logarithmically spaced values.
 Alternatively, a vector of values can be used directly, if more freedom is needed 
 (e.g. `lims=exp10.(range(-4, 1, 128))`).
+By default, 128 points are used, logarithmically spaced between the first value 
+in x divided by 7, and the final value in x multiplied by 7.
+
 - `alpha` determines the smoothing term. Use a real number for a fixed alpha.  
 No selection will lead to automatically determining alpha through the 
 default method, which is `gcv()`.
@@ -114,11 +116,15 @@ The output is an `inv_out_2D` structure.
  Optional (keyword) arguments:
 - `lims1` determines the output "range" of the inversion in the direct dimension (e.g. T₂ times in IRCPMG)
 - `lims2` determines the output "range" of the inversion in the indirect dimension (e.g. T₁ times in IRCPMG)
- In both cases above, you can use a tuple specifying the limits of the range, or a vector of values, same as the `lims` argument in the 1D inversion.
+
+In both cases above, you can use a tuple specifying the limits of the range, 
+or a vector of values, same as the `lims` argument in the 1D inversion function.
+By default, 64 points are used, logarithmically spaced between the first value 
+in x divided by 7, and the final value in x multiplied by 7 (for both direct and indirect x).
 
 - `alpha` determines the smoothing term. Use a real number for a fixed alpha.  No selection will lead to automatically determining alpha through the default method, which is `gcv`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.
-- `normalize` will normalize `Data` to 1 at the max value of `Data`. Default is `true`.
+- `normalize` will normalize `Data` so that its maximum value is 1. Default is `true`.
 
 """
 function invert(
