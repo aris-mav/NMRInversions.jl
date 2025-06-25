@@ -97,7 +97,6 @@ function invert(data::input1D; kwargs...)
 end
 
 
-
 """
 # Inversion for 2D pulse sequences:
     invert(seq, x_direct, x_indirect, Data; lims1, lims2, alpha, solver, normalize)
@@ -144,10 +143,9 @@ function invert(
 
     if isa(lims2, Type{<:pulse_sequence2D})
         if lims2 == IRCPMG
-            X_indirect = collect(logrange(minimum(x_indirect)/7 , maximum(x_indirect)*7 , 64)) 
+            X_indirect = collect(logrange(minimum(x_indirect)/7, maximum(x_indirect)*7, 64)) 
         elseif lims2 == PFGCPMG
-            #=X_indirect = 1e-9 .* collect(logrange(minimum(x_indirect)/7 , maximum(x_indirect)*7 , 64)) =#
-            X_indirect = exp10.(range(-11, -8, 128))
+            X_indirect = 1e-18 .* collect(logrange(minimum(x_indirect)/7, maximum(x_indirect)*7, 64)) 
         end
     elseif isa(lims2, Tuple)
         X_indirect = exp10.(range(lims2...))
