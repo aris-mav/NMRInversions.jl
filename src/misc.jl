@@ -250,9 +250,9 @@ function weighted_averages(r::inv_out_2D; silent::Bool = false)
     volumes = Vector(undef, length(r.selections))
 
     z = r.F' .* r.filter'
+    x = r.X_indir
+    y = r.X_dir
 
-    x = range(0, 1, size(z, 1))
-    y = range(0, 1, size(z, 2))
     points = [[i, j] for i in x, j in y]
     mask = zeros(size(points))
 
@@ -280,7 +280,7 @@ function weighted_averages(r::inv_out_2D; silent::Bool = false)
             println(ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) "*ind_lbl[2])
             println(dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) "*dir_lbl[2])
             if r.seq == IRCPMG
-                println("<T₁>/<T₂> = $(round(wa_dir[i], sigdigits=4)) ")
+                println("T₁/T₂ = $(round(wa_indir[i]/wa_dir[i], sigdigits=2)) ")
             end
             println("Volume = $(round(volumes[i], sigdigits=4) * 100) %")
             println()
