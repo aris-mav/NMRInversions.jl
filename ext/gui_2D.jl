@@ -83,6 +83,7 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
         xlabel=xlbl, ylabel=ylbl,
         xlabelsize=labelsizes[1], ylabelsize=labelsizes[2],
         xticklabelsize=ticksizes[1], yticklabelsize=ticksizes[2],
+        xtickalign = 0, ytickalign = 0,
         xscale = log10, yscale = log10
     )
     axtop = Axis(fig[1:2, 1:8], xscale = log10,
@@ -95,9 +96,6 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
     Makie.deactivate_interaction!(axmain, :rectanglezoom) # Disable zoom
     Makie.deactivate_interaction!(axright, :rectanglezoom) # Disable zoom
     Makie.deactivate_interaction!(axtop, :rectanglezoom) # Disable zoom
-
-    linkxaxes!(axmain, axtop)
-    linkyaxes!(axright, axmain)
 
     draw_on_axes(axmain, axtop, axright, res, colormap, contf, levels, legendlabelsize)
 end
@@ -149,19 +147,12 @@ function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendl
 
         end
 
-        sc = scatter!(axmain, xc, yc, markersize=15,
-            marker=collect('a':'z')[i],
-            colormap=:tab10, colorrange=(1, 10),
-            color=i,
-            glowcolor=:white, glowwidth=4,
-            label=lbl)
-
-        #=text!(axmain, 2.5 * (1 / 100), (99 - 13 * (i - 1)) * (1 / 100),=#
-        #=      text==#
-        #=      collect('a':'z')[i] * lbl,=#
-        #=      align=(:left, :top), colormap=:tab10, colorrange=(1, 10), color=i,=#
-        #=      glowcolor=:white, glowwidth=1,=#
-        #=      )=#
+        scatter!(axmain, xc, yc, markersize=15,
+                 marker=collect('a':'z')[i],
+                 colormap=:tab10, colorrange=(1, 10),
+                 color=i,
+                 glowcolor=:white, glowwidth=4,
+                 label=lbl)
     end
 
     if res.seq == IRCPMG
@@ -169,23 +160,24 @@ function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendl
     end
 
     if !isempty(res.selections)
-        lg = axislegend(axmain, position=:lt,
-                        framevisible = false,
-                        labelsize = legendlabelsize)
+        axislegend(axmain, position=:lt,
+                   framevisible = false,
+                   labelsize = legendlabelsize)
     end
 end
 
 function plot_diagonal(ax,x,y)
 
-    low = floor(min(x[1],y[1]),sigdigits=1)
-    high = ceil(max(x[end],y[end]),sigdigits=1)
+    low = exp10(floor(log10(min(x[1],y[1]))))
+    high = exp10(ceil(log10(max(x[end],y[end]))))
     lines!(
         ax, 
         [ (low, low), (high,high) ], 
         color=:black, linewidth=1
     )
     ax.limits = ((low,high),(low,high))
-    #=ax.limits = ((x[1],x[end]),(y[1],y[end]))=#
+    ax.xticks = LogTicks(floor(log10(low)):ceil(log10(high)))
+    ax.yticks = LogTicks(floor(log10(low)):ceil(log10(high)))
 end
 
 function dynamic_plots(axmain, axtop, axright, selection, polygon)
@@ -391,6 +383,9 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
     end ## BUTTON CLICKS
     
+
+    linkxaxes!(axmain, axtop)
+    linkyaxes!(axright, axmain)
 
     gui
     
