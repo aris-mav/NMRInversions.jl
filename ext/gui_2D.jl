@@ -64,7 +64,7 @@ Keyword (optional) arguments:
 function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInversions.inv_out_2D;
                      title=res.title, colormap=:viridis, contf=false, levels = 40, 
                      labelsizes = (23, 23), ticksizes = (15, 15), titlesize = 17, titlefont = :bold ,
-                     legendlabelsize = 12
+                     legendlabelsize = 12, gap = 0,
                      )
 
     xlbl = if res.seq == IRCPMG
@@ -77,21 +77,30 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
         L"T_2 \,\textrm{(s)}"
     end
 
+    gr = fig[1:10, 1:10] = GridLayout()
+
     # order is important, dont change
     axmain = Axis(
-        fig[3:10, 1:8],
+        gr[3:10, 1:8],
         xlabel=xlbl, ylabel=ylbl,
         xlabelsize=labelsizes[1], ylabelsize=labelsizes[2],
         xticklabelsize=ticksizes[1], yticklabelsize=ticksizes[2],
         xtickalign = 0, ytickalign = 0,
         xscale = log10, yscale = log10
     )
-    axtop = Axis(fig[1:2, 1:8], xscale = log10,
+    axtop = Axis(gr[1:2, 1:8], xscale = log10,
                  title=title, titlesize=titlesize, titlefont=titlefont)
-    axright = Axis(fig[3:10, 9:10], yscale = log10)
+    axright = Axis(gr[3:10, 9:10], yscale = log10)
 
     hidedecorations!(axtop)
     hidedecorations!(axright)
+
+    colgap!(gr , gap)
+    rowgap!(gr , gap)
+    if gap <= 3
+        hidespines!(axtop, :b)
+        hidespines!(axright, :l)
+    end
 
     Makie.deactivate_interaction!(axmain, :rectanglezoom) # Disable zoom
     Makie.deactivate_interaction!(axright, :rectanglezoom) # Disable zoom
