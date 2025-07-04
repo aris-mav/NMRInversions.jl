@@ -60,6 +60,8 @@ Keyword (optional) arguments:
 - `ticksizes` : Size of the axis ticks (default: (14, 14)).
 - `titlesize` : Size of the title (default: 17).
 - `titlefont` : Font of the title (default: :bold).
+- `legendlabelsize` : Size of the legend label (default : 12)
+- `gap` : The gap between the contour plot and the distribution plots (default : 0)
 """
 function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInversions.inv_out_2D;
                      title=res.title, colormap=:viridis, contf=false, levels = 40, 
@@ -89,8 +91,10 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
         xscale = log10, yscale = log10
     )
     axtop = Axis(gr[1:2, 1:8], xscale = log10,
-                 title=title, titlesize=titlesize, titlefont=titlefont)
-    axright = Axis(gr[3:10, 9:10], yscale = log10)
+                 title=title, titlesize=titlesize, titlefont=titlefont,
+                 ygridvisible=false)
+    axright = Axis(gr[3:10, 9:10], yscale = log10,
+                   xgridvisible=false)
 
     hidedecorations!(axtop)
     hidedecorations!(axright)
@@ -185,8 +189,10 @@ function plot_diagonal(ax,x,y)
         color=:black, linewidth=1
     )
     ax.limits = ((low,high),(low,high))
-    ax.xticks = LogTicks(floor(log10(low)):ceil(log10(high)))
-    ax.yticks = LogTicks(floor(log10(low)):ceil(log10(high)))
+    if abs(log10(low)) + abs(log10(high)) <= 8
+        ax.xticks = LogTicks(floor(log10(low)):ceil(log10(high)))
+        ax.yticks = LogTicks(floor(log10(low)):ceil(log10(high)))
+    end
 end
 
 function dynamic_plots(axmain, axtop, axright, selection, polygon)
