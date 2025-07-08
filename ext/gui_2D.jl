@@ -11,6 +11,7 @@ The arguments are:
 - `results` : The `inv_out_2D` matrix or vector containing the fit results.
 
 Keyword (optional) arguments:
+- `dims` : Dimensions of each plot (default: (400, 400)).
 - `title` : Title of the plot (default: "").
 - `colormap` : Color map of the plot (default: :viridis).
 - `contf` : Whether to use a filled contour plot (default: false).
