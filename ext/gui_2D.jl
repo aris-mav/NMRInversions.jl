@@ -11,8 +11,7 @@ The arguments are:
 - `results` : The `inv_out_2D` matrix or vector containing the fit results.
 
 Keyword (optional) arguments:
-- `dims` : Dimensions of each plot (default: (400, 400)).
-- `title` : Title of the plot (default is the title in the inv_out_2D).
+- `title` : Title of the plot (default: "").
 - `colormap` : Color map of the plot (default: :viridis).
 - `contf` : Whether to use a filled contour plot (default: false).
 - `levels` : Number of contour levels (default: 40).
@@ -20,7 +19,9 @@ Keyword (optional) arguments:
 - `ticksizes` : Size of the axis ticks (default: (14, 14)).
 - `titlesize` : Size of the title (default: 17).
 - `titlefont` : Font of the title (default: :bold).
-- `legendlabelsize` : Size of the legend text (default: 12).
+- `legendlabelsize` : Size of the legend label (default : 12)
+- `gap` : The gap between the contour plot and the distribution plots (default : 0)
+- `extend_grid` : Whether to extend the gridlines to the plots on the sides (default : false)
 """
 function Makie.plot(
     res_mat::AbstractVecOrMat{NMRInversions.inv_out_2D}; dims = (400,400),
@@ -62,11 +63,12 @@ Keyword (optional) arguments:
 - `titlefont` : Font of the title (default: :bold).
 - `legendlabelsize` : Size of the legend label (default : 12)
 - `gap` : The gap between the contour plot and the distribution plots (default : 0)
+- `extend_grid` : Whether to extend the gridlines to the plots on the sides (default : false)
 """
 function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInversions.inv_out_2D;
                      title=res.title, colormap=:viridis, contf=false, levels = 40, 
                      labelsizes = (23, 23), ticksizes = (15, 15), titlesize = 17, titlefont = :bold ,
-                     legendlabelsize = 12, gap = 0,
+                     legendlabelsize = 12, gap = 0, extend_grid = false,
                      )
 
     seq = res.seq
@@ -117,20 +119,24 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
 
     if abs(log10(x_low)) + abs(log10(x_high)) <= 7
         axmain.xticks = LogTicks(floor(log10(x_low)):ceil(log10(x_high)))
+        axtop.xticks = LogTicks(floor(log10(x_low)):ceil(log10(x_high)))
     else
         axmain.xticks = LogTicks(floor(log10(x_low)):2:ceil(log10(x_high)))
+        axtop.xticks = LogTicks(floor(log10(x_low)):2:ceil(log10(x_high)))
     end
     if abs(log10(y_low)) + abs(log10(y_high)) <= 7
         axmain.yticks = LogTicks(floor(log10(y_low)):ceil(log10(y_high)))
+        axright.yticks = LogTicks(floor(log10(y_low)):ceil(log10(y_high)))
     else
         axmain.yticks = LogTicks(floor(log10(y_low)):2:ceil(log10(y_high)))
+        axright.yticks = LogTicks(floor(log10(y_low)):2:ceil(log10(y_high)))
     end
 
     linkxaxes!(axmain, axtop)
     linkyaxes!(axright, axmain)
 
-    hidedecorations!(axtop)
-    hidedecorations!(axright)
+    hidedecorations!(axtop, grid= !extend_grid)
+    hidedecorations!(axright, grid= !extend_grid)
 
     colgap!(gr , gap)
     rowgap!(gr , gap)
