@@ -69,13 +69,17 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
                      legendlabelsize = 12, gap = 0,
                      )
 
-    xlbl = if res.seq == IRCPMG
+    seq = res.seq
+    x = res.X_indir
+    y = res.X_dir
+
+    xlbl = if seq == IRCPMG
         L"T_1 \, \textrm{(s)}"
-    elseif res.seq == PFGCPMG
+    elseif seq == PFGCPMG
         L"D \, \textrm{(m^2/s)}"
     end
 
-    ylbl = if res.seq in [IRCPMG, PFGCPMG]
+    ylbl = if seq in [IRCPMG, PFGCPMG]
         L"T_2 \,\textrm{(s)}"
     end
 
@@ -90,11 +94,39 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
         xtickalign = 0, ytickalign = 0,
         xscale = log10, yscale = log10
     )
-    axtop = Axis(gr[1:2, 1:8], xscale = log10,
-                 title=title, titlesize=titlesize, titlefont=titlefont,
-                 ygridvisible=false)
-    axright = Axis(gr[3:10, 9:10], yscale = log10,
-                   xgridvisible=false)
+
+    x_low = seq == IRCPMG ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(x[1])))
+    x_high = seq == IRCPMG ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(x[end])))
+    y_low = seq == IRCPMG ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(y[1])))
+    y_high = seq == IRCPMG ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(y[end])))
+
+    axtop = Axis(
+        gr[1:2, 1:8], xscale = log10,
+        title=title, titlesize=titlesize, titlefont=titlefont,
+        ygridvisible=false, 
+        limits = (x_low, x_high ,0 , nothing) 
+    )
+    axright = Axis(
+        gr[3:10, 9:10], yscale = log10,
+        xgridvisible=false,
+        limits = (
+            0, nothing, y_low , y_high,
+        )
+    )
+
+    if abs(log10(x_low)) + abs(log10(x_high)) <= 7
+        axmain.xticks = LogTicks(floor(log10(x_low)):ceil(log10(x_high)))
+    else
+        axmain.xticks = LogTicks(floor(log10(x_low)):2:ceil(log10(x_high)))
+    end
+    if abs(log10(y_low)) + abs(log10(y_high)) <= 7
+        axmain.yticks = LogTicks(floor(log10(y_low)):ceil(log10(y_high)))
+    else
+        axmain.yticks = LogTicks(floor(log10(y_low)):2:ceil(log10(y_high)))
+    end
+
+    linkxaxes!(axmain, axtop)
+    linkyaxes!(axright, axmain)
 
     hidedecorations!(axtop)
     hidedecorations!(axright)
@@ -188,11 +220,6 @@ function plot_diagonal(ax,x,y)
         [ (low, low), (high,high) ], 
         color=:black, linewidth=1
     )
-    ax.limits = ((low,high),(low,high))
-    if abs(log10(low)) + abs(log10(high)) <= 8
-        ax.xticks = LogTicks(floor(log10(low)):ceil(log10(high)))
-        ax.yticks = LogTicks(floor(log10(low)):ceil(log10(high)))
-    end
 end
 
 function dynamic_plots(axmain, axtop, axright, selection, polygon)
@@ -399,8 +426,6 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     end ## BUTTON CLICKS
     
 
-    linkxaxes!(axmain, axtop)
-    linkyaxes!(axright, axmain)
 
     gui
     
