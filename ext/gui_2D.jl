@@ -83,6 +83,11 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
         L"T_2 \,\textrm{(s)}"
     end
 
+    x_low = seq == IRCPMG ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(x[1])))
+    x_high = seq == IRCPMG ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(x[end])))
+    y_low = seq == IRCPMG ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(y[1])))
+    y_high = seq == IRCPMG ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(y[end])))
+
     gr = fig[1:10, 1:10] = GridLayout()
 
     # order is important, dont change
@@ -92,13 +97,9 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
         xlabelsize=labelsizes[1], ylabelsize=labelsizes[2],
         xticklabelsize=ticksizes[1], yticklabelsize=ticksizes[2],
         xtickalign = 0, ytickalign = 0,
-        xscale = log10, yscale = log10
+        xscale = log10, yscale = log10,
+        limits = (x_low, x_high, y_low, y_high)
     )
-
-    x_low = seq == IRCPMG ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(x[1])))
-    x_high = seq == IRCPMG ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(x[end])))
-    y_low = seq == IRCPMG ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(y[1])))
-    y_high = seq == IRCPMG ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(y[end])))
 
     axtop = Axis(
         gr[1:2, 1:8], xscale = log10,
