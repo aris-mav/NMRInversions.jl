@@ -11,18 +11,19 @@ The arguments are:
 - `results` : The `inv_out_2D` matrix or vector containing the fit results.
 
 Keyword (optional) arguments:
-- `dims` : Dimensions of each plot (default: (400, 400)).
-- `title` : Title of the plot (default: "").
-- `colormap` : Color map of the plot (default: :viridis).
-- `contf` : Whether to use a filled contour plot (default: false).
-- `levels` : Number of contour levels (default: 40).
-- `labelsizes` : Size of the axis labels (default: (23, 23)).
-- `ticksizes` : Size of the axis ticks (default: (14, 14)).
-- `titlesize` : Size of the title (default: 17).
-- `titlefont` : Font of the title (default: :bold).
-- `legendlabelsize` : Size of the legend label (default : 12)
-- `gap` : The gap between the contour plot and the distribution plots (default : 0)
-- `extend_grid` : Whether to extend the gridlines to the plots on the sides (default : false)
+- `dims` : Dimensions of each plot (default: `(400, 400)`).
+- `title` : Title of the plot (default: `""`).
+- `colormap` : Color map of the plot (default: `:viridis`).
+- `contf` : Whether to use a filled contour plot (default : `false`).
+- `levels` : Number of contour levels (default: `40`).
+- `labelsizes` : Size of the axis labels (default: `(23, 23)`).
+- `ticksizes` : Size of the axis ticks (default: `(14, 14)`).
+- `titlesize` : Size of the title (default: `17`).
+- `titlefont` : Font of the title (default: `:bold`).
+- `legendlabelsize` : Size of the legend label (default: `12`)
+- `gap` : The gap between the contour plot and the distribution plots (default: `0`)
+- `extend_grid` : Whether to extend the gridlines to the plots on the sides (default: `false`)
+- `legendposition` : Where to put the legend (default: `:lt` )
 """
 function Makie.plot(
     res_mat::AbstractVecOrMat{NMRInversions.inv_out_2D}; dims = (400,400),
@@ -54,22 +55,23 @@ The arguments are:
 - `res` : The `inv_out_2D` structure containing the fit results.
 
 Keyword (optional) arguments:
-- `title` : Title of the plot (default: "").
-- `colormap` : Color map of the plot (default: :viridis).
-- `contf` : Whether to use a filled contour plot (default: false).
-- `levels` : Number of contour levels (default: 40).
-- `labelsizes` : Size of the axis labels (default: (23, 23)).
-- `ticksizes` : Size of the axis ticks (default: (14, 14)).
-- `titlesize` : Size of the title (default: 17).
-- `titlefont` : Font of the title (default: :bold).
-- `legendlabelsize` : Size of the legend label (default : 12)
-- `gap` : The gap between the contour plot and the distribution plots (default : 0)
-- `extend_grid` : Whether to extend the gridlines to the plots on the sides (default : false)
+- `title` : Title of the plot (default : `""`).
+- `colormap` : Color map of the plot (default: `:viridis`).
+- `contf` : Whether to use a filled contour plot (default : `false`).
+- `levels` : Number of contour levels (default: `40`).
+- `labelsizes` : Size of the axis labels (default: `(23, 23)`).
+- `ticksizes` : Size of the axis ticks (default: `(14, 14)`).
+- `titlesize` : Size of the title (default: `17`).
+- `titlefont` : Font of the title (default: `:bold`).
+- `legendlabelsize` : Size of the legend label (default: `12`)
+- `gap` : The gap between the contour plot and the distribution plots (default: `0`)
+- `extend_grid` : Whether to extend the gridlines to the plots on the sides (default: `false`)
+- `legendposition` : Where to put the legend (default: `:lt` )
 """
 function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInversions.inv_out_2D;
                      title=res.title, colormap=:viridis, contf=false, levels = 40, 
                      labelsizes = (23, 23), ticksizes = (15, 15), titlesize = 17, titlefont = :bold ,
-                     legendlabelsize = 12, gap = 0, extend_grid = false,
+                     legendlabelsize = 12, gap = 0, extend_grid = false, legendposition = :lt,
                      )
 
     seq = res.seq
@@ -150,11 +152,11 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
     Makie.deactivate_interaction!(axright, :rectanglezoom) # Disable zoom
     Makie.deactivate_interaction!(axtop, :rectanglezoom) # Disable zoom
 
-    draw_on_axes(axmain, axtop, axright, res, colormap, contf, levels, legendlabelsize)
+    draw_on_axes(axmain, axtop, axright, res, colormap, contf, levels, legendlabelsize, legendposition)
 end
 
 
-function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendlabelsize)
+function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendlabelsize, legendposition)
 
     empty!(axmain)
     empty!(axtop)
@@ -180,6 +182,9 @@ function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendl
 
     wa_indir, wa_dir, volumes = weighted_averages(res, silent = true)
 
+    markers = collect('a':'z')
+    colors = cgrad(:tab10)
+
     for (i, polygon) in enumerate(res.selections)
 
         # Selected points only
@@ -200,12 +205,12 @@ function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendl
 
         end
 
-        scatter!(axmain, xc, yc, markersize=15,
-                 marker=collect('a':'z')[i],
-                 colormap=:tab10, colorrange=(1, 10),
-                 color=i,
-                 glowcolor=:white, glowwidth=4,
-                 label=lbl)
+        scatter!(
+            axmain, xc, yc, markersize=15,
+            marker=markers[i], color = colors[i],
+            label=Makie.rich(lbl, color = colors[i]),
+            glowcolor=:white, glowwidth=4,
+        )
     end
 
     if res.seq == IRCPMG
@@ -213,7 +218,7 @@ function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendl
     end
 
     if !isempty(res.selections)
-        axislegend(axmain, position=:lt,
+        axislegend(axmain, position=legendposition,
                    framevisible = false,
                    labelsize = legendlabelsize)
     end
@@ -341,7 +346,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
                 delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
                 push!(res.selections, polygon[])
 
-                draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[],levels[], 12)
+                draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[],levels[], 12, :lt)
                 dynamic_plots(axmain, axtop, axright, selection, polygon)
 
                 # Clear for next selection
@@ -372,7 +377,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
             end
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[],levels[],12)
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[],levels[],12,:lt)
             dynamic_plots(axmain, axtop, axright, selection, polygon)
 
             selection[] = Point{2,Float32}[]
@@ -387,7 +392,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
             empty!(res.selections)
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12)
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt)
             dynamic_plots(axmain, axtop, axright, selection, polygon)
 
             selection[] = Point{2,Float32}[]
@@ -416,18 +421,18 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
         end
 
         on(colormenu.selection) do _
-            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12)
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt)
             dynamic_plots(axmain, axtop, axright, selection, polygon)
         end
 
         on(fillcheck.checked) do _
-            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12)
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt)
             dynamic_plots(axmain, axtop, axright, selection, polygon)
         end
 
         on(levelsbox.stored_string) do s
             levels[] = parse(Int, s)
-            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12)
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt)
             dynamic_plots(axmain, axtop, axright, selection, polygon)
         end
 
