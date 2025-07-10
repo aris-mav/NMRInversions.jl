@@ -84,7 +84,7 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     button_save = Button(fig[10,8:10], label = "Save and exit")
 
     log_y = false
-    if res.seq != IR
+    if !any(res.y .<= 0)
         button_yscale = Button(fig[10,6:8], label = "Change y scale")
 
         on(button_yscale.clicks) do _
