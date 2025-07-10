@@ -260,7 +260,7 @@ Run the GUI to plot the results and select peaks you want to label.
 function Makie.plot(res::NMRInversions.inv_out_2D)
     # begin
     gui = Figure(size=(900, 500))
-    plot!(gui[2:10, 1:9], res)
+    plot!(gui[2:10, 1:9], res, title = "")
 
     axmain = gui.content[1]
     axtop = gui.content[2]
