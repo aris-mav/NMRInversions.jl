@@ -171,10 +171,10 @@ function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendl
         contourf!(axmain, x, y, z, colormap=clmap, levels=levels)
     else
         contour!(axmain, x, y, z, colormap=clmap, levels=levels)
+        
     end
     lines!(axtop, x, vec(sum(z, dims=2)), colormap=clmap, colorrange=(1, 10), color=5, alpha=0.8)
     lines!(axright, vec(sum(z, dims=1)), y, colormap=clmap, colorrange=(1, 10), color=5, alpha=0.8)
-
 
     #Create a matrix for all the discrete points in the space
     points = [[i, j] for i in x, j in y]
@@ -191,9 +191,6 @@ function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendl
         mask .= [PolygonOps.inpolygon(p, polygon; in=1, on=1, out=0) for p in points]
         spo = mask .* z
 
-        #draw current polygon
-        lines!(axmain, Point2f.(polygon), linestyle=:dash, colormap=:tab10, colorrange=(1, 10), color=i, alpha=0.9)
-
         # Plot peak label
         xc = vec(sum(spo, dims=2)) ⋅ x / sum(spo)
         yc = vec(sum(spo, dims=1)) ⋅ y / sum(spo)
@@ -204,6 +201,13 @@ function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendl
             "D = $(round(wa_indir[i], sigdigits=3)), T₂ = $(round(wa_dir[i], sigdigits=3))\nVolume = $(round(volumes[i] *100 ,digits = 1))%"
 
         end
+
+        #=contour!(=#
+        #=    axmain, x, y, spo, color = colors[i],=#
+        #=    levels = range(minimum(z),maximum(z),levels+1)[2:end]=#
+        #=)=#
+
+        lines!(axmain, Point2f.(polygon), linestyle=:dash, colormap=:tab10, colorrange=(1, 10), color=i, alpha=0.9)
 
         scatter!(
             axmain, xc, yc, markersize=15,
