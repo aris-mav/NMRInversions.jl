@@ -296,8 +296,8 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     Label(gui[7, 10:13], "Fill contour:", halign=:right)
     fillcheck = Checkbox(gui[7, 14], checked=false)
 
-    Label(gui[9,10:19],"α = $(round(res.alpha))")
-    Label(gui[10,10:19],"SNR = $(round(res.SNR))")
+    Label(gui[9,10:19],"α = $(round(res.alpha, sigdigits=3))")
+    Label(gui[10,10:19],"SNR = $(round(res.SNR, digits=1))")
 
     z = res.F' .* res.filter'
     x = res.X_indir
