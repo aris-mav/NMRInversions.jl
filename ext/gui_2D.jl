@@ -1,5 +1,7 @@
 ## Plots for 2D inversions
 
+using GLMakie: coordinates
+
 """
     plot(results::AbstractVecOrMat{inv_out_2D}; kwargs...)
 
@@ -254,10 +256,14 @@ function plot_diagonal(ax,x,y)
     )
 end
 
-function dynamic_plots(axmain, axtop, axright, selection, polygon)
+function dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
 
     scatter!(axmain, selection, colormap=:tab10, colorrange=(1, 10), color=8)
     lines!(axmain, polygon, colormap=:tab10, colorrange=(1, 10), color=8)
+    vlines!(axmain, xcoord, color = :black, linewidth = 0.5)
+    vlines!(axtop, xcoord, color = :black, linewidth = 0.5)
+    hlines!(axmain, ycoord, color = :black, linewidth = 0.5)
+    hlines!(axright, ycoord, color = :black, linewidth = 0.5)
 
 end
 
@@ -277,8 +283,11 @@ end
 Run the GUI to plot the results and select peaks you want to label.
 """
 function Makie.plot(res::NMRInversions.inv_out_2D)
-    # begin
+
+    GLMakie.activate!(; title= "2D inversion GUI")
+
     gui = Figure(size=(900, 500))
+
     plot!(gui[2:10, 1:9], res, title = "")
 
     axmain = gui.content[1]
@@ -316,7 +325,29 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     Label(gui[8, 10:13], "Band plots:", halign=:right)
     bandcheck = Checkbox(gui[8, 14], checked=true)
 
-    Label(gui[10,10:19],"α = $(round(res.alpha, sigdigits=3)) , SNR = $(round(res.SNR, digits=1))")
+    Label(gui[9,10:19],"α = $(round(res.alpha, sigdigits=3)) , SNR = $(round(res.SNR, digits=1))")
+
+    xcoord = Observable(0.0)
+    ycoord = Observable(0.0)
+    coord_label = Observable("")
+
+    on(events(gui).mouseposition) do _
+        if is_mouseinside(axmain)
+            xcoord[] = (exp10.(mouseposition(axmain)[1]))
+            ycoord[] = (exp10.(mouseposition(axmain)[2]))
+            coord_label[] = "x = $(round(xcoord[],sigdigits=2)) , y = $(round(ycoord[],sigdigits=2))"
+        end
+        if is_mouseinside(axtop)
+            xcoord[] = (exp10.(mouseposition(axtop)[1]))
+            coord_label[] = "x = $(round(xcoord[],sigdigits=2)) , y = $(round(ycoord[],sigdigits=2))"
+        end
+        if is_mouseinside(axright)
+            ycoord[] = (exp10.(mouseposition(axright)[2]))
+            coord_label[] = "x = $(round(xcoord[],sigdigits=2)) , y = $(round(ycoord[],sigdigits=2))"
+        end
+    end
+
+    Label(gui[10,10:19], coord_label)
 
     z = res.F' .* res.filter'
     x = res.X_indir
@@ -338,8 +369,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     polygon = Observable(Point{2,Float32}[])
 
     # Dynamic plots
-    dynamic_plots(axmain, axtop, axright, selection, polygon)
-
+    dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
 
     begin ## SELECTING POINTS
 
@@ -357,6 +387,11 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
             end
         end
 
+        #=on(events(gui).mouseposition) do _=#
+        #=    if is_mouseinside(axmain)=#
+        #=    end=#
+        #=end=#
+
     end ## SELECTING POINTS
 
 
@@ -372,7 +407,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
                 push!(res.selections, polygon[])
 
                 draw_on_axes(axmain, axtop, axright, res, Symbol(colormenu.selection[]), fillcheck.checked[],levels[], 12, :lt, bandcheck.checked[])
-                dynamic_plots(axmain, axtop, axright, selection, polygon)
+                dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
 
                 # Clear for next selection
                 selection[] = Point{2,Float32}[]
@@ -403,7 +438,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[],levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon)
+            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
 
             selection[] = Point{2,Float32}[]
             polygon[] = Point{2,Float32}[]
@@ -416,7 +451,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon)
+            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
 
             selection[] = Point{2,Float32}[]
             polygon[] = Point{2,Float32}[]
@@ -428,7 +463,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon)
+            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
 
             selection[] = Point{2,Float32}[]
             polygon[] = Point{2,Float32}[]
@@ -458,25 +493,25 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
         on(colormenu.selection) do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon)
+            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
         end
 
         on(fillcheck.checked)  do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon)
+            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
         end
 
         on(bandcheck.checked)  do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon)
+            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
         end
 
         on(levelsbox.stored_string) do s
             levels[] = parse(Int, s)
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon)
+            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
         end
 
     end ## BUTTON CLICKS
