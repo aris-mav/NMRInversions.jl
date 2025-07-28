@@ -89,11 +89,14 @@ Then you can use the following options:
 - `Label current selection` will highlight the selected region 
   and add some text in the plot with the weighed average ``T_2``
   of that region.
-- `Filter-out current selection` will remove the selected region 
+- `Filter-out selection` will remove the selected region 
   from the distribution, and it will update the fit and the residuals 
   accordingly on the plot.
 - `Reset selections` gets you back where you started, removes any 
   selections and brings back filtered-out regions.
+-  `Change y scale` will change the 1st plot from linear scale to log 
+   scale and back. Only works if there are no negative values (so it will 
+   not work for inversion recovery data).
 - `Save and exit` will bring up a window so that you can save your 
    plot as a .png (without the buttons and the slider).
 
@@ -117,11 +120,11 @@ the plot which enclose a region of interest. Then, we can :
 - `Label current selection` will highlight the selected polygon 
   with a dashed line and add some text in the plot with the weighed 
   average ``T_1/T_2`` of that region, as well as the volume fraction of it.
-- `Filter-out unselected` will remove everything outside the polygon.
+- `Filter-out selection` will remove everything inside the selection polygon.
 - `Cancel current selection` will discard the current polygon in 
    case you do not like what you selected.
-- `Reset everything` will get you back to the original state, 
-   removing selections and restoring filtered-out regions.
+- `Reset selection` will remove all the selections you made.
+- `Reset filter` will undo anything you filtered-out.
 - `Save and exit` will bring up a window so that you can save your 
    plot as a .png (without the buttons).
 
