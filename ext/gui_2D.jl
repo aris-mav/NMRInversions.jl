@@ -24,6 +24,7 @@ Keyword (optional) arguments:
 - `gap` : The gap between the contour plot and the distribution plots (default: `0`)
 - `extend_grid` : Whether to extend the gridlines to the plots on the sides (default: `false`)
 - `legendposition` : Where to put the legend (default: `:lt` )
+- `bandplots` : Whether to use band plots to highlight the selections in the top and right distributions (default: `true`)
 """
 function Makie.plot(
     res_mat::AbstractVecOrMat{NMRInversions.inv_out_2D}; dims = (400,400),
@@ -55,7 +56,7 @@ The arguments are:
 - `res` : The `inv_out_2D` structure containing the fit results.
 
 Keyword (optional) arguments:
-- `title` : Title of the plot (default : `""`).
+- `title` : Title of the plot (default: `""`).
 - `colormap` : Color map of the plot (default: `:viridis`).
 - `contf` : Whether to use a filled contour plot (default : `false`).
 - `levels` : Number of contour levels (default: `40`).
@@ -67,11 +68,13 @@ Keyword (optional) arguments:
 - `gap` : The gap between the contour plot and the distribution plots (default: `0`)
 - `extend_grid` : Whether to extend the gridlines to the plots on the sides (default: `false`)
 - `legendposition` : Where to put the legend (default: `:lt` )
+- `bandplots` : Whether to use band plots to highlight the selections in the top and right distributions (default: `true`)
 """
 function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInversions.inv_out_2D;
                      title=res.title, colormap=:viridis, contf=false, levels = 40, 
                      labelsizes = (23, 23), ticksizes = (15, 15), titlesize = 17, titlefont = :bold ,
                      legendlabelsize = 12, gap = 0, extend_grid = false, legendposition = :lt,
+                     bandplots = true,
                      )
 
     seq = res.seq
@@ -152,11 +155,14 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
     Makie.deactivate_interaction!(axright, :rectanglezoom) # Disable zoom
     Makie.deactivate_interaction!(axtop, :rectanglezoom) # Disable zoom
 
-    draw_on_axes(axmain, axtop, axright, res, colormap, contf, levels, legendlabelsize, legendposition)
+    draw_on_axes(axmain, axtop, axright, res, colormap, contf, levels, legendlabelsize, legendposition, bandplots)
 end
 
 
-function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendlabelsize, legendposition)
+function draw_on_axes(
+    axmain, axtop, axright, res, 
+    clmap, contf, levels, legendlabelsize, 
+    legendposition, bandplots)
 
     empty!(axmain)
     empty!(axtop)
@@ -173,8 +179,11 @@ function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendl
         contour!(axmain, x, y, z, colormap=clmap, levels=levels)
         
     end
-    lines!(axtop, x, vec(sum(z, dims=2)), colormap=clmap, colorrange=(1, 10), color=5, alpha=0.8)
-    lines!(axright, vec(sum(z, dims=1)), y, colormap=clmap, colorrange=(1, 10), color=5, alpha=0.8)
+
+    linecolor = :black
+
+    lines!(axtop, x, vec(sum(z, dims=2)), color = linecolor, alpha=0.8, linewidth =1)
+    lines!(axright, vec(sum(z, dims=1)), y, color = linecolor, alpha=0.8, linewidth =1)
 
     #Create a matrix for all the discrete points in the space
     points = [[i, j] for i in x, j in y]
@@ -191,9 +200,12 @@ function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendl
         mask .= [PolygonOps.inpolygon(p, polygon; in=1, on=1, out=0) for p in points]
         spo = mask .* z
 
+        xdist = vec(sum(spo, dims=2))
+        ydist = vec(sum(spo, dims=1))
+
         # Plot peak label
-        xc = vec(sum(spo, dims=2)) ⋅ x / sum(spo)
-        yc = vec(sum(spo, dims=1)) ⋅ y / sum(spo)
+        xc = xdist ⋅ x / sum(spo)
+        yc = ydist ⋅ y / sum(spo)
 
         lbl = if res.seq == IRCPMG
             "T₁/T₂ = $(round(wa_indir[i]/wa_dir[i] , digits=1)) \nVolume = $(round(volumes[i] *100 ,digits = 1))%"
@@ -202,12 +214,15 @@ function draw_on_axes(axmain, axtop, axright, res, clmap, contf, levels, legendl
 
         end
 
-        #=contour!(=#
-        #=    axmain, x, y, spo, color = colors[i],=#
-        #=    levels = range(minimum(z),maximum(z),levels+1)[2:end]=#
-        #=)=#
+        alphas = 0.83
 
-        lines!(axmain, Point2f.(polygon), linestyle=:dash, colormap=:tab10, colorrange=(1, 10), color=i, alpha=0.9)
+        if bandplots == true
+            band!(axtop, x, zeros(length(x)), xdist, color = colors[i], alpha = alphas-0.2)
+            band!(axright, y, zeros(length(y)), ydist, color = colors[i], alpha = alphas-0.2,
+                  direction = :y)
+        end 
+
+        lines!(axmain, Point2f.(polygon), linestyle=:dash, color = colors[i], alpha=alphas)
 
         scatter!(
             axmain, xc, yc, markersize=15,
@@ -279,10 +294,12 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     
     # Buttons
     labelb = Button(gui[1, 10:15]; label="Label current selection")
-    clearb = Button(gui[2, 10:15]; label="Cancel current selection")
-    resetb = Button(gui[1, 15:19]; label="Reset everything")
-    filterb = Button(gui[2, 15:19]; label="Filter-out unselected")
-    saveb = Button(gui[3, 10:19]; label="Save and exit")
+    filterb = Button(gui[2, 10:15]; label="Filter-out selection")
+    clearb = Button(gui[3, 10:15]; label="Cancel current selection")
+
+    reset_sel_b = Button(gui[1, 15:19]; label="Reset selections")
+    reset_filter_b = Button(gui[2, 15:19]; label="Reset filter")
+    saveb = Button(gui[3, 15:19]; label="Save and exit")
 
     Label(gui[5, 10:13], "Colormap:", halign=:right)
     colormenu = Menu(gui[5, 14:18], 
@@ -296,8 +313,10 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     Label(gui[7, 10:13], "Fill contour:", halign=:right)
     fillcheck = Checkbox(gui[7, 14], checked=false)
 
-    Label(gui[9,10:19],"α = $(round(res.alpha, sigdigits=3))")
-    Label(gui[10,10:19],"SNR = $(round(res.SNR, digits=1))")
+    Label(gui[8, 10:13], "Band plots:", halign=:right)
+    bandcheck = Checkbox(gui[8, 14], checked=true)
+
+    Label(gui[10,10:19],"α = $(round(res.alpha, sigdigits=3)) , SNR = $(round(res.SNR, digits=1))")
 
     z = res.F' .* res.filter'
     x = res.X_indir
@@ -352,7 +371,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
                 delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
                 push!(res.selections, polygon[])
 
-                draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[],levels[], 12, :lt)
+                draw_on_axes(axmain, axtop, axright, res, Symbol(colormenu.selection[]), fillcheck.checked[],levels[], 12, :lt, bandcheck.checked[])
                 dynamic_plots(axmain, axtop, axright, selection, polygon)
 
                 # Clear for next selection
@@ -379,11 +398,11 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
                 @warn("You need to make a selection.")
             else
 
-                res.filter .= res.filter .* [PolygonOps.inpolygon(p, polygon[]; in=1, on=1, out=0) for p in points]'
+                res.filter .= res.filter .* [PolygonOps.inpolygon(p, polygon[]; in=0, on=0, out=1) for p in points]'
             end
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[],levels[],12,:lt)
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[],levels[],12,:lt, bandcheck.checked[])
             dynamic_plots(axmain, axtop, axright, selection, polygon)
 
             selection[] = Point{2,Float32}[]
@@ -392,13 +411,23 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
         end
 
-
-        on(resetb.clicks) do _
-            res.filter .= ones(size(res.F))
+        on(reset_sel_b.clicks) do _
             empty!(res.selections)
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt)
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
+            dynamic_plots(axmain, axtop, axright, selection, polygon)
+
+            selection[] = Point{2,Float32}[]
+            polygon[] = Point{2,Float32}[]
+            mask[] = zeros(size(points))
+        end
+
+        on(reset_filter_b.clicks) do _
+            res.filter .= ones(size(res.F))
+
+            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
             dynamic_plots(axmain, axtop, axright, selection, polygon)
 
             selection[] = Point{2,Float32}[]
@@ -409,7 +438,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
         on(saveb.clicks) do _
 
             # permutedims so that res is a matrix
-            f = plot(permutedims([res]), levels = levels[], colormap = colormenu.selection[], contf = fillcheck.checked[]) 
+            f = plot(permutedims([res]), levels = levels[], colormap = Symbol(colormenu.selection[]), contf = fillcheck.checked[], bandplots=bandcheck) 
             savedir = NMRInversions.save_file(res.title, filterlist = "png")
 
             if savedir == ""
@@ -427,23 +456,30 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
         end
 
         on(colormenu.selection) do _
-            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt)
+            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
             dynamic_plots(axmain, axtop, axright, selection, polygon)
         end
 
-        on(fillcheck.checked) do _
-            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt)
+        on(fillcheck.checked)  do _
+            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
+            dynamic_plots(axmain, axtop, axright, selection, polygon)
+        end
+
+        on(bandcheck.checked)  do _
+            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
             dynamic_plots(axmain, axtop, axright, selection, polygon)
         end
 
         on(levelsbox.stored_string) do s
             levels[] = parse(Int, s)
-            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt)
+            draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
             dynamic_plots(axmain, axtop, axright, selection, polygon)
         end
 
     end ## BUTTON CLICKS
-    
 
 
     gui
