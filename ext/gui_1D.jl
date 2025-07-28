@@ -53,6 +53,7 @@ Run the GUI to plot the 1D inversion results and select peaks you want to label.
 """
 function Makie.plot(res::NMRInversions.inv_out_1D)
 
+    GLMakie.activate!(;title= "1D inversion GUI")
     fig = plot([res], selections = true)
 
     slider = IntervalSlider(fig[6,6:10], range = [1:length(res.X)...], startvalues = (1, length(res.X)))
