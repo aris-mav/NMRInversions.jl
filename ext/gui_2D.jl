@@ -176,10 +176,17 @@ function draw_on_axes(
 
     # Plots
     if contf == true
+        reset_limits!(axmain)
+        l = axmain.finallimits[]
+        heatmap!(
+            axmain, 
+            logrange(l.origin[1],l.widths[1],length(x)), 
+            logrange(l.origin[2],l.widths[2],length(y)), 
+            fill(cgrad(Symbol(clmap))[1],size(z)...), 
+        )
         contourf!(axmain, x, y, z, colormap=clmap, levels=levels)
     else
         contour!(axmain, x, y, z, colormap=clmap, levels=levels)
-        
     end
 
     linecolor = :black
@@ -406,12 +413,12 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
         on(events(gui).mouseposition) do _
             if is_mouseinside(axmain)
-                if size(selection[], 1) > 2
+                if size(selection[], 1) > 1
                     visual_polygon[] = vcat(selection[], [Point{2,Float32}(xcoord[],ycoord[])], [selection[][1]])
                 end
             end
             if !is_mouseinside(axmain)
-                if size(selection[], 1) > 2
+                if size(selection[], 1) > 1
                     visual_polygon[] =  polygon[] 
                 end
             end
@@ -503,7 +510,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
         on(saveb.clicks) do _
 
             # permutedims so that res is a matrix
-            f = plot(permutedims([res]), levels = levels[], colormap = Symbol(colormenu.selection[]), contf = fillcheck.checked[], bandplots=bandcheck) 
+            f = plot(permutedims([res]), levels = levels[], colormap = Symbol(colormenu.selection[]), contf = fillcheck.checked[], bandplots=bandcheck.checked[]) 
             savedir = NMRInversions.save_file(res.title, filterlist = "png")
 
             if savedir == ""
