@@ -256,26 +256,28 @@ function plot_diagonal(ax,x,y)
     )
 end
 
-function dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
+function dynamic_plots(res, axmain, axtop, axright, selection, poly, xcoord, ycoord)
 
-    scatter!(axmain, selection, colormap=:tab10, colorrange=(1, 10), color=8)
-    lines!(axmain, polygon, colormap=:tab10, colorrange=(1, 10), color=8)
-    vlines!(axmain, xcoord, color = :black, linewidth = 0.5)
-    vlines!(axtop, xcoord, color = :black, linewidth = 0.5)
-    hlines!(axmain, ycoord, color = :black, linewidth = 0.5)
-    hlines!(axright, ycoord, color = :black, linewidth = 0.5)
+    color = cgrad(:tab10)[length(res.selections)+1]
+    scatter!(axmain, selection, color= color)
+    lines!(axmain, poly, color= color)
 
-end
-
-function draw_3d(ax3d, res, sp)
-
-    surface!(ax3d, res.F' .* res.filter', colormap=:tempo)
-
-    surface!(ax3d, spo, colormap=:blues,
-        colorrange=(minimum(filter(x -> x != 0, vec(z))), maximum(z)),
-        lowclip=:transparent)
+    vlines!(axmain, xcoord, color = :black, linewidth = 0.5, alpha = 0.5)
+    vlines!(axtop, xcoord, color = :black, linewidth = 0.5, alpha = 0.5)
+    hlines!(axmain, ycoord, color = :black, linewidth = 0.5, alpha = 0.5)
+    hlines!(axright, ycoord, color = :black, linewidth = 0.5, alpha = 0.5)
 
 end
+
+#=function draw_3d(ax3d, res, sp)=#
+#==#
+#=    surface!(ax3d, res.F' .* res.filter', colormap=:tempo)=#
+#==#
+#=    surface!(ax3d, spo, colormap=:blues,=#
+#=        colorrange=(minimum(filter(x -> x != 0, vec(z))), maximum(z)),=#
+#=        lowclip=:transparent)=#
+#==#
+#=end=#
 
 
 """
@@ -331,19 +333,33 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     ycoord = Observable(0.0)
     coord_label = Observable("")
 
+    xlbl = if res.seq == IRCPMG
+        "T₁"
+    elseif res.seq == PFGCPMG
+        "D"
+    end
+
+    ylbl = if res.seq in [IRCPMG, PFGCPMG]
+        "T₂"
+    end
+
     on(events(gui).mouseposition) do _
         if is_mouseinside(axmain)
             xcoord[] = (exp10.(mouseposition(axmain)[1]))
             ycoord[] = (exp10.(mouseposition(axmain)[2]))
-            coord_label[] = "x = $(round(xcoord[],sigdigits=2)) , y = $(round(ycoord[],sigdigits=2))"
-        end
-        if is_mouseinside(axtop)
+            coord_label[] = "$xlbl = $(round(xcoord[],sigdigits=2)) , $ylbl = $(round(ycoord[],sigdigits=2))"
+        elseif is_mouseinside(axtop)
             xcoord[] = (exp10.(mouseposition(axtop)[1]))
-            coord_label[] = "x = $(round(xcoord[],sigdigits=2)) , y = $(round(ycoord[],sigdigits=2))"
-        end
-        if is_mouseinside(axright)
+            ycoord[] = 0.0
+            coord_label[] = "$xlbl = $(round(xcoord[],sigdigits=2))"
+        elseif is_mouseinside(axright)
+            xcoord[] = 0.0
             ycoord[] = (exp10.(mouseposition(axright)[2]))
-            coord_label[] = "x = $(round(xcoord[],sigdigits=2)) , y = $(round(ycoord[],sigdigits=2))"
+            coord_label[] = "$ylbl = $(round(ycoord[],sigdigits=2))"
+        else
+            xcoord[] = 0.0
+            ycoord[] = 0.0
+            coord_label[] = "Hover mouse over plot to view coordinates."
         end
     end
 
@@ -367,9 +383,10 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     # Initialise Selection vectors
     selection = Observable(Point{2,Float32}[])
     polygon = Observable(Point{2,Float32}[])
+    visual_polygon = Observable(Point{2,Float32}[])
 
     # Dynamic plots
-    dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
+    dynamic_plots(res,axmain, axtop, axright, selection, visual_polygon, xcoord, ycoord)
 
     begin ## SELECTING POINTS
 
@@ -387,10 +404,18 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
             end
         end
 
-        #=on(events(gui).mouseposition) do _=#
-        #=    if is_mouseinside(axmain)=#
-        #=    end=#
-        #=end=#
+        on(events(gui).mouseposition) do _
+            if is_mouseinside(axmain)
+                if size(selection[], 1) > 2
+                    visual_polygon[] = vcat(selection[], [Point{2,Float32}(xcoord[],ycoord[])], [selection[][1]])
+                end
+            end
+            if !is_mouseinside(axmain)
+                if size(selection[], 1) > 2
+                    visual_polygon[] =  polygon[] 
+                end
+            end
+        end
 
     end ## SELECTING POINTS
 
@@ -407,11 +432,12 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
                 push!(res.selections, polygon[])
 
                 draw_on_axes(axmain, axtop, axright, res, Symbol(colormenu.selection[]), fillcheck.checked[],levels[], 12, :lt, bandcheck.checked[])
-                dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
+                dynamic_plots(res, axmain, axtop, axright, selection, visual_polygon, xcoord, ycoord)
 
                 # Clear for next selection
                 selection[] = Point{2,Float32}[]
                 polygon[] = Point{2,Float32}[]
+                visual_polygon[] = Point{2,Float32}[]
                 mask[] = zeros(size(points))
 
                 reset_limits!(axmain)
@@ -423,6 +449,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
             selection[] = Point{2,Float32}[]
             polygon[] = Point{2,Float32}[]
+            visual_polygon[] = Point{2,Float32}[]
             mask[] = zeros(size(points))
 
         end
@@ -438,10 +465,11 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[],levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
+            dynamic_plots(res, axmain, axtop, axright, selection, visual_polygon, xcoord, ycoord)
 
             selection[] = Point{2,Float32}[]
             polygon[] = Point{2,Float32}[]
+            visual_polygon[] = Point{2,Float32}[]
             mask[] = zeros(size(points))
 
         end
@@ -451,10 +479,11 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
+            dynamic_plots(res, axmain, axtop, axright, selection, visual_polygon, xcoord, ycoord)
 
             selection[] = Point{2,Float32}[]
             polygon[] = Point{2,Float32}[]
+            visual_polygon[] = Point{2,Float32}[]
             mask[] = zeros(size(points))
         end
 
@@ -463,10 +492,11 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
+            dynamic_plots(res, axmain, axtop, axright, selection, visual_polygon, xcoord, ycoord)
 
             selection[] = Point{2,Float32}[]
             polygon[] = Point{2,Float32}[]
+            visual_polygon[] = Point{2,Float32}[]
             mask[] = zeros(size(points))
         end
 
@@ -493,25 +523,25 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
         on(colormenu.selection) do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
+            dynamic_plots(res, axmain, axtop, axright, selection, visual_polygon, xcoord, ycoord)
         end
 
         on(fillcheck.checked)  do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
+            dynamic_plots(res, axmain, axtop, axright, selection, visual_polygon, xcoord, ycoord)
         end
 
         on(bandcheck.checked)  do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
+            dynamic_plots(res, axmain, axtop, axright, selection, visual_polygon, xcoord, ycoord)
         end
 
         on(levelsbox.stored_string) do s
             levels[] = parse(Int, s)
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
-            dynamic_plots(axmain, axtop, axright, selection, polygon, xcoord, ycoord)
+            dynamic_plots(res, axmain, axtop, axright, selection, visual_polygon, xcoord, ycoord)
         end
 
     end ## BUTTON CLICKS
