@@ -339,6 +339,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     xcoord = Observable(0.0)
     ycoord = Observable(0.0)
     coord_label = Observable("")
+    coord_label[] = "init string, necessary in GLmakie 0.13 for whatever reason, do not remove"
 
     xlbl = if res.seq == IRCPMG
         "T₁"
