@@ -13,10 +13,12 @@ The output is an `inv_out_1D` structure.
  Optional (keyword) arguments:
 - `lims=(a,b,c)` will set the "limits" of the output X, 
 so that it starts from 10^a, ends in 10^b and consists of c 
-logarithmically spaced values 
-(default is (-5, 1, 128) for relaxation and (-10, -7, 128) for diffusion). 
+logarithmically spaced values.
 Alternatively, a vector of values can be used directly, if more freedom is needed 
 (e.g. `lims=exp10.(range(-4, 1, 128))`).
+By default, 128 points are used, logarithmically spaced between the first value 
+in x divided by 7, and the final value in x multiplied by 7.
+
 - `alpha` determines the smoothing term. Use a real number for a fixed alpha.  
 No selection will lead to automatically determining alpha through the 
 default method, which is `gcv()`.
@@ -41,9 +43,9 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
         X = lims
     elseif isa(lims, Type{<:pulse_sequence1D})
         if lims == PFG
-            X = exp10.(range(-11, -8, 128))
+            X = collect(logrange(minimum(x)*7 , maximum(x)*50 , 128)) * 1e-9
         else
-            X = exp10.(range(-5, 1, 128))
+            X = collect(logrange(minimum(x)/7 , maximum(x)*7 , 128)) 
         end
     end
 
@@ -97,7 +99,6 @@ function invert(data::input1D; kwargs...)
 end
 
 
-
 """
 # Inversion for 2D pulse sequences:
     invert(seq, x_direct, x_indirect, Data; lims1, lims2, alpha, solver, normalize)
@@ -115,11 +116,15 @@ The output is an `inv_out_2D` structure.
  Optional (keyword) arguments:
 - `lims1` determines the output "range" of the inversion in the direct dimension (e.g. T₂ times in IRCPMG)
 - `lims2` determines the output "range" of the inversion in the indirect dimension (e.g. T₁ times in IRCPMG)
- In both cases above, you can use a tuple specifying the limits of the range, or a vector of values, same as the `lims` argument in the 1D inversion.
+
+In both cases above, you can use a tuple specifying the limits of the range, 
+or a vector of values, same as the `lims` argument in the 1D inversion function.
+By default, 64 points are used, logarithmically spaced between the first value 
+in x divided by 7, and the final value in x multiplied by 7 (for both direct and indirect x).
 
 - `alpha` determines the smoothing term. Use a real number for a fixed alpha.  No selection will lead to automatically determining alpha through the default method, which is `gcv`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.
-- `normalize` will normalize `Data` to 1 at the max value of `Data`. Default is `true`.
+- `normalize` will normalize `Data` so that its maximum value is 1. Default is `true`.
 
 """
 function invert(
@@ -135,7 +140,7 @@ function invert(
     end
 
     if isa(lims1, Type{<:pulse_sequence2D})
-        X_direct = exp10.(range(-5,1,100))
+        X_direct = collect(logrange(minimum(x_direct)/7 , maximum(x_direct)*7 , 64)) 
     elseif isa(lims1, Tuple)
         X_direct = exp10.(range(lims1...))
     elseif isa(lims1, AbstractVector)
@@ -144,9 +149,9 @@ function invert(
 
     if isa(lims2, Type{<:pulse_sequence2D})
         if lims2 == IRCPMG
-            X_indirect = exp10.(range(-5,1,100))
+            X_indirect = collect(logrange(minimum(x_indirect)/7, maximum(x_indirect)*7, 64)) 
         elseif lims2 == PFGCPMG
-            X_indirect = exp10.(range(-11, -8, 128))
+            X_indirect = 1e-18 .* collect(logrange(minimum(x_indirect)*7, maximum(x_indirect)*50, 64)) 
         end
     elseif isa(lims2, Tuple)
         X_indirect = exp10.(range(lims2...))

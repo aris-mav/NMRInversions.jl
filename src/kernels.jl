@@ -82,11 +82,6 @@ function create_kernel(seq::Type{<:pulse_sequence2D},
     G = real.(Data)
     SNR = calc_snr(Data)
 
-    if SNR < 1000
-        @warn("The SNR is $(round(SNR, digits=1)), which is below the recommended value of 1000. 
-            Consider running experiment with more scans.")
-    end
-
     # Generate Kernels
     if seq == IRCPMG
         K_dir = create_kernel(CPMG, x_direct, X_direct)
