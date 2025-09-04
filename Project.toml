@@ -35,7 +35,19 @@ RipQP = "0.6, 0.7"
 julia = "1.9.0"
 
 [extras]
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+NMRInversions = "55c20db2-0166-4687-95c3-62a9c7afb29b"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = [
+    "Test",
+    "GLMakie",
+    "NMRInversions", 
+    "Random", 
+    "SparseArrays",
+    "LinearAlgebra"
+]
