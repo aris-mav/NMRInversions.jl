@@ -81,7 +81,8 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
 
     button_label = Button(fig[8,6:8], label = "Label selection")
     button_filter = Button(fig[8,8:10], label = "Filter-out selection")
-    button_reset = Button(fig[9,6:10], label = "Reset selections")
+    button_reset_s = Button(fig[9,6:8], label = "Reset selections")
+    button_reset_f = Button(fig[9,8:10], label = "Reset filter")
     button_save = Button(fig[10,8:10], label = "Save and exit")
 
     log_y = false
@@ -120,8 +121,17 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
         vlines!(fig.content[2], int_high, color=:red)
     end
 
-    on(button_reset.clicks) do _
+    on(button_reset_s.clicks) do _
         empty!(res.selections)
+        empty!(fig.content[1])
+        empty!(fig.content[2])
+        empty!(fig.content[3])
+        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res)
+        vlines!(fig.content[2], int_low, color=:red)
+        vlines!(fig.content[2], int_high, color=:red)
+    end
+
+    on(button_reset_f.clicks) do _
         res.filter = ones(length(res.X))
         empty!(fig.content[1])
         empty!(fig.content[2])
