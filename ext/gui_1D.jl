@@ -85,7 +85,7 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     button_save = Button(fig[10,8:10], label = "Save and exit")
 
     log_y = false
-    if !any(res.y .<= 0)
+    if !any(real.(res.y) .<= 0)
         button_yscale = Button(fig[10,6:8], label = "Change y scale")
 
         on(button_yscale.clicks) do _
@@ -146,13 +146,14 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
 
     # apply filter to f and update fitted curve and residuals
     f_prime = res.filter .* res.f
+
     yfit_prime = create_kernel(
         res.seq, res.xfit, (res.seq == PFG ? res.X .* 1e9 : res.X)
     ) * f_prime
 
     r_prime = create_kernel(
         res.seq, res.x, (res.seq == PFG ? res.X .* 1e9 : res.X)
-    ) * f_prime - res.y
+    ) * f_prime - real.(res.y)
 
     i = length(ax2.scene.plots)
 
