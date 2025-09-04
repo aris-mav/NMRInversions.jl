@@ -180,8 +180,8 @@ function draw_on_axes(
         l = axmain.finallimits[]
         heatmap!(
             axmain, 
-            logrange(l.origin[1],l.widths[1],length(x)), 
-            logrange(l.origin[2],l.widths[2],length(y)), 
+            NMRInversions.logrange(l.origin[1],l.widths[1],length(x)), 
+            NMRInversions.logrange(l.origin[2],l.widths[2],length(y)), 
             fill(cgrad(Symbol(clmap))[1],size(z)...), 
         )
         contourf!(axmain, x, y, z, colormap=clmap, levels=levels)

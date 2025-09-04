@@ -305,3 +305,8 @@ function filter_range!(res::inv_out_1D, range)
     res.filter .= res.filter .* scale
 
 end
+
+"defining this here so that package works on julia 1.10"
+function logrange(a,b,c)
+    exp10.(range(log10(a),log10(b),c))
+end

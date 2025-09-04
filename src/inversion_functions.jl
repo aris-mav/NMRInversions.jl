@@ -43,9 +43,9 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
         X = lims
     elseif isa(lims, Type{<:pulse_sequence1D})
         if lims == PFG
-            X = collect(logrange(minimum(x)*7 , maximum(x)*50 , 128)) * 1e-9
+            X = collect(NMRInversions.logrange(minimum(x)*7 , maximum(x)*50 , 128)) * 1e-9
         else
-            X = collect(logrange(minimum(x)/7 , maximum(x)*7 , 128)) 
+            X = collect(NMRInversions.logrange(minimum(x)/7 , maximum(x)*7 , 128)) 
         end
     end
 
@@ -140,7 +140,7 @@ function invert(
     end
 
     if isa(lims1, Type{<:pulse_sequence2D})
-        X_direct = collect(logrange(minimum(x_direct)/7 , maximum(x_direct)*7 , 64)) 
+        X_direct = collect(NMRInversions.logrange(minimum(x_direct)/7 , maximum(x_direct)*7 , 64)) 
     elseif isa(lims1, Tuple)
         X_direct = exp10.(range(lims1...))
     elseif isa(lims1, AbstractVector)
@@ -149,9 +149,9 @@ function invert(
 
     if isa(lims2, Type{<:pulse_sequence2D})
         if lims2 == IRCPMG
-            X_indirect = collect(logrange(minimum(x_indirect)/7, maximum(x_indirect)*7, 64)) 
+            X_indirect = collect(NMRInversions.logrange(minimum(x_indirect)/7, maximum(x_indirect)*7, 64)) 
         elseif lims2 == PFGCPMG
-            X_indirect = 1e-18 .* collect(logrange(minimum(x_indirect)*7, maximum(x_indirect)*50, 64)) 
+            X_indirect = 1e-18 .* collect(NMRInversions.logrange(minimum(x_indirect)*7, maximum(x_indirect)*50, 64)) 
         end
     elseif isa(lims2, Tuple)
         X_indirect = exp10.(range(lims2...))
