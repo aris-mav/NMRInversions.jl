@@ -213,8 +213,8 @@ function weighted_averages(r::inv_out_1D ; silent::Bool = false)
     total_area = sum(distribution)
 
     for (i,s) in enumerate(r.selections)
-        area = sum(distribution[s[1]:s[2]])
-        wa[i] = distribution[s[1]:s[2]]' * r.X[s[1]:s[2]] / area
+        area = sum(distribution[s[1]:s[2]-1])
+        wa[i] = distribution[s[1]:s[2]-1]' * r.X[s[1]:s[2]-1] / area
         areas[i] = area / total_area
 
         lbl = if r.seq in [IR, SR]
