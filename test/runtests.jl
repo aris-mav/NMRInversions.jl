@@ -2,7 +2,10 @@ using Test
 using NMRInversions
 using SparseArrays
 using LinearAlgebra
+using Random
+using GLMakie
 
+Random.seed!(1)
 
 seq = IR
 x = exp10.(range(log10(1e-4), log10(5), 32)) # acquisition range
@@ -11,63 +14,6 @@ K = create_kernel(seq, x, X)
 f_custom = [0.5exp.(-(x)^2 / 3) + exp.(-(x - 1.3)^2 / 0.5) for x in range(-5, 5, length(X))]
 g = K * f_custom
 y = g + 0.001 * maximum(g) .* randn(length(x))
-
-
-function test_lcurve()
-
-    x = collect(range(0.01, 1, 32))
-    X = exp10.(range(-5, 1, 128)) # T range
-    K = create_kernel(CPMG, x, X)
-    f_custom = [0.5exp.(-(x)^2 / 3) + exp.(-(x - 1.3)^2 / 0.5) for x in range(-5, 5, length(X))]
-    g = K * f_custom
-    noise_level = 0.001 * maximum(g)
-    y = g + noise_level .* randn(length(x))
-
-    alphas = exp10.(range(log10(1e-5), log10(1e0), 128))
-    curvatures = zeros(length(alphas))
-    xis = zeros(length(alphas))
-    rhos = zeros(length(alphas))
-
-    for (i, α) in enumerate(alphas)
-        println("α = ", α)
-
-        f, r = NMRInversions.solve_regularization(K, y, α, brd)
-
-        ξ = f'f
-        ρ = r'r
-        λ = √α
-
-        A = sparse([K; √(α) * LinearAlgebra.I ])
-        b = sparse([r; zeros(size(A, 1) - size(r, 1))])
-
-        z = NMRInversions.solve_ls(A, b)
-
-        ∂ξ∂λ = (4 / λ) * f'z
-
-        ĉ = 2 * (ξ * ρ / ∂ξ∂λ) * (α * ∂ξ∂λ * ρ + 2 * ξ * λ * ρ + λ^4 * ξ * ∂ξ∂λ) / ((α * ξ^2 + ρ^2)^(3 / 2))
-
-        xis[i] = ξ
-        rhos[i] = ρ
-        curvatures[i] = ĉ
-
-    end
-
-    α = alphas[argmin(curvatures)]
-
-    f, r = NMRInversions.solve_regularization(K, y, α, brd)
-
-    #=using Plots=#
-    #=begin=#
-    #=    p1 = plot(alphas, curvatures, xscale=:log10, xlabel="α", ylabel="curvature",label = "curvature vs. α");=#
-    #=    p1 = vline!(p1, [α], label="α = $α");=#
-    #=    p2 = plot(X, [f_custom, f], label=["original" "solution"], xscale=:log10);=#
-    #=    p3 = plot(rhos, xis, xscale=:log10, yscale=:log10,label = "lcurve");=#
-    #=    p3 = scatter!([rhos[argmin(curvatures)]], [xis[argmin(curvatures)]], label="α = $α");=#
-    #=    p4 = scatter(x, y, label="data");=#
-    #=    p4 = plot!(x, K * f, label="solution");=#
-    #=    p = plot(p1, p2, p3, p4)=#
-    #=end=#
-end
 
 function testT1T2()
 
@@ -99,7 +45,6 @@ function testT1T2()
     return LinearAlgebra.norm(results.F - F_original) < 0.5
 
 end
-
 
 
 function test_phase_correction(plots=false)
@@ -148,6 +93,7 @@ end
 
 
 @testset "NMRInversions.jl" begin
+    display("Testing inversion of artificial data.")
     @test norm(invert(
         seq, x, y, alpha=gcv(), lims=(-5,1,128), normalize=false
     ).f - f_custom) < 1.0
@@ -158,7 +104,24 @@ end
         seq, x, y, alpha=lcurve(1e-5, 10), lims=(-5,1,128), normalize=false
     ).f - f_custom) < 1.0
     @test testT1T2()
+
+    display("Testing expfit.")
     @test test_expfit()
+
+    display("Testing phase correction accuracy.")
     @test test_phase_correction()
+
+    display("Testing plots - inverting geospec data.")
+    @test isa( 
+        plot(invert(import_geospec("../example_data/geospec_data/bunter_IR.txt"))), 
+        Figure
+    )
+    @test isa( 
+        plot(invert(
+            import_geospec("../example_data/geospec_data/bunter_IRCPMG.txt"),
+            alpha = 0.5)
+             ), 
+        Figure
+    )
 
 end
