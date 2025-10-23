@@ -19,7 +19,9 @@ Alternatively, a vector of values can be used directly, if more freedom is neede
 By default, 128 points are used, logarithmically spaced between the first value 
 in x divided by 7, and the final value in x multiplied by 7.
 
-- `alpha` determines the smoothing term. Use a real number for a fixed alpha.  
+- `alpha` determines the smoothing term. Use a real number for a fixed alpha, 
+or look at the "Types and Structures - Finding Optimal Alpha" section of the 
+documentation for other options.  
 No selection will lead to automatically determining alpha through the 
 default method, which is `gcv()`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.

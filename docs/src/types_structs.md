@@ -37,7 +37,7 @@ optim_nnls
 ## Finding optimal alpha
 These are methods for finding the optimal regularization parameter. 
 They can be used as input to the `invert` function as the 'alpha' argument
-(e.g., `invert(data, alpha=gcv)` or `invert(data, alpha=lcurve(0.001,1,64))` ).
+(e.g., `invert(data, alpha=gcv())` or `invert(data, alpha=lcurve(0.001,1,64))` ).
 If you'd like to use a particular value of alpha, 
 you can just use that number instead (`invert(data, alpha=1)`).
 ```@docs
