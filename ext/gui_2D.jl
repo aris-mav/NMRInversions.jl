@@ -203,6 +203,10 @@ function draw_on_axes(
     markers = collect('a':'z')
     colors = cgrad(:tab10)
 
+    if res.seq == IRCPMG
+        plot_diagonal(axmain,x,y)
+    end
+
     for (i, polygon) in enumerate(res.selections)
 
         # Selected points only
@@ -241,9 +245,6 @@ function draw_on_axes(
         )
     end
 
-    if res.seq == IRCPMG
-        plot_diagonal(axmain,x,y)
-    end
 
     if !isempty(res.selections)
         axislegend(axmain, position=legendposition,
