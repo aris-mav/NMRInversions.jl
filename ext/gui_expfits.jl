@@ -67,7 +67,11 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::expfit_st
     end
 
     for r in res
-        scatter!(ax, r.x, r.y, markersize=markersize, label= r.title )
+        if isempty(r.title)
+            scatter!(ax, r.x, r.y, markersize=markersize)
+        else
+            scatter!(ax, r.x, r.y, markersize=markersize, label= r.title )
+        end
         lines!(ax, r.xfit, r.yfit, label=getfield(r, normeq == true ? :eqn : :eq))
     end
 
