@@ -95,6 +95,8 @@ function expfit(
     L::Int = 2
 )
 
+    y = real.(y)
+
     if normalize
         y = y ./ y[argmax(real(y))]
     end
