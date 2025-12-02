@@ -57,6 +57,43 @@ function read_acqu(filename, parameter)
     return replace(p, "\"" => "")
 end
 
+export import_tecmag
+function import_tecmag(filename=pick_file(pwd()))
+
+    aqp = open(filename) do io 
+        readuntil(io, "Acq. Points, \t")
+        parse(Int, readline(io))
+    end
+
+    tₑ = open(filename) do io 
+        readuntil(io, "Echo_Time, \t")
+        parse(Float64, readuntil(io,"u"))
+    end
+
+    tₑ /= 1e6 # convert to seconds
+
+    open(filename) do io 
+
+        readuntil(io,  "Real	Imag	usec\r\n")
+
+        data_matrix = readdlm(
+            IOBuffer(readuntil(io, "\r\n\r\n[")), '\t'
+        )
+
+        (re, im, _) = [data_matrix[:,x] for x in 1:size(data_matrix,2)]
+
+        #=re, im, p = autophase(re, im, 1)=#
+        #=return p=#
+        
+        y = vec(sum(reshape(complex.(re,im) , aqp, :), dims = 1))
+        #=return angle.(y)=#
+
+        y .*= exp.( sum(angle.(y))/length(y) * complex(0,-1))
+        x = [ t * tₑ for t in 1:length(y) ]
+
+        return input1D(CPMG, x, y)
+    end
+end
 
 export import_spinsolve
 """
