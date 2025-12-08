@@ -58,7 +58,7 @@ function read_acqu(filename, parameter)
 end
 
 export import_tecmag
-function import_tecmag(filename=pick_file(pwd()))
+function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},filename=pick_file(pwd()))
 
     aqp = open(filename) do io 
         readuntil(io, "Acq. Points, \t")
@@ -80,18 +80,32 @@ function import_tecmag(filename=pick_file(pwd()))
             IOBuffer(readuntil(io, "\r\n\r\n[")), '\t'
         )
 
-        (re, im, _) = [data_matrix[:,x] for x in 1:size(data_matrix,2)]
+        re = data_matrix[:,1]
+        im = data_matrix[:,2]
 
-        #=re, im, p = autophase(re, im, 1)=#
-        #=return p=#
-        
         y = vec(sum(reshape(complex.(re,im) , aqp, :), dims = 1))
-        #=return angle.(y)=#
 
-        y .*= exp.( sum(angle.(y))/length(y) * complex(0,-1))
-        x = [ t * tₑ for t in 1:length(y) ]
+        if seq == CPMG
+            y .*= exp.( sum(angle.(y))/length(y) * complex(0,-1))
+            x = [ t * tₑ for t in 1:length(y) ]
+        elseif seq == IR
+            re, im, p = autophase(re, im, -1)
+            y = vec(sum(reshape(complex.(re,im) , aqp, :), dims = 1))
+            x = collect(logrange(1e-4,10,16))
 
-        return input1D(CPMG, x, y)
+        elseif seq == IRCPMG
+
+            re, im, p = autophase(re, im, -1)
+            y = vec(sum(reshape(complex.(re,im) , aqp, :), dims = 1))
+            data2D = reshape(y,:,16)
+            x_indir = collect(logrange(1e-4,10,16))
+            x_dir = [ t * tₑ for t in 1:size(data2D,1) ]
+
+            return input2D(seq, x_dir, x_indir, data2D)
+
+        end
+
+        return input1D(seq, x, y)
     end
 end
 
