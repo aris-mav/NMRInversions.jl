@@ -16,7 +16,9 @@ in which case a file dialog will open to select the file
 
 
 Please note that this function will just import the data as is,
-without any unit conversions. Ensure that your x-axis is in SI.
+without any unit conversions. 
+Ensure that your x-axis is in seconds for relaxation, 
+or in `seconds/metres² * 1e-9` for PFG experiments.
 """
 function import_csv(seq::Type{<:pulse_sequence1D}, file=pick_file(pwd()))
     x, y = import_csv(file)
