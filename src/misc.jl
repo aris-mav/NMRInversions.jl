@@ -310,3 +310,43 @@ end
 function logrange(a,b,c)
     exp10.(range(log10(a),log10(b),c))
 end
+
+export trim
+"""
+    trim(data::input1D, first::Int=0, last::Int=0)
+
+Return an `input1D` structure which excludes a selected 
+amount of points from the beginning and the end of the 
+`x` and `y` arrays. 
+
+For example, `trim(data,2,3)` will remove the first 2 and 
+the last 3 data points.
+"""
+function trim(data::input1D, first::Int=0, last::Int=0)
+    return input1D(
+        data.seq, 
+        data.x[1 + first : end - last],
+        data.y[1 + first : end - last],
+    )  
+end
+
+
+"""
+    trim(Data::input2D, dir::Tuple{Int,Int}=(0,0), indir::Tuple{Int,Int}=(0,0))
+
+Return an `input2D` structure which excludes a selected 
+amount of points from the beginning and the end of the 
+direct and indirect dimensions of the data matrix. 
+
+For example, `trim(data, (2,3), (1,4) )` will remove the first 2 
+and the 3 last columns of the data matrix, as well as the first 
+row and the last four rows.
+"""
+function trim(Data::input2D, dir::Tuple{Int,Int}=(0,0), indir::Tuple{Int,Int}=(0,0))
+    return input2D(
+        Data.seq, 
+        Data.x_direct[1 + dir[1] : end - dir[2]],
+        Data.x_indirect[1 + dir[1] : end - dir[2]],
+        Data.data[1 + dir[1] : end - dir[2], 1 + indir[1] : end - indir[2]],
+    )  
+end
