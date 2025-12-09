@@ -15,7 +15,7 @@ function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector; y::V
     if seq == IR
         kernel_eq = (t, T) -> y[end] - (y[end] - y[1]) * exp(-(t-x[1]) / T)
     elseif seq == SR
-        kernel_eq = (t, T) -> (y[end] + y[1])  * exp(-(t-x[1]) / T)
+        kernel_eq = (t, T) -> y[end] * (1 - exp(-(t-x[1]) / T))
     elseif seq == CPMG
         kernel_eq = (t, T) -> y[1] * exp(-(t-x[1]) / T)
     elseif seq == PFG
