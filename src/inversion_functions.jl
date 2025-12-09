@@ -71,12 +71,12 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
 
     end
 
-    x_fit = exp10.(range(log10(1e-8), log10(1.1 * x[end]), 512))
-    y_fit = create_kernel(seq, x_fit, X) * f
+    x_fit = exp10.(range(log10(x[1]), log10(x[end]), 512))
+    y_fit = create_kernel(seq, x_fit, X, y=y) * f
 
     isreal(y) ? SNR = NaN : SNR = calc_snr(y)
     
-    r = create_kernel(seq, x, X) * f - y
+    r = create_kernel(seq, x, X, y=y) * f - y
 
     if seq == PFG
         X .= X ./ 1e9
