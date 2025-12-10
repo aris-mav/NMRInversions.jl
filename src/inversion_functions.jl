@@ -26,7 +26,7 @@ No selection will lead to automatically determining alpha through the
 default method, which is `gcv()`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.
 - `normalize` will normalize `y` to 1 at the max value of `y`. Default is `true`.  
-- `silent` will suppress the output of the alpha search. Default is `true` for 1D, and `false` for 2D inversion.  
+- `silent` will suppress the output of the alpha search. Default is `false`.
 
 """
 function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
@@ -34,7 +34,7 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
                 alpha::Union{Real, alpha_optimizer}=gcv(), 
                 solver::Union{regularization_solver, Type{<:regularization_solver}}=brd(),
                 normalize::Bool = true,
-                silent::Bool = true
+                silent::Bool = false,
                 )
 
     if normalize
@@ -129,7 +129,7 @@ in x divided by 7, and the final value in x multiplied by 7 (for both direct and
 - `alpha` determines the smoothing term. Use a real number for a fixed alpha.  No selection will lead to automatically determining alpha through the default method, which is `gcv`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.
 - `normalize` will normalize `Data` so that its maximum value is 1. Default is `true`.
-- `silent` will suppress the output of the alpha search. Default is `true` for 1D, and `false` for 2D inversion.  
+- `silent` will suppress the output of the alpha search. Default is `false`.
 
 """
 function invert(
