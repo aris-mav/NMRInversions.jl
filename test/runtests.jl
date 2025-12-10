@@ -115,7 +115,7 @@ end
     display("Testing inversion of artificial data.")
     for seq in [IR, CPMG]
         for snr in exp10.(2:1:4) 
-            @test test_artificial_data(seq,snr,alpha=gcv())
+            @test test_artificial_data(seq,snr,alpha=gcv(),silent=true)
         end
     end
 
@@ -130,13 +130,13 @@ end
 
     display("Testing plots - inverting geospec data.")
     @test isa( 
-        plot(invert(import_geospec("../example_data/geospec_data/bunter_IR.txt"))), 
+        plot(invert(import_geospec("../example_data/geospec_data/bunter_IR.txt"),silent=true)), 
         Figure
     )
     @test isa( 
         plot(invert(
             import_geospec("../example_data/geospec_data/bunter_IRCPMG.txt"),
-            alpha = 0.5)
+            alpha = 0.5, silent = true)
              ), 
         Figure
     )

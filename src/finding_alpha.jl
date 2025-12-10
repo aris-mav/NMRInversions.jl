@@ -84,7 +84,7 @@ Select the solution with minimum gcv score and return it, along with the residua
 """
 function find_alpha(svds::svd_kernel_struct, 
                    solver::Union{regularization_solver, Type{<:regularization_solver}},
-                   mode::gcv_mitchell)
+                   mode::gcv_mitchell ; silent = false)
 
     s̃ = svds.S
     ñ = length(s̃)
@@ -100,7 +100,7 @@ function find_alpha(svds::svd_kernel_struct,
 
     while all(conditions) 
 
-        display("Testing α = $(round(α,sigdigits=3))")
+        silent ? nothing : display("Testing α = $(round(α,sigdigits=3))")
 
         f, r = solve_regularization(svds.K, svds.g, α, solver)
         push!(alphas, α) # Add the just tested α to the array
@@ -121,7 +121,7 @@ function find_alpha(svds::svd_kernel_struct,
 
     end
 
-    display("The optimal α is $(round(alphas[end-1], digits=3))")
+    silent ? nothing : display("The optimal α is $(round(alphas[end-1], digits=3))")
     α = alphas[end-1]
     f = f_star
     r = svds.g - svds.K * f
@@ -135,7 +135,7 @@ Find alpha via univariate optimization.
 """
 function find_alpha(svds::svd_kernel_struct,
                    solver::Union{regularization_solver, Type{<:regularization_solver}},
-                   mode::find_alpha_univariate
+                   mode::find_alpha_univariate; silent = true
                    )
 
     local f
@@ -151,11 +151,12 @@ function find_alpha(svds::svd_kernel_struct,
         f,
         mode.lower, mode.upper,
         mode.algorithm,
-        abs_tol = mode.abs_tol
+        abs_tol = mode.abs_tol,
+        show_trace = !silent
     )
 
     α = sol.minimizer
-    display("Converged at α =$(round(α,sigdigits=3)), after $(sol.f_calls) calls.")
+    silent ? nothing : display("Converged at α =$(round(α,sigdigits=3)), after $(sol.f_calls) calls.")
 
     f, r = NMRInversions.solve_regularization(svds.K, svds.g, α, solver)
 
@@ -163,12 +164,26 @@ function find_alpha(svds::svd_kernel_struct,
 
 end
 
+ 
+# used below to add silend option to Optim.Options immutable struct
+function change_field(x::T; kwargs...) where {T}
+    # Convert keyword overrides to a dictionary for fast lookup
+    kw = Dict(kwargs)
+
+    # Get the fields in the correct positional order
+    vals = [ get(kw, f, getfield(x, f)) for f in fieldnames(T) ]
+
+    # Call the canonical positional constructor
+    return T(vals...)
+end
+
+
 """
 Find alpha using Fminbox optimization.
 """
 function find_alpha(svds::svd_kernel_struct,
                     solver::Union{regularization_solver, Type{<:regularization_solver}},
-                    mode::find_alpha_box 
+                    mode::find_alpha_box ; silent = true
                     )
 
     local f
@@ -184,12 +199,12 @@ function find_alpha(svds::svd_kernel_struct,
         f,
         [0], [Inf], [mode.start],
         Fminbox(mode.algorithm),
-        mode.opts
+        change_field(mode.opts, show_trace = !silent)
     )
 
     α = sol.minimizer[1]
 
-    display("Converged at α =$(round(α,sigdigits=3)), after $(sol.f_calls) calls.")
+    silent ? nothing : display("Converged at α =$(round(α,sigdigits=3)), after $(sol.f_calls) calls.")
     f, r = NMRInversions.solve_regularization(svds.K, svds.g, α, solver)
 
     return f, r, α
@@ -203,7 +218,7 @@ which is at the heel of the L curve, accoding to Hansen 2010.
 """
 function find_alpha(svds::svd_kernel_struct,
                    solver::Union{regularization_solver, Type{<:regularization_solver}},
-                   mode::lcurve_range
+                   mode::lcurve_range; silent = false
                    )
 
     alphas = exp10.(range(log10(mode.lowest_value), 
@@ -219,7 +234,7 @@ function find_alpha(svds::svd_kernel_struct,
     end
 
     α = alphas[argmin(curvatures)]
-    display("The optimal α is $(round(α,sigdigits=3))")
+    silent ? nothing : display("The optimal α is $(round(α,sigdigits=3))")
 
     f, r = NMRInversions.solve_regularization(svds.K, svds.g, α, solver)
     return f, r, α

@@ -32,7 +32,8 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
                 lims::Union{Tuple{Real, Real, Int}, AbstractVector, Type{<:pulse_sequence1D}}=seq, 
                 alpha::Union{Real, alpha_optimizer}=gcv(), 
                 solver::Union{regularization_solver, Type{<:regularization_solver}}=brd(),
-                normalize::Bool = true
+                normalize::Bool = true,
+                silent::Bool = true
                 )
 
     if normalize
@@ -67,7 +68,7 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
 
     else
 
-        f, _, α = find_alpha(ker_struct, solver, alpha)
+        f, _, α = find_alpha(ker_struct, solver, alpha ; silent = silent)
 
     end
 
@@ -135,7 +136,9 @@ function invert(
     lims2::Union{Tuple{Real, Real, Int}, AbstractVector, Type{<:pulse_sequence2D}}=seq,
     alpha::Union{Real, alpha_optimizer} = gcv(), 
     solver::Union{regularization_solver, Type{<:regularization_solver}}=brd(),
-    normalize::Bool=true)
+    normalize::Bool=true,
+    silent::Bool = false
+)
 
     if normalize
         Data = Data ./ Data[argmax(real(Data))]
@@ -171,7 +174,7 @@ function invert(
         f, r = solve_regularization(ker_struct.K, ker_struct.g, α, solver)
 
     else
-        f, r, α = find_alpha(ker_struct, solver, alpha)
+        f, r, α = find_alpha(ker_struct, solver, alpha, silent = silent)
 
     end
 
