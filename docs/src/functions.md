@@ -153,21 +153,21 @@ your data and select regions to characterize.
 Using a matrix or vector of results (e.g. plot([r1, r2, r3]) will plot all of
 them on the same figure, but without the selection options.
 
-For example, for 1D inversions, we have:
+### 1D inversion plots
 
 ```@docs
 plot(res::inv_out_1D)
 plot(res_mat::VecOrMat{inv_out_1D};kwargs...)
 ```
 
-And for 2D inversions:
+### 2D inversion plots
 
 ```@docs
 plot(::NMRInversions.inv_out_2D)
 plot(results::AbstractVecOrMat{inv_out_2D}; kwargs...)
 ```
 
-For expfits, we have:
+### Expfit plots
 
 ```@docs
 plot(::NMRInversions.expfit_struct)
@@ -176,6 +176,7 @@ plot!(::Union{Makie.Figure,Makie.GridPosition}, ::NMRInversions.expfit_struct )
 
 ## Miscellaneous 
 
+### Weighted averages
 Once you have selected some peaks in your inversion results through the GUI,
 you might want to extract the weighted averages of these selected peaks,
 to get the underlying relaxation times or diffusion coefficients.
@@ -185,3 +186,30 @@ The following functions do the job:
 weighted_averages(r::inv_out_1D)
 weighted_averages(r::inv_out_2D)
 ```
+
+For example:
+```julia
+results = invert(my_data)
+plot(results)
+"Select regions interactively through the GUI"
+weighted_averages(results)
+```
+
+### Trimming data
+
+If you want a "quick and dirty" way to exclude
+some data points from your imported data, you may
+use the 'trim' function.
+
+```@docs
+trim(::input1D, ::Int, ::Int)
+trim(::input2D, ::Tuple{Int,Int}, ::Tuple{Int,Int})
+```
+
+You can use the output of `trim()` directly as the inversion input:
+```julia
+invert(trim(import_csv(CPMG,"/path/to/data") , 3 ))
+```
+The one-liner above will remove the first three
+data points from the data and pass that into the
+inversion function.

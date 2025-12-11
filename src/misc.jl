@@ -313,7 +313,7 @@ end
 
 export trim
 """
-    trim(data::input1D, first::Int=0, last::Int=0)
+    trim(::input1D, ::Int=0, ::Int=0)
 
 Return an `input1D` structure which excludes a selected 
 amount of points from the beginning and the end of the 
@@ -332,15 +332,19 @@ end
 
 
 """
-    trim(Data::input2D, dir::Tuple{Int,Int}=(0,0), indir::Tuple{Int,Int}=(0,0))
+    trim(::input2D, ::Tuple{Int,Int}=(0,0), ::Tuple{Int,Int}=(0,0))
 
 Return an `input2D` structure which excludes a selected 
 amount of points from the beginning and the end of the 
-direct and indirect dimensions of the data matrix. 
+direct and indirect dimensions of the data matrix, respectively. 
 
 For example, `trim(data, (2,3), (1,4) )` will remove the first 2 
 and the 3 last columns of the data matrix, as well as the first 
 row and the last four rows.
+
+That means, for T1T2 data, you will remove the first 2 and last 3 echoes
+for T2 (direct dimension), and the first 1 and last 4 inversion recovery 
+points (indirect dimension).
 """
 function trim(Data::input2D, dir::Tuple{Int,Int}=(0,0), indir::Tuple{Int,Int}=(0,0))
     return input2D(
