@@ -26,13 +26,15 @@ No selection will lead to automatically determining alpha through the
 default method, which is `gcv()`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.
 - `normalize` will normalize `y` to 1 at the max value of `y`. Default is `true`.  
+- `silent` will suppress the output of the alpha search. Default is `false`.
 
 """
 function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
                 lims::Union{Tuple{Real, Real, Int}, AbstractVector, Type{<:pulse_sequence1D}}=seq, 
                 alpha::Union{Real, alpha_optimizer}=gcv(), 
                 solver::Union{regularization_solver, Type{<:regularization_solver}}=brd(),
-                normalize::Bool = true
+                normalize::Bool = true,
+                silent::Bool = false,
                 )
 
     if normalize
@@ -67,16 +69,16 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
 
     else
 
-        f, _, α = find_alpha(ker_struct, solver, alpha)
+        f, _, α = find_alpha(ker_struct, solver, alpha ; silent = silent)
 
     end
 
-    x_fit = exp10.(range(log10(1e-8), log10(1.1 * x[end]), 512))
-    y_fit = create_kernel(seq, x_fit, X) * f
+    x_fit = exp10.(range(log10(x[1]), log10(x[end]), 512))
+    y_fit = create_kernel(seq, x_fit, X, y=y) * f
 
     isreal(y) ? SNR = NaN : SNR = calc_snr(y)
     
-    r = create_kernel(seq, x, X) * f - y
+    r = create_kernel(seq, x, X, y=y) * f - y
 
     if seq == PFG
         X .= X ./ 1e9
@@ -127,6 +129,7 @@ in x divided by 7, and the final value in x multiplied by 7 (for both direct and
 - `alpha` determines the smoothing term. Use a real number for a fixed alpha.  No selection will lead to automatically determining alpha through the default method, which is `gcv`.
 - `solver` is the algorithm used to do the inversion math. Default is `brd`.
 - `normalize` will normalize `Data` so that its maximum value is 1. Default is `true`.
+- `silent` will suppress the output of the alpha search. Default is `false`.
 
 """
 function invert(
@@ -135,7 +138,9 @@ function invert(
     lims2::Union{Tuple{Real, Real, Int}, AbstractVector, Type{<:pulse_sequence2D}}=seq,
     alpha::Union{Real, alpha_optimizer} = gcv(), 
     solver::Union{regularization_solver, Type{<:regularization_solver}}=brd(),
-    normalize::Bool=true)
+    normalize::Bool=true,
+    silent::Bool = false
+)
 
     if normalize
         Data = Data ./ Data[argmax(real(Data))]
@@ -171,7 +176,7 @@ function invert(
         f, r = solve_regularization(ker_struct.K, ker_struct.g, α, solver)
 
     else
-        f, r, α = find_alpha(ker_struct, solver, alpha)
+        f, r, α = find_alpha(ker_struct, solver, alpha, silent = silent)
 
     end
 

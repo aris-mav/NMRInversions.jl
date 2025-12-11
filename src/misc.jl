@@ -226,10 +226,10 @@ function weighted_averages(r::inv_out_1D ; silent::Bool = false)
         end
 
         if !silent
-            println("Selection $(collect('a':'z')[i]) :")
-            println(lbl[1] * " = $(round(wa[i], sigdigits=4)) "*lbl[2])
-            println("Area = $(round(areas[i], sigdigits=4) * 100) %")
-            println()
+            display("Selection $(collect('a':'z')[i]) :")
+            display(lbl[1] * " = $(round(wa[i], sigdigits=4)) "*lbl[2])
+            display("Area = $(round(areas[i], sigdigits=4) * 100) %")
+            display()
         end
     end
 
@@ -276,13 +276,13 @@ function weighted_averages(r::inv_out_2D; silent::Bool = false)
         end
 
         if !silent
-            println("Selection $(collect('a':'z')[i]) :")
-            println(ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) "*ind_lbl[2])
-            println(dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) "*dir_lbl[2])
+            display("Selection $(collect('a':'z')[i]) :")
+            display(ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) "*ind_lbl[2])
+            display(dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) "*dir_lbl[2])
             if r.seq == IRCPMG
-                println("T₁/T₂ = $(round(wa_indir[i]/wa_dir[i], sigdigits=2)) ")
+                display("T₁/T₂ = $(round(wa_indir[i]/wa_dir[i], sigdigits=2)) ")
             end
-            println("Volume = $(round(volumes[i], sigdigits=4) * 100) %")
+            display("Volume = $(round(volumes[i], sigdigits=4) * 100) %")
             println()
         end
     end

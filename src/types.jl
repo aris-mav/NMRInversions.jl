@@ -253,7 +253,7 @@ For more details, refer to Optim.jl documentation.
 - `opts` an Optim.Options() structure which can provide some preferences to the solver.
 Please have a look [here](https://julianlsolvers.github.io/Optim.jl/v1.10/user/config/).
 """
-lcurve(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_tol = 1e-3)) = 
+lcurve(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_abstol = 1e-3)) = 
     find_alpha_box(:lcurve, Float64(start), algorithm, opts)
 
 """

@@ -227,8 +227,6 @@ function import_geospec(filedir::String=pick_file(pwd()))
         y_re, y_im, ϕ = autophase(y_re, y_im, 1)
     end
 
-    display("Data phase corrected by $(round(ϕ,digits=3)) radians.")
-
     if seq == IRCPMG
 
         return input2D(IRCPMG, data[1:dimensions[1], 1] .* (1 / 1000), data[1:dimensions[1]:end, 2] .* (1 / 1000), reshape(complex.(y_re, y_im), dimensions[1], dimensions[2]))

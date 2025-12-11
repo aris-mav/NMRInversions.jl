@@ -158,11 +158,11 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
     f_prime = res.filter .* res.f
 
     yfit_prime = create_kernel(
-        res.seq, res.xfit, (res.seq == PFG ? res.X .* 1e9 : res.X)
+        res.seq, res.xfit, (res.seq == PFG ? res.X .* 1e9 : res.X), y = res.y
     ) * f_prime
 
     r_prime = create_kernel(
-        res.seq, res.x, (res.seq == PFG ? res.X .* 1e9 : res.X)
+        res.seq, res.x, (res.seq == PFG ? res.X .* 1e9 : res.X), y = res.y
     ) * f_prime - real.(res.y)
 
     i = length(ax2.scene.plots)

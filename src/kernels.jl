@@ -9,16 +9,17 @@
 The output is a matrix, `K`.
 
 """
-function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector)
+function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector; y::Vector=ones(1))
 
+    y = real.(y)
     if seq == IR
-        kernel_eq = (t, T) -> 1 - 2 * exp(-t / T)
+        kernel_eq = (t, T) -> y[end] - (y[end] + abs(y[1])) * exp(-(t-x[1]) / T)
     elseif seq == SR
-        kernel_eq = (t, T) -> 1 - exp(-t / T)
+        kernel_eq = (t, T) -> y[end] * (1 - exp(-(t-x[1]) / T))
     elseif seq == CPMG
-        kernel_eq = (t, T) -> exp(-t / T)
+        kernel_eq = (t, T) -> y[1] * exp(-(t-x[1]) / T)
     elseif seq == PFG
-        kernel_eq = (b, D) -> exp(-b * D)
+        kernel_eq = (b, D) -> y[1] * exp(-(b-x[1]) * D)
     end
 
     return kernel_eq.(x, X')
@@ -33,7 +34,7 @@ to remove the "noisy" singular values.
 """
 function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::Vector{<:Real})
 
-    usv = svd(create_kernel(seq, x , X))
+    usv = svd(create_kernel(seq, x , X, y=g))
     K_new = Diagonal(usv.S) * usv.V'
     g_new = usv.U' * g
 
@@ -43,12 +44,12 @@ end
 
 function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::Vector{<:Complex})
 
-    usv = svd(create_kernel(seq, x , X))
+    usv = svd(create_kernel(seq, x , X, y = g))
 
     SNR = calc_snr(g)
     indices = findall(i -> i .> (1 / SNR), usv.S) # find elements in S12 above the noise threshold
 
-    display("SVD truncated to $(length(indices)) singular values out of $(length(usv.S))")
+    #=display("SVD truncated to $(length(indices)) singular values out of $(length(usv.S))")=#
 
     U = usv.U[:, indices]
     S = usv.S[indices]
@@ -84,11 +85,11 @@ function create_kernel(seq::Type{<:pulse_sequence2D},
 
     # Generate Kernels
     if seq == IRCPMG
-        K_dir = create_kernel(CPMG, x_direct, X_direct)
-        K_indir = create_kernel(IR, x_indirect, X_indirect)
+        K_dir = create_kernel(CPMG, x_direct, X_direct, y = vec(Data[:,end]))
+        K_indir = create_kernel(IR, x_indirect, X_indirect, y = vec(Data[1,:]))
     elseif seq == PFGCPMG
-        K_dir = create_kernel(CPMG, x_direct, X_direct)
-        K_indir = create_kernel(PFG, x_indirect, X_indirect)
+        K_dir = create_kernel(CPMG, x_direct, X_direct, y = vec(Data[:,1]))
+        K_indir = create_kernel(PFG, x_indirect, X_indirect, y = vec(Data[1,:]))
     else
         error("2D inversion not yet implemented for $(seq)")
     end
