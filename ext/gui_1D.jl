@@ -10,16 +10,17 @@ The keyword (optional) arguments are:
 - `selections` : Whether to highlight the selections in the plots (default is `false`).
 
 """
-function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; selections = false , yscale = identity)
+function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; 
+                    selections = false , yscale = identity, xscale = identity)
 
     fig = Figure(size=(700, 600))
 
     res = res_mat[1]
     # Make axes
     if res.seq in [NMRInversions.IR]
-        ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)", yscale = yscale)
+        ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)", yscale = yscale, xscale = xscale)
         ax2 = Axis(fig[1:5, 6:10], xlabel=L"T_1 \, \textrm{(s)}", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)")
+        ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)", xscale = xscale)
 
     elseif res.seq in [NMRInversions.CPMG]
         ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)")
@@ -41,6 +42,7 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; selecti
     end
 
     ax1.yscale = yscale
+    ax1.xscale = xscale
 
     return fig
 end
@@ -86,6 +88,7 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
     button_save = Button(fig[10,8:10], label = "Save and exit")
 
     log_y = false
+    log_x = false
     if !any(real.(res.y) .<= 0)
         button_yscale = Button(fig[10,6:8], label = "Change y scale")
 
@@ -96,6 +99,23 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
             else
                 fig.content[1].yscale = log10
                 log_y = true
+            end
+
+        end
+    else 
+        button_xscale = Button(fig[10,6:8], label = "Change x scale")
+
+        on(button_xscale.clicks) do _
+            if log_x
+                fig.content[1].limits = (exp10(floor(log10(res.x[1]))), nothing, nothing, nothing) #this prevents an error
+                fig.content[1].xscale = identity
+                fig.content[3].xscale = identity
+                fig.content[1].limits = (nothing, nothing, nothing, nothing) #undo the above
+                log_x = false
+            else
+                fig.content[1].xscale = log10
+                fig.content[3].xscale = log10
+                log_x = true
             end
 
         end
@@ -143,7 +163,10 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
 
     on(button_save.clicks) do _
         savedir = NMRInversions.save_file(res.title, filterlist = "png")
-        f = plot([res], selections = true, yscale = log_y ? log10 : identity)
+        f = plot([res], selections = true, 
+                 yscale = log_y ? log10 : identity,
+                 xscale = log_x ? log10 : identity
+                 )
         save(savedir, f, px_per_unit = 2.5)
     end
 
