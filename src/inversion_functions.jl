@@ -1,3 +1,4 @@
+export invert
 """
 # Inversion for 1D pulse sequences:
     invert(seq, x, y ; lims, alpha, solver, normalize)

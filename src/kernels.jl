@@ -1,4 +1,4 @@
-
+export create_kernel
 """
 # Create a kernel for the inversion of 1D data.
     create_kernel(seq, x, X)

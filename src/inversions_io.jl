@@ -192,8 +192,6 @@ will open a file dialog to select the .txt file.
 """
 function import_geospec(filedir::String=pick_file(pwd()))
 
-    # cd(dirname(filedir))
-
     data = []
     pulse_sequence_number::Int16 = 0
     dimensions = [0, 0]
