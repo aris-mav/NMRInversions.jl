@@ -46,6 +46,13 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D};
 
     Legend(fig[6:10,6:10], ax2)
 
+    ax2.limits = (
+        minimum(minimum(getfield.(res_mat,:X))),
+        maximum(maximum(getfield.(res_mat,:X))),
+        minimum(map(res -> -0.025 * maximum(res.f .* res.filter), res_mat)),
+        maximum(map(res ->  1.025 * maximum(res.f .* res.filter), res_mat)),
+    )
+
     return fig
 end
 
