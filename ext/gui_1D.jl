@@ -44,6 +44,8 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D};
     ax1.yscale = yscale
     ax1.xscale = xscale
 
+    Legend(fig[6:10,6:10], ax2)
+
     return fig
 end
 
@@ -181,7 +183,7 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
 
     scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=i)
     lines!(ax1, res.xfit, yfit_prime, colormap=:tab10, colorrange=(1, 10), color=i)
-    !selections && lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+    !selections && lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=i, label = res.title)
     lines!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
     scatter!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
 
