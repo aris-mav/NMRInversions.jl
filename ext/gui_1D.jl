@@ -48,6 +48,15 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D};
 end
 
 
+function redraw(fig::Figure,res::inv_out_1D, int_low, int_high)
+    empty!(fig.content[1])
+    empty!(fig.content[2])
+    empty!(fig.content[3])
+    draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
+    vlines!(fig.content[2], int_low, color=:red)
+    vlines!(fig.content[2], int_high, color=:red)
+end
+
 """
     plot(res::inv_out_1D)
 
@@ -123,42 +132,22 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
 
     on(button_label.clicks) do _
         push!(res.selections, slider.interval[])
-        empty!(fig.content[1])
-        empty!(fig.content[2])
-        empty!(fig.content[3])
-        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
-        vlines!(fig.content[2], int_low, color=:red)
-        vlines!(fig.content[2], int_high, color=:red)
+        redraw(fig, res, int_low, int_high)
     end
 
     on(button_filter.clicks) do _
-        empty!(fig.content[1])
-        empty!(fig.content[2])
-        empty!(fig.content[3])
         filter_range!(res, slider.interval[])
-        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
-        vlines!(fig.content[2], int_low, color=:red)
-        vlines!(fig.content[2], int_high, color=:red)
+        redraw(fig, res, int_low, int_high)
     end
 
     on(button_reset_s.clicks) do _
         empty!(res.selections)
-        empty!(fig.content[1])
-        empty!(fig.content[2])
-        empty!(fig.content[3])
-        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res)
-        vlines!(fig.content[2], int_low, color=:red)
-        vlines!(fig.content[2], int_high, color=:red)
+        redraw(fig, res, int_low, int_high)
     end
 
     on(button_reset_f.clicks) do _
         res.filter = ones(length(res.X))
-        empty!(fig.content[1])
-        empty!(fig.content[2])
-        empty!(fig.content[3])
-        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res)
-        vlines!(fig.content[2], int_low, color=:red)
-        vlines!(fig.content[2], int_high, color=:red)
+        redraw(fig, res, int_low, int_high)
     end
 
     on(button_save.clicks) do _
