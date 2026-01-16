@@ -177,7 +177,7 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
         res.seq, res.x, (res.seq == PFG ? res.X .* 1e9 : res.X), y = res.y
     ) * f_prime - real.(res.y)
 
-    i = length(ax2.scene.plots)
+    i = length(ax2.scene.plots) + 1
 
     scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=i)
     lines!(ax1, res.xfit, yfit_prime, colormap=:tab10, colorrange=(1, 10), color=i)
