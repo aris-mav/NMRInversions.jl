@@ -70,6 +70,11 @@ function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},fi
         parse(Float64, readuntil(io,"u"))
     end
 
+    end_rec = open(filename) do io 
+        readuntil(io, "Ending Record:")
+        parse(Int, readuntil(io,"\n"))
+    end
+
     tₑ /= 1e6 # convert to seconds
 
     open(filename) do io 
@@ -78,6 +83,13 @@ function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},fi
 
         data_matrix = readdlm(
             IOBuffer(readuntil(io, "\r\n\r\n[")), '\t'
+        )
+
+        final_point = floor(Int, size(data_matrix,1)/end_rec)
+        data_matrix = dropdims(
+            sum(
+                reshape(data_matrix, final_point, : , 3), dims = 2
+            ),dims=2
         )
 
         re = data_matrix[:,1]
