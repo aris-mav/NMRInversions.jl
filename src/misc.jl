@@ -350,7 +350,7 @@ function trim(Data::input2D, dir::Tuple{Int,Int}=(0,0), indir::Tuple{Int,Int}=(0
     return input2D(
         Data.seq, 
         Data.x_direct[1 + dir[1] : end - dir[2]],
-        Data.x_indirect[1 + dir[1] : end - dir[2]],
+        Data.x_indirect[1 + indir[1] : end - indir[2]],
         Data.data[1 + dir[1] : end - dir[2], 1 + indir[1] : end - indir[2]],
     )  
 end
