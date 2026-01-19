@@ -44,9 +44,30 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D};
     ax1.yscale = yscale
     ax1.xscale = xscale
 
+    if length(fig.content[2].scene.plots) > 1
+
+        Legend(fig[6:10,6:10], ax2)
+
+        ax2.limits = (
+            minimum(minimum(getfield.(res_mat,:X))),
+            maximum(maximum(getfield.(res_mat,:X))),
+            minimum(map(res -> -0.025 * maximum(res.f .* res.filter), res_mat)),
+            maximum(map(res ->  1.025 * maximum(res.f .* res.filter), res_mat)),
+        )
+    end
+
     return fig
 end
 
+
+function redraw(fig::Figure,res::inv_out_1D, int_low, int_high)
+    empty!(fig.content[1])
+    empty!(fig.content[2])
+    empty!(fig.content[3])
+    draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
+    vlines!(fig.content[2], int_low, color=:red)
+    vlines!(fig.content[2], int_high, color=:red)
+end
 
 """
     plot(res::inv_out_1D)
@@ -123,42 +144,22 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
 
     on(button_label.clicks) do _
         push!(res.selections, slider.interval[])
-        empty!(fig.content[1])
-        empty!(fig.content[2])
-        empty!(fig.content[3])
-        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
-        vlines!(fig.content[2], int_low, color=:red)
-        vlines!(fig.content[2], int_high, color=:red)
+        redraw(fig, res, int_low, int_high)
     end
 
     on(button_filter.clicks) do _
-        empty!(fig.content[1])
-        empty!(fig.content[2])
-        empty!(fig.content[3])
         filter_range!(res, slider.interval[])
-        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections = true)
-        vlines!(fig.content[2], int_low, color=:red)
-        vlines!(fig.content[2], int_high, color=:red)
+        redraw(fig, res, int_low, int_high)
     end
 
     on(button_reset_s.clicks) do _
         empty!(res.selections)
-        empty!(fig.content[1])
-        empty!(fig.content[2])
-        empty!(fig.content[3])
-        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res)
-        vlines!(fig.content[2], int_low, color=:red)
-        vlines!(fig.content[2], int_high, color=:red)
+        redraw(fig, res, int_low, int_high)
     end
 
     on(button_reset_f.clicks) do _
         res.filter = ones(length(res.X))
-        empty!(fig.content[1])
-        empty!(fig.content[2])
-        empty!(fig.content[3])
-        draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res)
-        vlines!(fig.content[2], int_low, color=:red)
-        vlines!(fig.content[2], int_high, color=:red)
+        redraw(fig, res, int_low, int_high)
     end
 
     on(button_save.clicks) do _
@@ -188,11 +189,11 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
         res.seq, res.x, (res.seq == PFG ? res.X .* 1e9 : res.X), y = res.y
     ) * f_prime - real.(res.y)
 
-    i = length(ax2.scene.plots)
+    i = length(ax2.scene.plots) + 1
 
     scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=i)
     lines!(ax1, res.xfit, yfit_prime, colormap=:tab10, colorrange=(1, 10), color=i)
-    !selections && lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+    !selections && lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=i, label = res.title)
     lines!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
     scatter!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
 
