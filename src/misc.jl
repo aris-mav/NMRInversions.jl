@@ -127,7 +127,7 @@ function autophase(input::input2D)
     seq = input.seq
 
     if seq in [IRCPMG]
-        re, im, ϕ = autophase(re, im, -1)
+        re, im, _ = autophase(re, im, -1)
         return input2D(seq, input.x_direct, input.x_indirect, complex.(re, im))
     else
         error("This function is not yet implemented for this pulse sequence. Please submit an issue on GitHub.")
@@ -229,7 +229,7 @@ function weighted_averages(r::inv_out_1D ; silent::Bool = false)
             display("Selection $(collect('a':'z')[i]) :")
             display(lbl[1] * " = $(round(wa[i], sigdigits=4)) "*lbl[2])
             display("Area = $(round(areas[i], sigdigits=4) * 100) %")
-            display()
+            display("")
         end
     end
 
