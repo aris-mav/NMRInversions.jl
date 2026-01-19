@@ -380,13 +380,13 @@ end
 
 export inv_out_2D
 """
-    inv_out_2D(seq, X_dir, X_indir, F, r, SNR, α, filter, selections)
+    inv_out_2D(seq, X_direct, X_indirect, F, r, SNR, α, filter, selections)
 
 Output of the invert function for 2D pulse sequences.
 A structure containing the following fields:
 - `seq` is the 2D pulse sequence (e.g. IRCPMG)
-- `X_dir`, the x values of the direct dimension.
-- `X_indir`, the x values of the indirect dimension.
+- `X_direct`, the x values of the direct dimension.
+- `X_indirect`, the x values of the indirect dimension.
 - `F`, the inversion results as a matrix.
 - `r`, the residuals.
 - `SNR`, the signal-to-noise ratio.
@@ -398,8 +398,8 @@ A structure containing the following fields:
 """
 mutable struct inv_out_2D
     seq::Type{<:pulse_sequence2D}
-    X_dir::Vector
-    X_indir::Vector
+    X_direct::Vector
+    X_indirect::Vector
     F::Matrix
     r::Vector
     SNR::Real

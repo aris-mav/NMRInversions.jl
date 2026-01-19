@@ -46,8 +46,8 @@ Return a vector of matrices, containing the F for each selection polygon.
 """
 function selections(res::inv_out_2D)
 
-    dir = res.X_dir
-    indir = res.X_indir
+    dir = res.X_direct
+    indir = res.X_indirect
     F = res.F
 
     x = collect(1:length(indir))
@@ -250,8 +250,8 @@ function weighted_averages(r::inv_out_2D; silent::Bool = false)
     volumes = Vector(undef, length(r.selections))
 
     z = r.F' .* r.filter'
-    x = r.X_indir
-    y = r.X_dir
+    x = r.X_indirect
+    y = r.X_direct
 
     points = [[i, j] for i in x, j in y]
     mask = zeros(size(points))
@@ -264,8 +264,8 @@ function weighted_averages(r::inv_out_2D; silent::Bool = false)
         indir_dist = vec(sum(spo, dims=2))
         dir_dist = vec(sum(spo, dims=1))
 
-        wa_indir[i] = indir_dist' *  r.X_indir / sum(spo)
-        wa_dir[i] = dir_dist' *  r.X_dir / sum(spo)
+        wa_indir[i] = indir_dist' *  r.X_indirect / sum(spo)
+        wa_dir[i] = dir_dist' *  r.X_direct / sum(spo)
         volumes[i] = sum(spo)/sum(z)
 
         dir_lbl = ["<T₂>","s"]
