@@ -80,8 +80,8 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
                      )
 
     seq = res.seq
-    x = res.X_indir
-    y = res.X_dir
+    x = res.X_indirect
+    y = res.X_direct
 
     xlbl = if seq == IRCPMG
         L"T_1 \, \textrm{(s)}"
@@ -171,8 +171,8 @@ function draw_on_axes(
     empty!(axright)
 
     z = res.F' .* res.filter'
-    x = res.X_indir
-    y = res.X_dir
+    x = res.X_indirect
+    y = res.X_direct
 
     # Plots
     if contf == true
@@ -375,8 +375,8 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     Label(gui[10,10:19], coord_label)
 
     z = res.F' .* res.filter'
-    x = res.X_indir
-    y = res.X_dir
+    x = res.X_indirect
+    y = res.X_direct
 
     #Create a matrix for all the discrete points in the space
     points = [[i, j] for i in x, j in y] #important, used by inpolygon later
