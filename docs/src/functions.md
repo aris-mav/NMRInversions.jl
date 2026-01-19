@@ -203,7 +203,7 @@ use the 'trim' function.
 
 ```@docs
 trim(::input1D, ::Int, ::Int)
-trim(::input2D, ::Tuple{Int,Int}, ::Tuple{Int,Int})
+trim(::input2D; direct::Tuple{Int,Int}=(0,0), indirect::Tuple{Int,Int}=(0,0))
 ```
 
 You can use the output of `trim()` directly as the inversion input:
