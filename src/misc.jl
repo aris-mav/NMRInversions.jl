@@ -191,7 +191,7 @@ function compress_data(t_direct::AbstractVector, G::AbstractMatrix, bins::Int=64
     G = A * G # Replace old G with compressed one
 
     # sanity check plot:
-    usv1 = svd(sqrt(W0) * K1) #paper (13)
+    #=usv1 = svd(sqrt(W0) * K1) #paper (13)=#
     # surface(G, camera=(110, 25), xscale=:log10)
 
 end
@@ -332,25 +332,25 @@ end
 
 
 """
-    trim(::input2D, ::Tuple{Int,Int}=(0,0), ::Tuple{Int,Int}=(0,0))
+    trim(::input2D; direct::Tuple{Int,Int}=(0,0), indirect::Tuple{Int,Int}=(0,0))
 
 Return an `input2D` structure which excludes a selected 
 amount of points from the beginning and the end of the 
 direct and indirect dimensions of the data matrix, respectively. 
 
-For example, `trim(data, (2,3), (1,4) )` will remove the first 2 
+For example, `trim(data, direct=(2,3), indirect=(1,4))` will remove the first 2 
 and the 3 last columns of the data matrix, as well as the first 
 row and the last four rows.
 
-That means, for T1T2 data, you will remove the first 2 and last 3 echoes
+That means, for T1T2 data, you will remove the first 2 and last 3 echo points
 for T2 (direct dimension), and the first 1 and last 4 inversion recovery 
 points (indirect dimension).
 """
-function trim(Data::input2D, dir::Tuple{Int,Int}=(0,0), indir::Tuple{Int,Int}=(0,0))
+function trim(Data::input2D; direct::Tuple{Int,Int}=(0,0), indirect::Tuple{Int,Int}=(0,0))
     return input2D(
         Data.seq, 
-        Data.x_direct[1 + dir[1] : end - dir[2]],
-        Data.x_indirect[1 + indir[1] : end - indir[2]],
-        Data.data[1 + dir[1] : end - dir[2], 1 + indir[1] : end - indir[2]],
+        Data.x_direct[1 + direct[1] : end - direct[2]],
+        Data.x_indirect[1 + indirect[1] : end - indirect[2]],
+        Data.data[1 + direct[1] : end - direct[2], 1 + indirect[1] : end - indirect[2]],
     )  
 end
