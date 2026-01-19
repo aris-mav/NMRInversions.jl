@@ -110,25 +110,25 @@ function test_expfit()
 end
 
 
-@testset "NMRInversions.jl" begin
-
-    display("Testing inversion of artificial data.")
+@testset "Inversions on artificial data" begin
     for seq in [IR, CPMG]
         for snr in exp10.(2:1:4) 
             @test test_artificial_data(seq,snr,alpha=gcv(),silent=true)
         end
     end
-
     @test test_artificial_data(IR, 500, alpha=gcv(1))
     @test test_artificial_data(IR, 500, alpha=lcurve(1e-5,10))
+end
 
-    display("Testing expfit.")
+@testset "expfits" begin
     @test test_expfit()
+end
 
-    display("Testing phase correction accuracy.")
+@testset "Phase correction" begin
     @test test_phase_correction()
+end
 
-    display("Testing plots - inverting geospec data.")
+@testset "GLMakie and import_geospec" begin
     @test isa( 
         plot(invert(import_geospec("../example_data/geospec_data/bunter_IR.txt"),silent=true)), 
         Figure
@@ -140,5 +140,4 @@ end
              ), 
         Figure
     )
-
 end
