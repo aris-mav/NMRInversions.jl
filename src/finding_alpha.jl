@@ -121,7 +121,7 @@ function find_alpha(svds::svd_kernel_struct,
 
     end
 
-    silent ? nothing : display("The optimal α is $(round(alphas[end-1], digits=3))")
+    silent ? nothing : display("The optimal α is $(round(alphas[end-1], sigdigits=3))")
     α = alphas[end-1]
     f = f_star
     r = svds.g - svds.K * f

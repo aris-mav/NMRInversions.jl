@@ -48,16 +48,10 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
         X = lims
     elseif isa(lims, Type{<:pulse_sequence1D})
         if lims == PFG
-            X = collect(NMRInversions.logrange(minimum(x)*7 , maximum(x)*50 , 128)) * 1e-9
+            X = collect(NMRInversions.logrange(minimum(x)*7 , maximum(x)*10 , 128)) 
         else
             X = collect(NMRInversions.logrange(minimum(x)/7 , maximum(x)*7 , 128)) 
         end
-    end
-
-
-    # Change scale to match bfactor, which is s/m²e-9, undo below to go back to SI
-    if seq == PFG
-        X .= X .* 1e9
     end
  
     ker_struct = create_kernel(seq, x, X, y)
@@ -159,7 +153,7 @@ function invert(
         if lims2 == IRCPMG
             X_indirect = collect(NMRInversions.logrange(minimum(x_indirect)/7, maximum(x_indirect)*7, 64)) 
         elseif lims2 == PFGCPMG
-            X_indirect = 1e-18 .* collect(NMRInversions.logrange(minimum(x_indirect)*7, maximum(x_indirect)*50, 64)) 
+            X_indirect = collect(NMRInversions.logrange(minimum(x_indirect)*7, maximum(x_indirect)*10, 64)) 
         end
     elseif isa(lims2, Tuple)
         X_indirect = exp10.(range(lims2...))
@@ -179,6 +173,10 @@ function invert(
     else
         f, r, α = find_alpha(ker_struct, solver, alpha, silent = silent)
 
+    end
+
+    if seq == PFGCPMG
+        X_indirect .= X_indirect .* 1e-9
     end
 
     F = reshape(f, length(X_direct), length(X_indirect))

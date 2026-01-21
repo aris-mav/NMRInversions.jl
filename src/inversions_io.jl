@@ -77,7 +77,6 @@ function import_spinsolve(files=pick_multi_file(pwd()))
         error("Please select only two files (data file and 'acqu.par'")
     end
 
-
     acqufile = files[contains.(files, "acqu")][1]
     datafile = files[.!contains.(files, "acqu")][1]
 
@@ -164,7 +163,7 @@ function spinsolve_read_PFGCPMG(acqufile, datafile)
     end 
 
     t_direct = collect(1:n_echoes) * t_echo
-    bfactor = g.^2 .* (γ^2 * δ^2 * (Δ - δ/3))
+    bfactor = g.^2 .* (γ^2 * δ^2 * (Δ - δ/3)) .* 1e-9
 
     Raw = readdlm(datafile, ' ')
 
