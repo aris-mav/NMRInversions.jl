@@ -39,6 +39,22 @@ function Makie.plot(data::NMRInversions.input2D)
     xd = data.x_direct
     xi = data.x_indirect
 
+    if any(map( x -> length(x) > 16000 , [xd,xi]))
+
+        dim = length(xd) > length(xi) ? "direct" : "indirect"
+        excess = maximum(map( x -> length(x), [xd,xi])) - 16000
+
+        throw("Dataset too big to plot, \
+              Makie throws errors. \
+              Consider using `trim` to have \
+              fewer than 16000 points on either \
+              dimensions. e.g. \
+              'plot(trim(data, $dim=(0,$excess)))` \
+              should work, as it will remove $excess \
+              points from the end of the $dim dimension data"
+              )
+    end
+
     fig = Figure()
     ax_dir = Axis(fig[1:4,1:5], ylabel= "Signal (a.u.)", 
                   title= "Direct dimension")
