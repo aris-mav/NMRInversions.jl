@@ -35,6 +35,10 @@ Interactive GUI to visualise the contents of a 2D NMR data structure.
 """
 function Makie.plot(data::NMRInversions.input2D)
 
+    dt = real.(data.data)
+    xd = data.x_direct
+    xi = data.x_indirect
+
     fig = Figure()
     ax_dir = Axis(fig[1:4,1:5], ylabel= "Signal (a.u.)", 
                   title= "Direct dimension")
@@ -42,24 +46,23 @@ function Makie.plot(data::NMRInversions.input2D)
                     title = "Indirect dimension")
     ax_full = Axis3(fig[1:9,6:10], zticklabelsize = 0.1, zlabelvisible=false)
 
-    d = real.(data.data)
-    xd = data.x_direct
-    xi = data.x_indirect
-
     sld = Slider(fig[5, 1:5], range = 1:length(xi), startvalue = 1)
     sli = Slider(fig[10, 1:5], range = 1:length(xd), startvalue = 1)
 
-    indir_slice = @lift(d[$(sli.value),:])
-    dir_slice = @lift(d[:,$(sld.value)])
+    indir_slice = @lift(dt[$(sli.value),:])
+    dir_slice = @lift(dt[:,$(sld.value)])
 
     scatter!(ax_dir, xd, dir_slice, color = Cycled(1))
     scatter!(ax_indir, xi, indir_slice, color = Cycled(2))
-    surface!(ax_full,xd, xi, d, alpha=0.5)
+    surface!(ax_full,xd, xi, dt, alpha=0.5)
     scatter!(ax_full, xd , @lift(fill(xi[$(sld.value)] ,length(xd)) ), dir_slice, color = Cycled(1), markersize = 10)
     scatter!(ax_full, @lift(fill(xd[$(sli.value)] ,length(xi)) ), xi , indir_slice, color = Cycled(2), markersize = 10)
 
-    y_low = minimum(d) * 1.1
-    y_high = maximum(d) * 1.1
+    scatter!(ax_dir, @lift(xd[$(sli.value)]), @lift(dt[$(sli.value),$(sld.value)]), color = Cycled(2))
+    scatter!(ax_indir, @lift(xi[$(sld.value)]), @lift(dt[$(sli.value),$(sld.value)]), color = Cycled(1))
+
+    y_low = minimum(dt) * 1.1
+    y_high = maximum(dt) * 1.1
     ax_dir.limits = (nothing,nothing,y_low,y_high)
     ax_indir.limits = (nothing,nothing,y_low,y_high)
 
