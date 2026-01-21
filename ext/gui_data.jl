@@ -70,7 +70,7 @@ function Makie.plot(data::NMRInversions.input2D)
 
     scatter!(ax_dir, xd, dir_slice, color = Cycled(1))
     scatter!(ax_indir, xi, indir_slice, color = Cycled(2))
-    surface!(ax_full,xd, xi, dt, alpha=0.5)
+    surface!(ax_full, xd, xi, dt, alpha=0.5)
     scatter!(ax_full, xd , @lift(fill(xi[$(sld.value)] ,length(xd)) ), dir_slice, color = Cycled(1), markersize = 10)
     scatter!(ax_full, @lift(fill(xd[$(sli.value)] ,length(xi)) ), xi , indir_slice, color = Cycled(2), markersize = 10)
 

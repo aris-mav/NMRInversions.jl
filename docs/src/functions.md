@@ -146,8 +146,25 @@ to load the package, and these functions become available.
 
 We basically take the `plot()` function offered by GLMakie and extend it to types from the package.
 
+### Data plots
+
+You can use `plot()` for `input1D` or `input2D`
+structures coming from import functions.
+
+e.g. 
+```julia
+data = import_csv(IR, "./path/to/file.csv")
+plot(data)
+```
+works well.
+
+```@docs
+plot(data::input1D)
+plot(data::input2D)
+```
+
 For inversions results, if your `inv_out_1D` or `inv_out_2D` struct is saved as
-a variable named `r`, using `plot(r)` will run a GUI to interractively visualize
+a variable named `r`, using `plot(r)` will run a GUI to interactively visualize
 your data and select regions to characterize.
 
 Using a matrix or vector of results (e.g. plot([r1, r2, r3]) will plot all of
