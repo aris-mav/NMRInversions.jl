@@ -8,7 +8,7 @@ using PolygonOps
 using Optim 
 
 include("types.jl")
-include("inversions_io.jl")
+include("import_data.jl")
 include("kernels.jl")
 include("finding_alpha.jl")
 include("optim_regularizations.jl")
