@@ -58,6 +58,58 @@ function read_acqu(filename, parameter)
 end
 
 export import_tecmag
+function import_tecmag(filename=pick_file(pwd()) ; echotime="Echo_Time")
+    open(filename) do io
+
+        head_vec = Vector{Int32}(undef,22) # init vector
+        read!(io, head_vec) # read header values
+
+        keys_list = [
+            "acq_points", 
+            "points_2d", 
+            "points_3d", 
+            "points_4d", 
+            "points_1d",
+            "actual_points_2d", 
+            "actual_points_3d", 
+            "actual_points_4d", 
+            "actual_scans_1d", 
+            "scan_start_1d", 
+            "points_start_2d",
+        ]
+
+        header = Dict(zip(keys_list, head_vec[6:16]))
+
+        readuntil(io, "DATA")
+        read(io,Int32) # discard this (empty bytes)
+        data_length = read(io,Int32) # how much data (in bytes)
+        data = Vector{ComplexF32}(undef,data_length ÷ 8) # create data array
+        read!(io,data) # fill the array
+
+        y = vec(sum(reshape(data , header["acq_points"], :), dims = 1))
+        y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
+
+        data_end = position(io) # save this position
+
+        readuntil(io, "de0:2")
+        if !eof(io) # Try looking for T1 information
+            readuntil(io, "de0:2")
+        end
+
+        seek(io,data_end)
+
+        while !eof(io) # Try looking for T2 information
+            readuntil(io, echotime)
+            if !isprint(peek(io, Char)) 
+                tₑ = parse(Int, filter(isdigit , readuntil(io,"u"))) / 1e-6
+                x = [ t * tₑ for t in 1:length(y)]
+                return autophase(input1D(CPMG, x, y))
+            end
+        end
+
+    end
+end
+
 function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},filename=pick_file(pwd()))
 
     aqp = open(filename) do io 
@@ -86,11 +138,6 @@ function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},fi
         )
 
         final_point = floor(Int, size(data_matrix,1)/end_rec)
-        data_matrix = dropdims(
-            sum(
-                reshape(data_matrix, final_point, : , 3), dims = 2
-            ),dims=2
-        )
 
         re = data_matrix[:,1]
         im = data_matrix[:,2]
