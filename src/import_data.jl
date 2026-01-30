@@ -101,7 +101,7 @@ function import_tecmag(filename=pick_file(pwd()) ; echotime="Echo_Time")
         while !eof(io) # Try looking for T2 information
             readuntil(io, echotime)
             if !isprint(peek(io, Char)) 
-                tₑ = parse(Int, filter(isdigit , readuntil(io,"u"))) / 1e-6
+                tₑ = parse(Int, filter(isdigit , readuntil(io,"u"))) * 1e-6
                 x = [ t * tₑ for t in 1:length(y)]
                 return autophase(input1D(CPMG, x, y))
             end
