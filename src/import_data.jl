@@ -58,7 +58,44 @@ function read_acqu(filename, parameter)
 end
 
 export import_tecmag
-function import_tecmag(filename=pick_file(pwd()) ; echotime="Echo_Time")
+"""
+    import_tecmag(filename)
+Read raw data from .tnt file and return a complex vector containing all the values.
+"""
+function import_tecmag(filename::String = pick_file(pwd()) )
+
+    data = open(filename) do io
+        head_vec = Vector{Int32}(undef,22) # init vector
+        read!(io, head_vec) # read header values
+        readuntil(io, "DATA")
+        read(io,Int32) # discard this (empty bytes)
+        data_length = read(io,Int32) # how much data (in bytes)
+        data = Vector{ComplexF32}(undef,data_length ÷ 8) # create data array
+        read!(io,data) # fill the array
+        # return vec(sum(reshape(data , head_vec[6], :), dims = 1))
+        return data
+    end
+
+end
+
+"""
+    import_tecmag(seq, filename)
+Read data from a .tnt file, and return a `input1D` or `input2D` object with 
+all the relevant information.
+ Necessary (positional) arguments:
+- `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
+- `filename` is the path of the file containing the data.
+
+ Optional (keyword) arguments:
+- `echotime` is the string that is used to denote the Echo time as 
+defined in the pulse sequence. Default value is "Echo_Time".
+
+"""
+function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
+                       filename::String =pick_file(pwd()); 
+                       echotime="Echo_Time"
+                       )
+
     open(filename) do io
 
         head_vec = Vector{Int32}(undef,22) # init vector
@@ -76,9 +113,11 @@ function import_tecmag(filename=pick_file(pwd()) ; echotime="Echo_Time")
             "actual_scans_1d", 
             "scan_start_1d", 
             "points_start_2d",
+            "points_start_3d",
+            "points_start_4d",
         ]
 
-        header = Dict(zip(keys_list, head_vec[6:16]))
+        header = Dict(zip(keys_list, head_vec[6:18]))
 
         readuntil(io, "DATA")
         read(io,Int32) # discard this (empty bytes)
@@ -87,85 +126,44 @@ function import_tecmag(filename=pick_file(pwd()) ; echotime="Echo_Time")
         read!(io,data) # fill the array
 
         y = vec(sum(reshape(data , header["acq_points"], :), dims = 1))
-        y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
 
         data_end = position(io) # save this position
+        seek(io, data_end)
 
-        readuntil(io, "de0:2")
-        if !eof(io) # Try looking for T1 information
+        if seq == IR
+
             readuntil(io, "de0:2")
-        end
-
-        seek(io,data_end)
-
-        while !eof(io) # Try looking for T2 information
-            readuntil(io, echotime)
-            if !isprint(peek(io, Char)) 
-                tₑ = parse(Int, filter(isdigit , readuntil(io,"u"))) * 1e-6
-                x = [ t * tₑ for t in 1:length(y)]
-                return autophase(input1D(CPMG, x, y))
+            readuntil(io, "de0:2")
+            readuntil(io, UInt8[0xc0, 0x00, 0x00, 0x00])
+            x = Vector{Float64}(undef,0)
+            while !eof(io)
+                try
+                    push!(x, (parse(Float64, readuntil(io, "m")) + 0.01) * 1e-3)
+                catch
+                    break
+                end
             end
-        end
 
-    end
-end
+            # y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
+            return autophase(input1D(IR, x, y))
 
-function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},filename=pick_file(pwd()))
+        elseif seq == CPMG
 
-    aqp = open(filename) do io 
-        readuntil(io, "Acq. Points, \t")
-        parse(Int, readline(io))
-    end
-
-    tₑ = open(filename) do io 
-        readuntil(io, "Echo_Time, \t")
-        parse(Float64, readuntil(io,"u"))
-    end
-
-    end_rec = open(filename) do io 
-        readuntil(io, "Ending Record:")
-        parse(Int, readuntil(io,"\n"))
-    end
-
-    tₑ /= 1e6 # convert to seconds
-
-    open(filename) do io 
-
-        readuntil(io,  "Real	Imag	usec\r\n")
-
-        data_matrix = readdlm(
-            IOBuffer(readuntil(io, "\r\n\r\n[")), '\t'
-        )
-
-        final_point = floor(Int, size(data_matrix,1)/end_rec)
-
-        re = data_matrix[:,1]
-        im = data_matrix[:,2]
-
-        y = vec(sum(reshape(complex.(re,im) , aqp, :), dims = 1))
-
-        if seq == CPMG
-            y .*= exp.( sum(angle.(y))/length(y) * complex(0,-1))
-            x = [ t * tₑ for t in 1:length(y) ]
-        elseif seq == IR
-            re, im, p = autophase(re, im, -1)
-            y = vec(sum(reshape(complex.(re,im) , aqp, :), dims = 1))
-            x = collect(logrange(1e-4,10,16))
-
+            while !eof(io)
+                readuntil(io, echotime)
+                if !isprint(peek(io, Char)) 
+                    tₑ = parse(Int, filter(isdigit , readuntil(io,"u"))) * 1e-6
+                    x = [ t * tₑ for t in 1:length(y)]
+                    y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
+                    return autophase(input1D(CPMG, x, y))
+                end
+            end
         elseif seq == IRCPMG
 
-            re, im, p = autophase(re, im, -1)
-            y = vec(sum(reshape(complex.(re,im) , aqp, :), dims = 1))
-            data2D = reshape(y,:,16)
-            x_indir = collect(logrange(1e-4,10,16))
-            x_dir = [ t * tₑ for t in 1:size(data2D,1) ]
-
-            return input2D(seq, x_dir, x_indir, data2D)
-
         end
 
-        return input1D(seq, x, y)
     end
+
 end
 
 export import_spinsolve
