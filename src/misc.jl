@@ -354,3 +354,30 @@ function trim(Data::input2D; direct::Tuple{Int,Int}=(0,0), indirect::Tuple{Int,I
         Data.data[1 + direct[1] : end - direct[2], 1 + indirect[1] : end - indirect[2]],
     )  
 end
+
+# Implement indexing
+function Base.getindex(data::input1D, i)
+    return input1D(data.seq, data.x[i], data.y[i])
+end
+# Tell Julia the length is based on the data vectors
+Base.length(data::input1D) = length(data.x)
+# Tell Julia that 'end' refers to the last index of the x vector
+Base.lastindex(data::input1D) = lastindex(data.x)
+
+function Base.getindex(d::input2D, i, j)
+    return input2D(
+        d.seq,
+        d.x_direct[i],
+        d.x_indirect[j],
+        d.data[i, j]
+    )
+end
+
+# Basic size reporting
+Base.size(d::input2D) = size(d.data)
+Base.size(d::input2D, dim::Int) = size(d.data, dim)
+# Required for the 'end' keyword
+Base.lastindex(d::input2D) = lastindex(d.data)
+Base.lastindex(d::input2D, dim::Int) = size(d.data, dim)
+# Good practice for completeness
+Base.axes(d::input2D, dim::Int) = axes(d.data, dim)
