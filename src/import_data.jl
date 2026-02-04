@@ -61,6 +61,9 @@ export import_tecmag
 """
     import_tecmag(filename)
 Read raw data from .tnt file and return a complex vector containing all the values.
+
+Calling this function without an argument by typing `import_tecmag()` 
+will open a file dialog to select the .tnt file.
 """
 function import_tecmag(filename::String = pick_file(pwd()) )
 
@@ -125,6 +128,8 @@ all the relevant information.
 - `echotime` is the string that is used to denote the Echo time as 
 defined in the pulse sequence. Default value is "Echo_Time".
 
+Calling this function without a filename argument, e.g.: `import_tecmag(seq)`, 
+will open a file dialog to select the .tnt file.
 """
 function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
                        filename::String =pick_file(pwd()); 
