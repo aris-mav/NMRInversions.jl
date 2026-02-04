@@ -4,8 +4,8 @@ export sequence_type
 abstract type sequence_type{D} end
 
 export nmr_data
-struct nmr_data{D, T <: sequence_type{D}}
-    seq::Type{T}
+struct nmr_data{D}
+    seq::Type{<:sequence_type{D}}
     x::NTuple{D, AbstractVector{<:Real}} 
     y::AbstractArray{<:Number, D}
 end
