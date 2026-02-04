@@ -72,10 +72,45 @@ function import_tecmag(filename::String = pick_file(pwd()) )
         data_length = read(io,Int32) # how much data (in bytes)
         data = Vector{ComplexF32}(undef,data_length ÷ 8) # create data array
         read!(io,data) # fill the array
-        # return vec(sum(reshape(data , head_vec[6], :), dims = 1))
+        return vec(sum(reshape(data , head_vec[6], :), dims = 1))
         return data
     end
 
+end
+
+function read_echo_times(io::IOStream, data_end::Int, len::Int, echotime::String)
+    
+    while !eof(io)
+        readuntil(io, echotime)
+        if !isprint(peek(io, Char)) 
+            tₑ = parse(Int, filter(isdigit , readuntil(io,"u"))) * 1e-6
+            x = [ t * tₑ for t in 1:len]
+            seek(io, data_end)
+            return x
+        end
+    end
+    throw("Could not find `$echotime` in the file.")
+end
+
+function read_de0_times(io::IOStream, data_end::Int, len::Int)
+
+    readuntil(io, "de0:2")
+    readuntil(io, "de0:2")
+    readuntil(io, UInt8[0xc0, 0x00, 0x00, 0x00])
+    x = Vector{Float64}(undef,0)
+    while !eof(io)
+        try
+            push!(x, (parse(Float64, readuntil(io, "m")) + 0.01) * 1e-3)
+        catch
+            break
+        end
+    end
+    seek(io, data_end)
+    if length(x) > 1
+        return x[1:len]
+    else
+        throw("Could not read de0 times.")
+    end
 end
 
 """
@@ -128,37 +163,26 @@ function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
         y = vec(sum(reshape(data , header["acq_points"], :), dims = 1))
 
         data_end = position(io) # save this position
-        seek(io, data_end)
 
         if seq == IR
 
-            readuntil(io, "de0:2")
-            readuntil(io, "de0:2")
-            readuntil(io, UInt8[0xc0, 0x00, 0x00, 0x00])
-            x = Vector{Float64}(undef,0)
-            while !eof(io)
-                try
-                    push!(x, (parse(Float64, readuntil(io, "m")) + 0.01) * 1e-3)
-                catch
-                    break
-                end
-            end
-
             # y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
-            return autophase(input1D(IR, x, y))
+            x = read_de0_times(io, data_end, length(y))
+            return autophase(input1D(seq, x, y))
 
         elseif seq == CPMG
 
-            while !eof(io)
-                readuntil(io, echotime)
-                if !isprint(peek(io, Char)) 
-                    tₑ = parse(Int, filter(isdigit , readuntil(io,"u"))) * 1e-6
-                    x = [ t * tₑ for t in 1:length(y)]
-                    y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
-                    return autophase(input1D(CPMG, x, y))
-                end
-            end
+            y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
+            x = read_echo_times(io, data_end, length(y), echotime)
+            return autophase(input1D(seq, x, y))
+
         elseif seq == IRCPMG
+
+            data_mat = reshape(y , :, header["actual_points_2d"]) 
+            x_dir = read_echo_times(io, data_end, size(data_mat,1), echotime)
+            x_indir = read_de0_times(io, data_end, size(data_mat,2))
+
+            return autophase(input2D(seq, x_dir, x_indir, data_mat) )
 
         end
 
