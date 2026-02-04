@@ -120,16 +120,21 @@ end
     import_tecmag(seq, filename)
 Read data from a .tnt file, and return a `input1D` or `input2D` object with 
 all the relevant information.
+
+This function is experimental, and since tecmag consoles work mainly with 
+custom pulse sequences, it might not cover some cases. 
+If it does not work for you, please submit an issue.
+
  Necessary (positional) arguments:
 - `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
 - `filename` is the path of the file containing the data.
 
  Optional (keyword) arguments:
-- `echotime` is the string that is used to denote the Echo time as 
+- `echotime` is the string that is used to denote the Echo time as
 defined in the pulse sequence. Default value is "Echo_Time".
 
 Calling this function without a filename argument, e.g.: `import_tecmag(seq)`, 
-will open a file dialog to select the .tnt file.
+will open a file dialogue to select the .tnt file.
 """
 function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
                        filename::String =pick_file(pwd()); 
@@ -198,12 +203,15 @@ end
 export import_spinsolve
 """
     import_spinsolve(files)
-Import data from a Spinsolve experiment. 
+Import data from a Spinsolve expert experiment. 
 Two paths must be provided as follows (order is not important):
 - `files` = [.../datafile.csv , .../acqu.par] 
-\
-Calling this function without an argument by typing `import_spinsolve()` will open a file dialog to select the files.
-The function reads the acqu.par.bak file to get the acquisition parameters, and the .dat file to get the data. 
+
+Calling this function without an argument by typing `import_spinsolve()`
+will open a file dialogue to select the files.
+
+The function reads the acqu.par.bak file to get the 
+acquisition parameters, and the .dat file to get the data. 
 The function returns an `input2D` structure.
 """
 function import_spinsolve(files=pick_multi_file(pwd()))
