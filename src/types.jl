@@ -4,6 +4,34 @@ export pulse_sequence1D, pulse_sequence2D
 export IR, SR, CPMG, PFG, IRCPMG, SRCPMG, PFGCPMG, CPMGCPMG
 export alpha_optimizer, regularization_solver
 
+export sequence_type
+abstract type sequence_type{D} end
+
+export nmr_data
+struct nmr_data{D, T <: sequence_type{D}}
+    seq::Type{T}
+    x::NTuple{D, AbstractVector{<:Real}} 
+    y::AbstractArray{<:Number, D}
+end
+
+for (name, D, desc) in [
+    (:T1,   1, "Inversion recovery"),
+    (:T2,   1, "CPMG"),
+    (:D,    1, "PFG"),
+    (:T1T2, 2, "IR-CPMG")
+]
+    doc_text = """
+        $desc pulse sequence type, refering to a $(D)D NMR measurement.
+        It can be used wherever the `seq` argument is required.
+        """
+    @eval begin
+        struct $name <: sequence_type{$D} end
+        @doc $doc_text $name
+        export $name
+    end
+end
+
+# Pulse sequences
 abstract type pulse_sequence1D end
 abstract type pulse_sequence2D end
 
