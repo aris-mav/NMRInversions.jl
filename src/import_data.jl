@@ -59,7 +59,7 @@ end
 
 export import_tnt, read_tnt_data, read_tnt_header
 """
-    read_tnt_data(filename)
+    read_tnt_data(filename::String)
 Read raw data from  a tecmag .tnt file and return a 
 complex vector containing all the values.
 
@@ -80,7 +80,7 @@ function read_tnt_data(filename::String = pick_file(pwd()) )
 end
 
 """
-    read_tnt_header(filename)
+    read_tnt_header(filename::String)
 Read the header of a .tnt file and return a dictionary 
 with all the relevant information.
 """
@@ -167,7 +167,7 @@ custom pulse sequences, it might not cover some cases.
 If it does not work for you, please submit an issue.
 
  Necessary (positional) arguments:
-- `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
+- `seq` is the pulse sequence (e.g. IR, CPMG, PFG)
 - `filename` is the path of the file containing the data.
 
  Optional (keyword) arguments:

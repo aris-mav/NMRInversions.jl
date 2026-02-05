@@ -7,7 +7,7 @@ LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"
 NMRInversions = "55c20db2-0166-4687-95c3-62a9c7afb29b"
 
 [sources]
-NMRInversions = {rev = "master", url = ".."}
+NMRInversions = { path = ".." }
 
 [compat]
 Documenter = "1.8.0"
