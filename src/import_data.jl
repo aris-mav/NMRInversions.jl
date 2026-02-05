@@ -57,92 +57,31 @@ function read_acqu(filename, parameter)
     return replace(p, "\"" => "")
 end
 
-export import_tecmag
+export import_tnt, read_tnt_data, read_tnt_header
 """
-    import_tecmag(filename)
-Read raw data from .tnt file and return a complex vector containing all the values.
+    read_tnt_data(filename)
+Read raw data from  a tecmag .tnt file and return a 
+complex vector containing all the values.
 
-Calling this function without an argument by typing `import_tecmag()` 
+Calling this function without an argument by typing `import_tnt()` 
 will open a file dialog to select the .tnt file.
 """
-function import_tecmag(filename::String = pick_file(pwd()) )
+function read_tnt_data(filename::String = pick_file(pwd()) )
 
     data = open(filename) do io
-        head_vec = Vector{Int32}(undef,22) # init vector
-        read!(io, head_vec) # read header values
         readuntil(io, "DATA")
         read(io,Int32) # discard this (empty bytes)
         data_length = read(io,Int32) # how much data (in bytes)
         data = Vector{ComplexF32}(undef,data_length ÷ 8) # create data array
         read!(io,data) # fill the array
-        return vec(sum(reshape(data , head_vec[6], :), dims = 1))
         return data
     end
 
 end
 
-function read_echo_times(io::IOStream, data_end::Int, len::Int, echotime::String)
+function read_tnt_header(filename)
     
-    while !eof(io)
-        readuntil(io, echotime)
-        if !isprint(peek(io, Char)) 
-            tₑ = parse(Int, filter(isdigit , readuntil(io,"u"))) * 1e-6
-            x = [ t * tₑ for t in 1:len]
-            seek(io, data_end)
-            return x
-        end
-    end
-    throw("Could not find `$echotime` in the file.")
-end
-
-function read_de0_times(io::IOStream, data_end::Int, len::Int)
-
-    readuntil(io, "de0:2")
-    readuntil(io, "de0:2")
-    readuntil(io, UInt8[0xc0, 0x00, 0x00, 0x00])
-    x = Vector{Float64}(undef,0)
-    while !eof(io)
-        try
-            push!(x, (parse(Float64, readuntil(io, "m")) + 0.01) * 1e-3)
-        catch
-            break
-        end
-    end
-    seek(io, data_end)
-    if length(x) > 1
-        return x[1:len]
-    else
-        throw("Could not read de0 times.")
-    end
-end
-
-"""
-    import_tecmag(seq, filename)
-Read data from a .tnt file, and return a `input1D` or `input2D` object with 
-all the relevant information.
-
-This function is experimental, and since tecmag consoles work mainly with 
-custom pulse sequences, it might not cover some cases. 
-If it does not work for you, please submit an issue.
-
- Necessary (positional) arguments:
-- `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
-- `filename` is the path of the file containing the data.
-
- Optional (keyword) arguments:
-- `echotime` is the string that is used to denote the Echo time as
-defined in the pulse sequence. Default value is "Echo_Time".
-
-Calling this function without a filename argument, e.g.: `import_tecmag(seq)`, 
-will open a file dialogue to select the .tnt file.
-"""
-function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
-                       filename::String =pick_file(pwd()); 
-                       echotime="Echo_Time"
-                       )
-
     open(filename) do io
-
         head_vec = Vector{Int32}(undef,22) # init vector
         read!(io, head_vec) # read header values
 
@@ -162,42 +101,106 @@ function import_tecmag(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
             "points_start_4d",
         ]
 
-        header = Dict(zip(keys_list, head_vec[6:18]))
+        return Dict(zip(keys_list, head_vec[6:18]))
+    end
+end
+
+function read_tnt_echo_times(filename, len::Int, echotime::String)
+    
+    open(filename) do io
+        readuntil(io, "DATA")
+        read(io,Int32) # discard this (empty bytes)
+        data_length = read(io,Int32) # how much data (in bytes)
+        skip(io, data_length)
+        while !eof(io)
+            readuntil(io, echotime)
+            if !isprint(peek(io, Char)) 
+                tₑ = parse(Int, filter(isdigit , readuntil(io,"u"))) * 1e-6
+                x = [ t * tₑ for t in 1:len ]
+                return x
+            end
+        end
+        throw("Could not find `$echotime` in the file.")
+    end
+end
+
+function read_tnt_de0_times(filename, len::Int)
+
+    open(filename) do io
 
         readuntil(io, "DATA")
         read(io,Int32) # discard this (empty bytes)
         data_length = read(io,Int32) # how much data (in bytes)
-        data = Vector{ComplexF32}(undef,data_length ÷ 8) # create data array
-        read!(io,data) # fill the array
+        skip(io, data_length)
 
-        y = vec(sum(reshape(data , header["acq_points"], :), dims = 1))
-
-        data_end = position(io) # save this position
-
-        if seq == IR
-
-            # y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
-            x = read_de0_times(io, data_end, length(y))
-            return autophase(input1D(seq, x, y))
-
-        elseif seq == CPMG
-
-            y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
-            x = read_echo_times(io, data_end, length(y), echotime)
-            return autophase(input1D(seq, x, y))
-
-        elseif seq == IRCPMG
-
-            data_mat = reshape(y , :, header["actual_points_2d"]) 
-            x_dir = read_echo_times(io, data_end, size(data_mat,1), echotime)
-            x_indir = read_de0_times(io, data_end, size(data_mat,2))
-
-            return autophase(input2D(seq, x_dir, x_indir, data_mat) )
-
+        readuntil(io, "de0:2")
+        readuntil(io, "de0:2")
+        readuntil(io, UInt8[0xc0, 0x00, 0x00, 0x00])
+        x = Vector{Float64}(undef,0)
+        while !eof(io)
+            try
+                push!(x, (parse(Float64, readuntil(io, "m")) + 0.01) * 1e-3)
+            catch
+                break
+            end
         end
+        if length(x) > 1
+            return x[1:len]
+        else
+            throw("Could not read de0 times.")
+        end
+    end
+end
+
+"""
+    import_tnt(seq, filename)
+Read data from a tecmag .tnt file, and return a `input1D` or `input2D` object with 
+all the relevant information.
+
+This function is experimental, and since tecmag consoles work mainly with 
+custom pulse sequences, it might not cover some cases. 
+If it does not work for you, please submit an issue.
+
+ Necessary (positional) arguments:
+- `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
+- `filename` is the path of the file containing the data.
+
+ Optional (keyword) arguments:
+- `echotime` is the string that is used to denote the Echo time as
+defined in the pulse sequence. Default value is "Echo_Time".
+
+Calling this function without a filename argument, e.g.: `import_tnt(seq)`, 
+will open a file dialogue to select the .tnt file.
+"""
+function import_tnt(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
+                       filename::String =pick_file(pwd()); 
+                       echotime="Echo_Time"
+                       )
+
+    header = read_tnt_header(filename)
+    data = read_tnt_data(filename)
+    y = vec(sum(reshape(data , header["acq_points"], :), dims = 1))
+
+    if seq == IR
+
+        # y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
+        x = read_tnt_de0_times(filename, length(y))
+        return autophase(input1D(seq, x, y))
+
+    elseif seq == CPMG
+
+        y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
+        x = read_tnt_echo_times(filename, length(y), echotime)
+        return autophase(input1D(seq, x, y))
+
+    elseif seq == IRCPMG
+
+        data_mat = reshape(y , :, header["actual_points_2d"]) 
+        x_dir = read_tnt_echo_times(filename, size(data_mat,1), echotime)
+        x_indir = read_tnt_de0_times(filename, size(data_mat,2))
+        return autophase(input2D(seq, x_dir, x_indir, data_mat))
 
     end
-
 end
 
 export import_spinsolve
