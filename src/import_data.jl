@@ -79,7 +79,12 @@ function read_tnt_data(filename::String = pick_file(pwd()) )
 
 end
 
-function read_tnt_header(filename)
+"""
+    read_tnt_header(filename)
+Read the header of a .tnt file and return a dictionary 
+with all the relevant information.
+"""
+function read_tnt_header(filename::String)
     
     open(filename) do io
         head_vec = Vector{Int32}(undef,22) # init vector
@@ -105,7 +110,7 @@ function read_tnt_header(filename)
     end
 end
 
-function read_tnt_echo_times(filename, len::Int, echotime::String)
+function read_tnt_echo_times(filename::String, len::Int, echotime::String)
     
     open(filename) do io
         readuntil(io, "DATA")
