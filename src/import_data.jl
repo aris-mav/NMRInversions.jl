@@ -62,9 +62,6 @@ export import_tnt, read_tnt_data, read_tnt_header
     read_tnt_data(filename::String)
 Read raw data from  a tecmag .tnt file and return a 
 complex vector containing all the values.
-
-Calling this function without an argument by typing `import_tnt()` 
-will open a file dialog to select the .tnt file.
 """
 function read_tnt_data(filename::String = pick_file(pwd()) )
 
