@@ -130,12 +130,12 @@ end
 
 @testset "GLMakie and import_geospec" begin
     @test isa( 
-        plot(invert(import_geospec("../example_data/geospec_data/bunter_IR.txt"),silent=true)), 
+        plot(invert(import_geospec("../example_data/geospec_txt/IR_bunter.txt"),silent=true)), 
         Figure
     )
     @test isa( 
         plot(invert(
-            import_geospec("../example_data/geospec_data/bunter_IRCPMG.txt"),
+            import_geospec("../example_data/geospec_txt/IRCPMG_bunter.txt"),
             alpha = 0.5, silent = true)
              ), 
         Figure
