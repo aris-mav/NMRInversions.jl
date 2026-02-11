@@ -74,6 +74,21 @@ That text file can be read by the `import_geospec` function.
 import_geospec(::String)
 ```
 
+For.tnt files from Tecmag consoles, `import_tnt`
+can be used. It should be noted however, that
+since pulse sequence implementations might vary,
+automatic parsing of the data into a `input1D` or
+`input2D` struct might fail. Therefore, the more
+manual `read_tnt_data` and `read_tnt_header`
+functions can be used for fine-tuned cases. If
+that sounds confusing, please submit an issue and
+we'll work on it!
+
+```@docs
+import_tnt(::Type{<:Union{pulse_sequence1D, pulse_sequence2D}}, ::String; kwargs...)
+read_tnt_data(::String)
+read_tnt_header(::String)
+```
 
 ## Inversion 
 The most important function is `invert()`, which is the main function of the package.
