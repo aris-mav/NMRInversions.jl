@@ -32,6 +32,7 @@ They can be used as input to the `invert` function as the 'solver' argument.
 brd
 pdhgm
 optim_nnls
+jump_nnls
 ```
 
 ## Finding optimal alpha

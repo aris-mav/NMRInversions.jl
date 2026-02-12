@@ -103,13 +103,14 @@ It can be used as a "solver" for invert function.
 Order `n` means that the penalty term will be the n'th derivative
 of the results. 
 
-`L` detemines which norm of the penalty term will be minimized. 
-Default is 2 (tikhonov regularization).
+`n` detemines which norm of the loss function will be minimized. 
+Default is 2 (tikhonov regularization), but 1 is not the same as L1 regularization, 
+as both the residual term and the penalty term will be 1-norms, not just the penalty.
 
 """
 struct optim_nnls <: regularization_solver 
     order::Int
-    L::Int
+    n::Int
     optim_nnls() = new(0, 2)
     optim_nnls(x::Int) = new(x, 2)
     optim_nnls(x::Int, y::Int) = new(x, y)
@@ -121,9 +122,14 @@ Jump non-negative least squares method for tikhonov (L2) regularization,
 implemented using the JuMP extension.
 All around effective, but can be slow for large problems, such as 2D inversions, 
 unless a powerful solver like gurobi is used.
-The solver argument is parsed directly into JuMP.
-It can be used as a "solver" for invert function.
-Order determines the tikhonov matrix. If 0 is chosen, the identity matrix is used.
+
+`solver` is passed directly into JuMP. 
+`order` determines the tikhonov finite-difference matrix. 
+If 0 is chosen, the identity matrix is used.
+
+
+This one is still experimental and not well-tested, 
+please submit an issue if you encounter any difficulties.
 """
 struct jump_nnls <: regularization_solver 
     order::Int
