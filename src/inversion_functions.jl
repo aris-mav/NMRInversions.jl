@@ -25,7 +25,7 @@ or look at the "Types and Structures - Finding Optimal Alpha" section of the
 documentation for other options.  
 No selection will lead to automatically determining alpha through the 
 default method, which is `gcv()`.
-- `solver` is the algorithm used to do the inversion math. Default is `brd`.
+- `solver` is the algorithm used to do the inversion math. Default is `brd()`.
 - `normalize` will normalize `y` to 1 at the max value of `y`. Default is `true`.  
 - `silent` will suppress the output of the alpha search. Default is `false`.
 
@@ -122,7 +122,7 @@ By default, 64 points are used, logarithmically spaced between the first value
 in x divided by 7, and the final value in x multiplied by 7 (for both direct and indirect x).
 
 - `alpha` determines the smoothing term. Use a real number for a fixed alpha.  No selection will lead to automatically determining alpha through the default method, which is `gcv`.
-- `solver` is the algorithm used to do the inversion math. Default is `brd`.
+- `solver` is the algorithm used to do the inversion math. Default is `brd()`.
 - `normalize` will normalize `Data` so that its maximum value is 1. Default is `true`.
 - `silent` will suppress the output of the alpha search. Default is `false`.
 
@@ -132,7 +132,7 @@ function invert(
     lims1::Union{Tuple{Real, Real, Int}, AbstractVector, Type{<:pulse_sequence2D}}=seq, 
     lims2::Union{Tuple{Real, Real, Int}, AbstractVector, Type{<:pulse_sequence2D}}=seq,
     alpha::Union{Real, alpha_optimizer} = gcv(), 
-    solver::Union{regularization_solver, Type{<:regularization_solver}}=brd(),
+    solver::regularization_solver=brd(),
     normalize::Bool=true,
     silent::Bool = false
 )
