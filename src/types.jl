@@ -69,7 +69,8 @@ struct ripqp <: regularization_solver end
     pdhgm(σ, τ)
 Primal dual hybrid gradient method for L1 regularization, 
 following [this paper](https://doi.org/10.1016/j.jmr.2017.05.010)
-[Reci2017](@cite)
+[Reci2017](@cite).
+
 It can be used as a "solver" for the invert function.
 
 The particular choice of σ and τ is heuristic. 
@@ -79,6 +80,13 @@ The best values of σ and τ will depend slightly on the scaling of the signal.
 Therefore, it is best to normalize the NMR signal to a maximum of 1,
 a technique which was followed in the cited study.
 
+Can also be called with positional arguments:
+
+- `sigma`
+- `tau`
+
+for convenience.
+
 Note that for this method, the role of α is inverted, with larger α values
 leading to less smoothing, not more. For that reason, `alpha=gcv()` (Mitchell method)
 will not work. Please use `alpha=gcv(starting_value)` or `alpha=gcv(lower_limit, upper_limit)', or some lcurve method instead.
@@ -86,9 +94,29 @@ will not work. Please use `alpha=gcv(starting_value)` or `alpha=gcv(lower_limit,
 struct pdhgm <: regularization_solver
     σ::Real
     τ::Real
-    pdhgm() = new(0.1, 10.0)
-    pdhgm(σ::Real, τ::Real) = new(σ, τ)
 end
+pdhgm(;sigma::Real=0.1, tau::Real=10.0) = pdhgm(sigma, tau)
+
+
+"""
+    cdL1(; iterations, tol)
+Coordinate descent method for L1 regularization.
+
+It can be used as a "solver" for the invert function.
+
+Accepts two keyword (optional arguments):
+
+- `iterations` is an integer declaring the maximum amount of \
+iterations before the algorithm stops (default value `10000`).
+
+- `tol` is the relative tolerance (default value `1e-5`)
+
+"""
+struct cdL1 <: regularization_solver
+    iterations::Int
+    tol::Real
+end
+cdL1(;iterations::Int=10000, tol::Real=1e-5) = cdL1(iterations, tol)
 
 
 """
@@ -98,12 +126,12 @@ implemented using Optim.jl.
 All around effective, but can be slow for large problems, such as 2D inversions.
 It can be used as a "solver" for invert function.
 
-`order` is an integer that determines the tikhonov matrix 
+- `order` is an integer that determines the tikhonov matrix 
 (for more info look Hansen's 2010 book on inverse problems). 
 Order `n` means that the penalty term will be the n'th derivative
 of the results. 
 
-`n` detemines which norm of the loss function will be minimized. 
+- `n` detemines which norm of the loss function will be minimized. 
 Default is 2 (tikhonov regularization), but 1 is not the same as L1 regularization, 
 as both the residual term and the penalty term will be 1-norms, not just the penalty.
 
@@ -123,10 +151,9 @@ implemented using the JuMP extension.
 All around effective, but can be slow for large problems, such as 2D inversions, 
 unless a powerful solver like gurobi is used.
 
-`solver` is passed directly into JuMP. 
-`order` determines the tikhonov finite-difference matrix. 
+- `solver` is passed directly into JuMP. 
+- `order` determines the tikhonov finite-difference matrix. \
 If 0 is chosen, the identity matrix is used.
-
 
 This one is still experimental and not well-tested, 
 please submit an issue if you encounter any difficulties.
@@ -136,7 +163,7 @@ struct jump_nnls <: regularization_solver
     solver::Symbol
 end
 
-export regularization_solver, brd, ripqp, pdhgm, optim_nnls, jump_nnls
+export regularization_solver, brd, ripqp, pdhgm, cdL1, optim_nnls, jump_nnls
 
 
 "Supported methods to determine the α parameter in tikhonov regularization"

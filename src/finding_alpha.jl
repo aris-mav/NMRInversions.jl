@@ -92,6 +92,15 @@ function find_alpha(svds::svd_kernel_struct,
     #Initial guess (overestimate)
     α = sum(s̃ .^ 2) / ñ
 
+    if any(isa.( (solver,), (
+        cdL1,
+        pdhgm,
+    )))
+        throw("The Mitchell et. al. gcv method will not work a `$(typeof(solver)) solver. \
+              Please use a different alpha option, or change the solver \
+              (e.g.: `alpha=gcv(0.01,10)` or `solver=brd()`).")
+    end
+
     alphas = []
     phis = []
     f_star = []

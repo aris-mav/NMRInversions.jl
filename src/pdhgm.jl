@@ -1,3 +1,8 @@
+# Primal dual hybrid gradient method, based on:
+# https://doi.org/10.1016/j.jmr.2017.05.010
+
+using LinearAlgebra
+
 function PDHGM(K::AbstractMatrix, s::AbstractVector, α::Real; tol=10, τ=10 , σ=0.1)
 
     B = inv(LinearAlgebra.I + τ * α * K' * K)

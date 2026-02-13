@@ -31,6 +31,7 @@ They can be used as input to the `invert` function as the 'solver' argument.
 ```@docs
 brd
 pdhgm
+cdL1
 optim_nnls
 jump_nnls
 ```
