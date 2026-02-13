@@ -32,7 +32,7 @@ end
 
 function gcv_cost(α::Real, 
                   svds::svd_kernel_struct, 
-                  solver::Union{regularization_solver, Type{<:regularization_solver}})
+                  solver::regularization_solver)
 
     #=display("Testing α = $(round(α,sigdigits=3))")=#
     f, r = solve_regularization(svds.K, svds.g, α, solver)
@@ -83,7 +83,7 @@ Solve repeatedly until the GCV score stops decreasing, following Mitchell 2012 p
 Select the solution with minimum gcv score and return it, along with the residuals.
 """
 function find_alpha(svds::svd_kernel_struct, 
-                   solver::Union{regularization_solver, Type{<:regularization_solver}},
+                   solver::regularization_solver,
                    mode::gcv_mitchell ; silent = false)
 
     s̃ = svds.S
@@ -91,6 +91,15 @@ function find_alpha(svds::svd_kernel_struct,
 
     #Initial guess (overestimate)
     α = sum(s̃ .^ 2) / ñ
+
+    if any(isa.( (solver,), (
+        cdL1,
+        pdhgm,
+    )))
+        throw("The Mitchell et. al. gcv method will not work a `$(typeof(solver))` solver. \
+              Please use a different alpha option, or change the solver \
+              (e.g.: `alpha=gcv(0.01,10)` or `solver=brd()`).")
+    end
 
     alphas = []
     phis = []
@@ -134,7 +143,7 @@ end
 Find alpha via univariate optimization.
 """
 function find_alpha(svds::svd_kernel_struct,
-                   solver::Union{regularization_solver, Type{<:regularization_solver}},
+                   solver::regularization_solver,
                    mode::find_alpha_univariate; silent = true
                    )
 
@@ -182,7 +191,7 @@ end
 Find alpha using Fminbox optimization.
 """
 function find_alpha(svds::svd_kernel_struct,
-                    solver::Union{regularization_solver, Type{<:regularization_solver}},
+                    solver::regularization_solver,
                     mode::find_alpha_box ; silent = true
                     )
 
@@ -217,7 +226,7 @@ Test `n` alpha values between `lower` and `upper` and select the one
 which is at the heel of the L curve, accoding to Hansen 2010.
 """
 function find_alpha(svds::svd_kernel_struct,
-                   solver::Union{regularization_solver, Type{<:regularization_solver}},
+                   solver::regularization_solver,
                    mode::lcurve_range; silent = false
                    )
 

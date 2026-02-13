@@ -25,12 +25,13 @@ IRCPMG
 ## Inversion solvers
 These are used to let the invert fucntion know which solver to use.
 They can be used as input to the `invert` function as the 'solver' argument.
-(e.g., `invert(data, solver=brd)` [Song2002](@cite) or 
+(e.g., `invert(data, solver=brd())` [Song2002](@cite) or 
 `invert(data, solver=pdhgm(10,0.1) )`) [Reci2017](@cite).
 
 ```@docs
 brd
 pdhgm
+cdL1
 optim_nnls
 jump_nnls
 ```
