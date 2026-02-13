@@ -3,7 +3,7 @@
 
 using LinearAlgebra
 
-function PDHGM(K::AbstractMatrix, s::AbstractVector, α::Real; tol=10, τ=10 , σ=0.1)
+function PDHGM(K::AbstractMatrix, s::AbstractVector, α::Real; tol=1e-5, τ=0.1 , σ=10)
 
     B = inv(LinearAlgebra.I + τ * α * K' * K)
     Y = zeros(size(K, 2))
@@ -27,7 +27,10 @@ end
 
 function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, solver::pdhgm)
 
-    f = PDHGM(K, g, α, τ=solver.τ, σ=solver.σ)
+    f = PDHGM(K, g, α, 
+              tol=solver.tol, 
+              τ=solver.τ, 
+              σ=solver.σ)
 
     r = K * f - g
 

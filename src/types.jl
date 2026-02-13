@@ -66,24 +66,28 @@ end
 struct ripqp <: regularization_solver end
 
 """
-    pdhgm(σ, τ)
+    pdhgm(σ, τ, tol)
 Primal dual hybrid gradient method for L1 regularization, 
 following [this paper](https://doi.org/10.1016/j.jmr.2017.05.010)
 [Reci2017](@cite).
 
 It can be used as a "solver" for the invert function.
 
+Positional (keyowrd) arguments:
+
+- `sigma` (default value `10`)
+- `tau` (default value `0.1`)
+- `tol` (default value `1e-5`)
+
 The particular choice of σ and τ is heuristic. 
-A smaller σ will increase the stability while reducing the convergence speed
-of the algorithm. A good compromise between the two was found when σ = 0.1 and τ = 10. 
+The parameters σ and τ are step size parameters, which control
+convergence and stability of the algorithm. Convergence is guaranteed 
+when `τσ ≤ 1`.
+
 The best values of σ and τ will depend slightly on the scaling of the signal. 
-Therefore, it is best to normalize the NMR signal to a maximum of 1,
-a technique which was followed in the cited study.
+Therefore, it is best to normalize the NMR signal to a maximum of 1 
+(this is default for the invert function, no need to do anything).
 
-Can also be called with positional arguments:
-
-- `sigma`
-- `tau`
 
 for convenience.
 
@@ -94,8 +98,9 @@ will not work. Please use `alpha=gcv(starting_value)` or `alpha=gcv(lower_limit,
 struct pdhgm <: regularization_solver
     σ::Real
     τ::Real
+    tol::Real
 end
-pdhgm(;sigma::Real=0.1, tau::Real=10.0) = pdhgm(sigma, tau)
+pdhgm(;sigma::Real=10, tau::Real=0.1, tol::Real=1e-5) = pdhgm(sigma, tau, tol)
 
 
 """
