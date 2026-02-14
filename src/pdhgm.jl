@@ -47,14 +47,8 @@ function PDHGM2(K::AbstractMatrix, s::AbstractVector, α::Real; tol=1e-5, τ=0.1
         mul!(f, B, temp_vec) 
         @. f = max(0, f)
         
-        num = 0.0
-        den = 0.0
-        @inbounds for i in eachindex(f)
-            diff = f[i] - f_prev[i]
-            num += diff * diff
-            den += f_prev[i] * f_prev[i]
-        end
-        ε = sqrt(num) / sqrt(den)
+        @. temp_vec = f - f_prev 
+        ε = norm(temp_vec) / norm(f_prev)
         
         @. f̃ = 2 * f - f_prev
         copyto!(f_prev, f)
