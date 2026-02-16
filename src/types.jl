@@ -283,9 +283,6 @@ lcurve(lowest_value::Real, highest_value::Real, number_of_steps::Int,) =
 Constructor for finding the optimal alpha value via lcurve curvature
 box optimization, given a starting value.
 
-Currently this method is very slow for lcurve, probably due to the cost of
-computing the gradient of the curvature. Need to further investigate.
-
  Necessary (positional) arguments:
 - `start` is the starting alpha value. 
 Choose something sensible, usually a value between 0.1 and 10 would work well.

@@ -52,18 +52,22 @@ Compute the curvature of the L-curve at a given point.
 """
 function l_curvature(f, r, α, A, b)
 
-    ξ = f'f
-    ρ = r'r
-    λ = √α
+    ξ = dot(f, f)
+    ρ = dot(r, r)
+    λ = sqrt(α)
 
-    z = NMRInversions.solve_ls(A, b)
+    z = A \ b
 
-    ∂ξ∂λ = (4 / λ) * f'z
+    f_dot_z = dot(f, z)
+    ∂ξ∂λ = (4 / λ) * f_dot_z
 
-    ĉ = 2 * (ξ * ρ / ∂ξ∂λ) * (α * ∂ξ∂λ * ρ + 2 * ξ * λ * ρ + λ^4 * ξ * ∂ξ∂λ) / ((α * ξ^2 + ρ^2)^(3 / 2))
+    # ĉ = 2 * (ξ * ρ / ∂ξ∂λ) * (α * ∂ξ∂λ * ρ + 2 * ξ * λ * ρ + λ^4 * ξ * ∂ξ∂λ) / ((α * ξ^2 + ρ^2)^(3 / 2))
+    ξ2 = ξ^2
+    ρ2 = ρ^2
+    num = 2 * (ξ * ρ / ∂ξ∂λ) * (α * ∂ξ∂λ * ρ + 2 * ξ * λ * ρ + λ^4 * ξ * ∂ξ∂λ)
+    den = (α * ξ2 + ρ2)^(1.5)
 
-    return ĉ
-
+    return num / den
 end
 
 function l_cost(K, g, α, solver)
@@ -71,7 +75,7 @@ function l_cost(K, g, α, solver)
     f, r = NMRInversions.solve_regularization(K, g, α, solver)
 
     A = sparse([K; √(α) * LinearAlgebra.I ])
-    b = sparse([r; zeros(size(A, 1) - size(r, 1))])
+    b = [r; zeros(size(A, 1) - size(r, 1))]
 
     return l_curvature(f, r, α, A, b)
 
@@ -190,8 +194,6 @@ end
 
 """
 Find alpha using Fminbox optimization.
-
-Currently very slow for lcurve.
 """
 function find_alpha(svds::svd_kernel_struct,
                     solver::regularization_solver,
