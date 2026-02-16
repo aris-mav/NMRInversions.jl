@@ -192,6 +192,7 @@ struct find_alpha_univariate <: alpha_optimizer
     upper::Real
     algorithm::Optim.UnivariateOptimizer
     abs_tol::Real
+    rel_tol::Real
 end
 
 """
@@ -254,11 +255,13 @@ univariate optimization, given some lower and upper bounds.
  Optional (keyword) arguments:
 - `algorithm` determines which method will be used by Optim.jl to solve the problem.
 Default is `Brent()` and the only alternative is `GoldenSection()`, which is normally slower.
-- `abs_tol` determines what's the smallest change in alpha the algorithm should care about.
-Default is 1e-3.
+- `abs_tol` determines what's the smallest absolute change in the gcv score the algorithm should care about.
+Default is `1e-3`.
+- `rel_tol` determines what's the smallest relative change in the gcv score the algorithm should care about.
+Default is `1e-1`.
 """
-gcv(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3) = 
-    find_alpha_univariate(:gcv, Float64(lower), Float64(upper), algorithm, abs_tol)
+gcv(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3, rel_tol=1e-1) = 
+    find_alpha_univariate(:gcv, Float64(lower), Float64(upper), algorithm, abs_tol, rel_tol)
 
 
 """

@@ -161,6 +161,7 @@ function find_alpha(svds::svd_kernel_struct,
         mode.lower, mode.upper,
         mode.algorithm,
         abs_tol = mode.abs_tol,
+        rel_tol = mode.rel_tol,
         show_trace = !silent
     )
 
