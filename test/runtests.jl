@@ -116,8 +116,10 @@ end
             @test test_artificial_data(seq,snr,alpha=gcv(),silent=true)
         end
     end
-    @test test_artificial_data(IR, 500, alpha=gcv(1))
-    @test test_artificial_data(IR, 500, alpha=lcurve(1e-5,10))
+    @test test_artificial_data(IR, 500, alpha=gcv(1),silent=true)
+    # @test test_artificial_data(IR, 500, alpha=lcurve(1),silent=false) # takes ages
+    @test test_artificial_data(IR, 500, alpha=gcv(1e-5,10),silent=true)
+    @test test_artificial_data(IR, 500, alpha=lcurve(1e-5,10),silent=true)
 end
 
 @testset "expfits" begin

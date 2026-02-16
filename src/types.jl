@@ -239,7 +239,7 @@ For more details, refer to Optim.jl documentation.
 - `opts` an Optim.Options() structure which can provide some preferences to the solver.
 Please have a look [here](https://julianlsolvers.github.io/Optim.jl/v1.10/user/config/).
 """
-gcv(start::Real; algorithm = LBFGS(), opts = Optim.Options()) = 
+gcv(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_abstol=1e-3)) = 
     find_alpha_box(:gcv, Float64(start), algorithm, opts)
 
 
@@ -282,6 +282,9 @@ lcurve(lowest_value::Real, highest_value::Real, number_of_steps::Int,) =
     lcurve(start; kwargs...)
 Constructor for finding the optimal alpha value via lcurve curvature
 box optimization, given a starting value.
+
+Currently this method is very slow for lcurve, probably due to the cost of
+computing the gradient of the curvature. Need to further investigate.
 
  Necessary (positional) arguments:
 - `start` is the starting alpha value. 

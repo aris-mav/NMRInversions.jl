@@ -190,6 +190,8 @@ end
 
 """
 Find alpha using Fminbox optimization.
+
+Currently very slow for lcurve.
 """
 function find_alpha(svds::svd_kernel_struct,
                     solver::regularization_solver,
