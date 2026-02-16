@@ -27,6 +27,7 @@ end
 
 function PDHGM2(K::AbstractMatrix, s::AbstractVector, α::Real; tol=1e-5, τ=0.1, σ=10)
 
+    large = length(K) > 5000 ? true : false
     n = size(K, 2)
 
     Y, Ỹ, temp_vec = zeros.((n, n, n))
@@ -34,7 +35,11 @@ function PDHGM2(K::AbstractMatrix, s::AbstractVector, α::Real; tol=1e-5, τ=0.1
     
     Ks = (τ * α) .* (K' * s)   
 
-    B = inv(I + τ * α * K' * K)
+    if large
+        C = cholesky(I + (τ * α) .* (K' * K)) 
+    else
+        B = inv(I + τ * α * K' * K)
+    end
 
     ε = tol + 1.0
 
@@ -44,7 +49,7 @@ function PDHGM2(K::AbstractMatrix, s::AbstractVector, α::Real; tol=1e-5, τ=0.1
         @. Y = Ỹ / max(1, abs(Ỹ))
         
         @. temp_vec = f̃ - (τ * Y) + Ks
-        mul!(f, B, temp_vec) 
+        large ? ldiv!(f, C, temp_vec) : mul!(f, B, temp_vec) 
         @. f = max(0, f)
         
         @. temp_vec = f - f_prev 
