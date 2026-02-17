@@ -233,7 +233,22 @@ weighted_averages(results)
 
 If you want a "quick and dirty" way to exclude
 some data points from your imported data, you may
-use the 'trim' function.
+use indexing on the `input1D`and `input2D`
+structures, just like you would on any array.
+
+e.g.: `invert(data[x:end])`, if your first `x`
+number of points are noisy.
+
+- `data1D[3:end-2]` excludes the 3 first and last
+2 data points for both `x` and `y` elements within
+the structure.
+
+- `data2D[3:end-2, :]` excludes the 3 first and
+last 2 data points in the direct dimension, and
+includes all points on the indirect dimension.
+
+
+The `trim` function also works:
 
 ```@docs
 trim(::input1D, ::Int, ::Int)
