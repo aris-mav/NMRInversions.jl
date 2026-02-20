@@ -1,29 +1,50 @@
 export create_kernel
+
+"""
+    kernel_eq
+Return the value of the kernel at a given element.
+Arguments:
+- `seq` is the pulse sequence (e.g. IR, CPMG, PFG)
+- `x` is the experiment x axis (time or b factor etc.)
+- `X` is the range for the output x axis (T1, T2, D etc.)
+- `x0` is the offset in `x` (normally the first point `x[1]`).
+- `y` is the recorded data, used to normalise the kernel.
+- `n` should be `1` for exponential and `2` for gaussian decays.
+"""
+kernel_eq(::Type{IR}, x, X, x0, y, n) = y[end] - (y[end] + abs(y[1])) * exp(-((x-x0) / X)^n)
+kernel_eq(::Type{SR}, x, X, x0, y, n) = y[end] * (1 - exp(-((x-x0) / X))^n)
+kernel_eq(::Type{CPMG}, x, X, x0 ,y, n) = y[1] * exp(-((x-x0) / X)^n)
+kernel_eq(::Type{PFG}, x, X, x0, y, n) = y[1] * exp(-((x-x0) * X)^n)
+
+
 """
 # Create a kernel for the inversion of 1D data.
     create_kernel(seq, x, X)
+
+Arguments:
 - `seq` is the pulse sequence (e.g. IR, CPMG, PFG)
 - `x` is the experiment x axis (time or b factor etc.)
 - `X` is the range for the output x axis (T1, T2, D etc.)
 
+Keyword (optional) arguments:
+
+- `y`, if you provide the measurement data `y`, the kernel 
+will be normalised to match the highest value in `y`. Defaults 
+to an array containing `1.0`.
+- `gaussian` determines whether the kernel is exponential or 
+gaussian. Defaults to `false` (exponential by default).
+
 The output is a matrix, `K`.
 
 """
-function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector; y::Vector=ones(1))
+function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector; 
+                       y::Vector=ones(1),
+                       gaussian = false)
 
-    y = real.(y)
-    if seq == IR
-        kernel_eq = (t, T) -> y[end] - (y[end] + abs(y[1])) * exp(-(t-x[1]) / T)
-    elseif seq == SR
-        kernel_eq = (t, T) -> y[end] * (1 - exp(-(t-x[1]) / T))
-    elseif seq == CPMG
-        kernel_eq = (t, T) -> y[1] * exp(-(t-x[1]) / T)
-    elseif seq == PFG
-        kernel_eq = (b, D) -> y[1] * exp(-(b-x[1]) * D)
-    end
+    return ((a,b) -> kernel_eq(seq, a, b, x[1], real.(y), gaussian ? 2 : 1)).(x,X')
 
-    return kernel_eq.(x, X')
 end
+
 
 """
     create_kernel(seq, x, X, g)
