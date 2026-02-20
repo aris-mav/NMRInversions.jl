@@ -9,6 +9,7 @@ using Optim
 
 include("types.jl")
 include("brd.jl")
+include("sge.jl")
 include("coordinate_descent.jl")
 include("optim_least_squares.jl")
 include("pdhgm.jl")
