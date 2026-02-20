@@ -2,19 +2,26 @@ export create_kernel
 
 """
     kernel_eq
+# Internal function
 Return the value of the kernel at a given element.
+
 Arguments:
+
 - `seq` is the pulse sequence (e.g. IR, CPMG, PFG)
 - `x` is the experiment x axis (time or b factor etc.)
 - `X` is the range for the output x axis (T1, T2, D etc.)
+
+The ones below are set as keyword arguments so that they 
+are not broadcasted in `create_kernel`.
+
 - `x0` is the offset in `x` (normally the first point `x[1]`).
 - `y` is the recorded data, used to normalise the kernel.
 - `n` should be `1` for exponential and `2` for gaussian decays.
 """
-kernel_eq(::Type{IR}, x, X, x0, y, n) = y[end] - (y[end] + abs(y[1])) * exp(-((x-x0) / X)^n)
-kernel_eq(::Type{SR}, x, X, x0, y, n) = y[end] * (1 - exp(-((x-x0) / X))^n)
-kernel_eq(::Type{CPMG}, x, X, x0 ,y, n) = y[1] * exp(-((x-x0) / X)^n)
-kernel_eq(::Type{PFG}, x, X, x0, y, n) = y[1] * exp(-((x-x0) * X)^n)
+kernel_eq(::Type{IR}, x, X; x0, y, n) = y[end] - (y[end] + abs(y[1])) * exp(-((x-x0) / X)^n)
+kernel_eq(::Type{SR}, x, X; x0, y, n) = y[end] * (1 - exp(-((x-x0) / X))^n)
+kernel_eq(::Type{CPMG}, x, X; x0, y, n) = y[1] * exp(-((x-x0) / X)^n)
+kernel_eq(::Type{PFG}, x, X; x0, y, n) = y[1] * exp(-((x-x0) * X)^n)
 
 
 """
@@ -38,10 +45,9 @@ The output is a matrix, `K`.
 
 """
 function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector; 
-                       y::Vector=ones(1),
-                       gaussian = false)
+                       y::Vector=ones(1), gaussian = false)
 
-    return ((a,b) -> kernel_eq(seq, a, b, x[1], real.(y), gaussian ? 2 : 1)).(x,X')
+    return kernel_eq.(seq, x, X'; x0= x[1], y= real.(y), n= gaussian ? 2 : 1)
 
 end
 
