@@ -131,23 +131,20 @@ implemented using Optim.jl.
 All around effective, but can be slow for large problems, such as 2D inversions.
 It can be used as a "solver" for invert function.
 
-- `order` is an integer that determines the tikhonov matrix 
-(for more info look Hansen's 2010 book on inverse problems). 
-Order `n` means that the penalty term will be the n'th derivative
-of the results. 
-
-- `n` detemines which norm of the loss function will be minimized. 
-Default is 2 (tikhonov regularization), but 1 is not the same as L1 regularization, 
-as both the residual term and the penalty term will be 1-norms, not just the penalty.
-
+- `L` determines the tikhonov matrix.\
+Can be either a matrix or an integer `n`. The latter will create a finite difference matrix\
+of order `n`, which means that the penalty term will be the `n`'th derivative of the distribution.\
+Defaults to `0`, where `L` becomes the Identity matrix.
+- `algorithm` is of `Optim.FirstOrderOptimizer` type (defaults to `LBFGS()`).
+- `opts` an `Optim.Options()` structure which can provide some preferences to the solver.
 """
 struct optim_nnls <: regularization_solver 
-    order::Int
-    n::Int
-    optim_nnls() = new(0, 2)
-    optim_nnls(x::Int) = new(x, 2)
-    optim_nnls(x::Int, y::Int) = new(x, y)
+    L::Union{Int, AbstractMatrix}
+    algorithm::Optim.FirstOrderOptimizer
+    opts::Optim.Options
 end
+
+optim_nnls(;L= 0, algorithm= Optim.LBFGS(), opts= Optim.Options()) = optim_nnls(L, algorithm, opts)
 
 """
     jump_nnls(order, solver)
@@ -237,7 +234,6 @@ Choose something sensible, usually a value between 0.1 and 10 would work well.
 Default is LBFGS(). Only first order optimizers can be chosen here. 
 For more details, refer to Optim.jl documentation.
 - `opts` an Optim.Options() structure which can provide some preferences to the solver.
-Please have a look [here](https://julianlsolvers.github.io/Optim.jl/v1.10/user/config/).
 """
 gcv(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_abstol=1e-3)) = 
     find_alpha_box(:gcv, Float64(start), algorithm, opts)
