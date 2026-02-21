@@ -1,3 +1,28 @@
+using Optim
+
+export optim_nnls
+"""
+    optim_nnls(order)
+Simple non-negative least squares method for regularization, 
+implemented using Optim.jl.
+All around effective, but can be slow for large problems, such as 2D inversions.
+It can be used as a "solver" for invert function.
+
+- `L` determines the tikhonov matrix.\
+Can be either a matrix or an integer `n`. The latter will create a finite difference matrix\
+of order `n`, which means that the penalty term will be the `n`'th derivative of the distribution.\
+Defaults to `0`, where `L` becomes the Identity matrix.
+- `algorithm` is of `Optim.FirstOrderOptimizer` type (defaults to `LBFGS()`).
+- `opts` an `Optim.Options()` structure which can provide some preferences to the solver.
+"""
+struct optim_nnls <: regularization_solver 
+    L::Union{Int, AbstractMatrix}
+    algorithm::Optim.FirstOrderOptimizer
+    opts::Optim.Options
+end
+
+optim_nnls(;L= 0, algorithm= Optim.LBFGS(), opts= Optim.Options()) = optim_nnls(L, algorithm, opts)
+
 function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, solver::optim_nnls)
 
     L = if isa(solver.L,Int)

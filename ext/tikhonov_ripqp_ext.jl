@@ -6,6 +6,8 @@ using QuadraticModels
 using SparseArrays
 using LinearAlgebra
 
+struct ripqp <: regularization_solver end
+
 function NMRInversions.solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, solver::Type{NMRInversions.ripqp})
 
     ## solve 0.5 xᵀ H x + cᵀx + c₀ 

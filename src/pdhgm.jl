@@ -3,6 +3,44 @@
 
 using LinearAlgebra
 
+export pdhgm
+"""
+    pdhgm(σ, τ, tol)
+Primal dual hybrid gradient method for L1 regularization, 
+following [this paper](https://doi.org/10.1016/j.jmr.2017.05.010)
+[Reci2017](@cite).
+
+It can be used as a "solver" for the invert function.
+
+Positional (keyowrd) arguments:
+
+- `sigma` (default value `10`)
+- `tau` (default value `0.1`)
+- `tol` (default value `1e-5`)
+
+The particular choice of σ and τ is heuristic. 
+The parameters σ and τ are step size parameters, which control
+convergence and stability of the algorithm. Convergence is guaranteed 
+when `τσ ≤ 1`.
+
+The best values of σ and τ will depend slightly on the scaling of the signal. 
+Therefore, it is best to normalize the NMR signal to a maximum of 1 
+(this is default for the invert function, no need to do anything).
+
+
+for convenience.
+
+Note that for this method, the role of α is inverted, with larger α values
+leading to less smoothing, not more. For that reason, `alpha=gcv()` (Mitchell method)
+will not work. Please use `alpha=gcv(starting_value)` or `alpha=gcv(lower_limit, upper_limit)', or some lcurve method instead.
+"""
+struct pdhgm <: regularization_solver
+    σ::Real
+    τ::Real
+    tol::Real
+end
+pdhgm(;sigma::Real=10, tau::Real=0.1, tol::Real=1e-5) = pdhgm(sigma, tau, tol)
+
 function PDHGM(K::AbstractMatrix, s::AbstractVector, α::Real; tol=1e-5, τ=0.1 , σ=10)
 
     B = inv(LinearAlgebra.I + τ * α * K' * K)

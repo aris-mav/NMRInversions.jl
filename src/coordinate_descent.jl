@@ -3,6 +3,27 @@
 
 using LinearAlgebra
 
+export cdL1
+"""
+    cdL1(; iterations, tol)
+Coordinate descent method for L1 regularization.
+
+It can be used as a "solver" for the invert function.
+
+Accepts two keyword (optional arguments):
+
+- `iterations` is an integer declaring the maximum amount of \
+iterations before the algorithm stops (default value `10000`).
+
+- `tol` is the relative tolerance (default value `1e-5`)
+
+"""
+struct cdL1 <: regularization_solver
+    iterations::Int
+    tol::Real
+end
+cdL1(;iterations::Int=10000, tol::Real=1e-5) = cdL1(iterations, tol)
+
 function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, solver::cdL1)
     return solve_ls_l1_cd(K, g, α, solver.iterations, solver.tol)
 end

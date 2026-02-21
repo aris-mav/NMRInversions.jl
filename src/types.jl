@@ -1,8 +1,17 @@
 ## The following are custom types, defined mainly for multiple dispatch purposes
 
-# Pulse sequences
+export pulse_sequence1D, pulse_sequence2D
+export IR, SR, CPMG, PFG, IRCPMG, PFGCPMG
+export alpha_optimizer, regularization_solver
+
 abstract type pulse_sequence1D end
 abstract type pulse_sequence2D end
+
+"Supported solvers for regularization"
+abstract type regularization_solver end 
+
+"Supported methods to determine the α parameter in tikhonov regularization"
+abstract type alpha_optimizer end
 
 """
 Inversion recovery pulse sequence for 1D relaxation experiments.
@@ -16,20 +25,17 @@ It can be used wherever the `seq` argument is required.
 """
 struct SR <: pulse_sequence1D end
 
-
 """
 CPMG pulse sequence for 1D relaxation experiments.
 It can be used wherever the `seq` argument is required. 
 """
 struct CPMG <: pulse_sequence1D end
 
-
 """
 Pulsed field gradient pulse sequence for 1D diffusion experiments.
 It can be used wherever the `seq` argument is required. 
 """
 struct PFG <: pulse_sequence1D end
-
 
 """
 Inversion recovery - CPMG pulse sequence for 2D relaxation experiments (T1-T2).
@@ -38,307 +44,14 @@ It can be used wherever the `seq` argument is required.
 """
 struct IRCPMG <: pulse_sequence2D end
 
-
 """
 PFG - CPMG pulse sequence for 2D D-T2 experiments.
 It can be used wherever the `seq` argument is required.
 """
 struct PFGCPMG <: pulse_sequence2D end
 
-export pulse_sequence1D, pulse_sequence2D, IR, SR, CPMG, PFG, IRCPMG, PFGCPMG
 
-
-"Supported solvers for regularization"
-abstract type regularization_solver end 
-
-"""
-    brd
-Solver for tikhonov (L2) regularization, following [this paper](https://doi.org/10.1109/78.995059)
-[Venka2002](@cite).
-Very fast, but only uses the identity as tiknohonov matrix.
-It can be used as a "solver" for the invert function.
-"""
-struct brd <: regularization_solver 
-    algorithm::Optim.SecondOrderOptimizer
-    brd() = new(NewtonTrustRegion())
-end
-
-struct ripqp <: regularization_solver end
-
-"""
-    pdhgm(σ, τ, tol)
-Primal dual hybrid gradient method for L1 regularization, 
-following [this paper](https://doi.org/10.1016/j.jmr.2017.05.010)
-[Reci2017](@cite).
-
-It can be used as a "solver" for the invert function.
-
-Positional (keyowrd) arguments:
-
-- `sigma` (default value `10`)
-- `tau` (default value `0.1`)
-- `tol` (default value `1e-5`)
-
-The particular choice of σ and τ is heuristic. 
-The parameters σ and τ are step size parameters, which control
-convergence and stability of the algorithm. Convergence is guaranteed 
-when `τσ ≤ 1`.
-
-The best values of σ and τ will depend slightly on the scaling of the signal. 
-Therefore, it is best to normalize the NMR signal to a maximum of 1 
-(this is default for the invert function, no need to do anything).
-
-
-for convenience.
-
-Note that for this method, the role of α is inverted, with larger α values
-leading to less smoothing, not more. For that reason, `alpha=gcv()` (Mitchell method)
-will not work. Please use `alpha=gcv(starting_value)` or `alpha=gcv(lower_limit, upper_limit)', or some lcurve method instead.
-"""
-struct pdhgm <: regularization_solver
-    σ::Real
-    τ::Real
-    tol::Real
-end
-pdhgm(;sigma::Real=10, tau::Real=0.1, tol::Real=1e-5) = pdhgm(sigma, tau, tol)
-
-
-"""
-    cdL1(; iterations, tol)
-Coordinate descent method for L1 regularization.
-
-It can be used as a "solver" for the invert function.
-
-Accepts two keyword (optional arguments):
-
-- `iterations` is an integer declaring the maximum amount of \
-iterations before the algorithm stops (default value `10000`).
-
-- `tol` is the relative tolerance (default value `1e-5`)
-
-"""
-struct cdL1 <: regularization_solver
-    iterations::Int
-    tol::Real
-end
-cdL1(;iterations::Int=10000, tol::Real=1e-5) = cdL1(iterations, tol)
-
-
-"""
-    optim_nnls(order)
-Simple non-negative least squares method for regularization, 
-implemented using Optim.jl.
-All around effective, but can be slow for large problems, such as 2D inversions.
-It can be used as a "solver" for invert function.
-
-- `L` determines the tikhonov matrix.\
-Can be either a matrix or an integer `n`. The latter will create a finite difference matrix\
-of order `n`, which means that the penalty term will be the `n`'th derivative of the distribution.\
-Defaults to `0`, where `L` becomes the Identity matrix.
-- `algorithm` is of `Optim.FirstOrderOptimizer` type (defaults to `LBFGS()`).
-- `opts` an `Optim.Options()` structure which can provide some preferences to the solver.
-"""
-struct optim_nnls <: regularization_solver 
-    L::Union{Int, AbstractMatrix}
-    algorithm::Optim.FirstOrderOptimizer
-    opts::Optim.Options
-end
-
-optim_nnls(;L= 0, algorithm= Optim.LBFGS(), opts= Optim.Options()) = optim_nnls(L, algorithm, opts)
-
-"""
-    jump_nnls(order, solver)
-Jump non-negative least squares method for tikhonov (L2) regularization, 
-implemented using the JuMP extension.
-All around effective, but can be slow for large problems, such as 2D inversions, 
-unless a powerful solver like gurobi is used.
-
-- `solver` is passed directly into JuMP. 
-- `order` determines the tikhonov finite-difference matrix. \
-If 0 is chosen, the identity matrix is used.
-
-This one is still experimental and not well-tested, 
-please submit an issue if you encounter any difficulties.
-"""
-struct jump_nnls <: regularization_solver 
-    order::Int
-    solver::Symbol
-end
-
-export regularization_solver, brd, ripqp, pdhgm, cdL1, optim_nnls, jump_nnls
-
-
-"Supported methods to determine the α parameter in tikhonov regularization"
-abstract type alpha_optimizer end
-
-"""
-    gcv_mitchell
-Generalized cross validation for finding the optimal regularization parameter α,
-following the method in Mitchell 2012.
-"""
-struct gcv_mitchell <: alpha_optimizer end
-
-"""
-Finding the optimal regularization parameter α,
-using univariate optimization algorithm. Brent() is the default option, 
-GoldenSection() can be used as an alternative.
-"""
-struct find_alpha_univariate <: alpha_optimizer
-    search_method::Symbol
-    lower::Real
-    upper::Real
-    algorithm::Optim.UnivariateOptimizer
-    abs_tol::Real
-    rel_tol::Real
-end
-
-"""
-Finding the optimal regularization parameter α,
-using univariate optimization algorithm. 
-Brent() is the default option, but
-GoldenSection() can be used as an alternative.
-"""
-struct find_alpha_box <: alpha_optimizer
-    search_method::Symbol
-    start::Real
-    algorithm::Optim.FirstOrderOptimizer
-    opts::Optim.Options
-end
-
-"""
-"""
-struct lcurve_range <: alpha_optimizer 
-    lowest_value::Real
-    highest_value::Real
-    number_of_steps::Int
-end
-
-"""
-    gcv()
-Constructor for the gcv method described in Mitchell 2012.
-No arguments required.
-"""
-gcv() = gcv_mitchell()
-
-"""
-    gcv(start; kwargs...)
-Constructor for finding the optimal alpha value via gcv score
-box optimization, given a starting value.
-
- Necessary (positional) arguments:
-- `start` is the starting alpha value. 
-Choose something sensible, usually a value between 0.1 and 10 would work well.
-
- Optional (keyword) arguments:
-- `algorithm` determines which method will be used by Optim.jl to solve the problem.
-Default is LBFGS(). Only first order optimizers can be chosen here. 
-For more details, refer to Optim.jl documentation.
-- `opts` an Optim.Options() structure which can provide some preferences to the solver.
-"""
-gcv(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_abstol=1e-3)) = 
-    find_alpha_box(:gcv, Float64(start), algorithm, opts)
-
-
-"""
-    gcv(lower, upper ; kwargs...)
-Constructor for finding the optimal alpha value via gcv score
-univariate optimization, given some lower and upper bounds.
-
- Necessary (positional) arguments:
-- `lower` is the lower bound, or lowest alpha value the algorighm will consider.
-- `upper` is the upper bound, or highest alpha value the algorighm will consider.
-
- Optional (keyword) arguments:
-- `algorithm` determines which method will be used by Optim.jl to solve the problem.
-Default is `Brent()` and the only alternative is `GoldenSection()`, which is normally slower.
-- `abs_tol` determines what's the smallest absolute change in the gcv score the algorithm should care about.
-Default is `1e-3`.
-- `rel_tol` determines what's the smallest relative change in the gcv score the algorithm should care about.
-Default is `1e-1`.
-"""
-gcv(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3, rel_tol=1e-1) = 
-    find_alpha_univariate(:gcv, Float64(lower), Float64(upper), algorithm, abs_tol, rel_tol)
-
-
-"""
-    lcurve(lowest_value, highest_value, number_of_steps)
-Constructor for testing all L-curve curvatures between some bounds and 
-picking the optimal.
-
-- `lowest_value` is the lowest alpha value.
-- `highest_value` is the highest alpha value.
-- `number_of_steps` is the number of alpha values that will be tested.
-
-This is a very crude and rather slow method, mostly for demonstration purposes.
-"""
-lcurve(lowest_value::Real, highest_value::Real, number_of_steps::Int,) = 
-    lcurve_range(lowest_value::Real, highest_value::Real, number_of_steps::Int)
-
-"""
-    lcurve(start; kwargs...)
-Constructor for finding the optimal alpha value via lcurve curvature
-box optimization, given a starting value.
-
- Necessary (positional) arguments:
-- `start` is the starting alpha value. 
-Choose something sensible, usually a value between 0.1 and 10 would work well.
-
- Optional (keyword) arguments:
-- `algorithm` determines which method will be used by Optim.jl to solve the problem.
-Default is LBFGS(). Only first order optimizers can be chosen here. 
-For more details, refer to Optim.jl documentation.
-- `opts` an Optim.Options() structure which can provide some preferences to the solver.
-Please have a look [here](https://julianlsolvers.github.io/Optim.jl/v1.10/user/config/).
-"""
-lcurve(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_abstol = 1e-3)) = 
-    find_alpha_box(:lcurve, Float64(start), algorithm, opts)
-
-"""
-    lcurve(lower, upper ; kwargs...)
-Constructor for finding the optimal alpha value via lcurve curvature
-univariate optimization, given some lower and upper bounds.
-
- Necessary (positional) arguments:
-- `lower` is the lower bound, or lowest alpha value the algorighm will consider.
-- `upper` is the upper bound, or highest alpha value the algorighm will consider.
-
- Optional (keyword) arguments:
-- `algorithm` determines which method will be used by Optim.jl to solve the problem.
-Default is `Brent()` and the only alternative is `GoldenSection()`, which is normally slower.
-- `abs_tol` determines what's the smallest absolute change in the lcurve score the algorithm should care about.
-Default is `1e-3`.
-- `rel_tol` determines what's the smallest relative change in the lcurve score the algorithm should care about.
-Default is `1e-1`.
-"""
-lcurve(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3, rel_tol=1e-1) = 
-    find_alpha_univariate(:lcurve, Float64(lower), Float64(upper), algorithm, abs_tol, rel_tol)
-
-
-
-export alpha_optimizer, gcv, lcurve
-
-
-export svd_kernel_struct
-"""
-    svd_kernel_struct(K,g,U,S,V)
-A structure containing the following fields:
-- `K`, the kernel matrix.
-- `G`, the data vector.
-- `U`, the left singular values matrix.
-- `S`, the singular values vector.
-- `V`, the right singular values matrix.
-
-To access the fields of a structure, we use the dot notation, 
-e.g. if the structure is called `a` and we want to access the kernel contained in there,
-we type `a.K`
-"""
-struct svd_kernel_struct
-    K::AbstractMatrix
-    g::AbstractVector
-    U::AbstractMatrix
-    S::AbstractVector
-    V::AbstractMatrix
-end
+export regularization_solver
 
 
 export input1D
@@ -356,7 +69,6 @@ struct input1D
     x::AbstractVector{<:Real}
     y::AbstractVector
 end
-
 
 export input2D
 """
@@ -414,8 +126,6 @@ mutable struct inv_out_1D
     filter::Vector
     title::String
 end
-
-
 
 export inv_out_2D
 """

@@ -8,6 +8,26 @@ using NMRInversions, JuMP, LinearAlgebra, SparseArrays
 # import JuMP: @constraints
 # import JuMP: @objective
 
+export jump_nnls
+"""
+    jump_nnls(order, solver)
+Jump non-negative least squares method for tikhonov (L2) regularization, 
+implemented using the JuMP extension.
+All around effective, but can be slow for large problems, such as 2D inversions, 
+unless a powerful solver like gurobi is used.
+
+- `solver` is passed directly into JuMP. 
+- `order` determines the tikhonov finite-difference matrix. \
+If 0 is chosen, the identity matrix is used.
+
+This one is still experimental and not well-tested, 
+please submit an issue if you encounter any difficulties.
+"""
+struct jump_nnls <: regularization_solver 
+    order::Int
+    solver::Symbol
+end
+
 function NMRInversions.solve_regularization(K::AbstractMatrix, g::AbstractVector,
         α::Real, solver::Type{jump_nnls})
 

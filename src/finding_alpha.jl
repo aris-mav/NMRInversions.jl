@@ -1,3 +1,157 @@
+export gcv, lcurve
+
+
+## Mitchell et al method
+"""
+    gcv_mitchell
+Generalized cross validation for finding the optimal regularization parameter α,
+following the method in Mitchell 2012.
+"""
+struct gcv_mitchell <: alpha_optimizer end
+"""
+    gcv()
+Constructor for the gcv method described in Mitchell 2012.
+No arguments required.
+"""
+gcv() = gcv_mitchell()
+
+
+
+# UNIVARIATE METHODS
+"""
+Finding the optimal regularization parameter α,
+using univariate optimization algorithm. Brent() is the default option, 
+GoldenSection() can be used as an alternative.
+"""
+struct find_alpha_univariate <: alpha_optimizer
+    search_method::Symbol
+    lower::Real
+    upper::Real
+    algorithm::Optim.UnivariateOptimizer
+    abs_tol::Real
+    rel_tol::Real
+end
+
+"""
+    gcv(lower, upper ; kwargs...)
+Constructor for finding the optimal alpha value via gcv score
+univariate optimization, given some lower and upper bounds.
+
+ Necessary (positional) arguments:
+- `lower` is the lower bound, or lowest alpha value the algorighm will consider.
+- `upper` is the upper bound, or highest alpha value the algorighm will consider.
+
+ Optional (keyword) arguments:
+- `algorithm` determines which method will be used by Optim.jl to solve the problem.
+Default is `Brent()` and the only alternative is `GoldenSection()`, which is normally slower.
+- `abs_tol` determines what's the smallest absolute change in the gcv score the algorithm should care about.
+Default is `1e-3`.
+- `rel_tol` determines what's the smallest relative change in the gcv score the algorithm should care about.
+Default is `1e-1`.
+"""
+gcv(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3, rel_tol=1e-1) = 
+    find_alpha_univariate(:gcv, Float64(lower), Float64(upper), algorithm, abs_tol, rel_tol)
+
+"""
+    lcurve(lower, upper ; kwargs...)
+Constructor for finding the optimal alpha value via lcurve curvature
+univariate optimization, given some lower and upper bounds.
+
+ Necessary (positional) arguments:
+- `lower` is the lower bound, or lowest alpha value the algorighm will consider.
+- `upper` is the upper bound, or highest alpha value the algorighm will consider.
+
+ Optional (keyword) arguments:
+- `algorithm` determines which method will be used by Optim.jl to solve the problem.
+Default is `Brent()` and the only alternative is `GoldenSection()`, which is normally slower.
+- `abs_tol` determines what's the smallest absolute change in the lcurve score the algorithm should care about.
+Default is `1e-3`.
+- `rel_tol` determines what's the smallest relative change in the lcurve score the algorithm should care about.
+Default is `1e-1`.
+"""
+lcurve(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3, rel_tol=1e-1) = 
+    find_alpha_univariate(:lcurve, Float64(lower), Float64(upper), algorithm, abs_tol, rel_tol)
+
+
+## Fminbox methods
+
+"""
+Finding the optimal regularization parameter α,
+using Fminbox optimization algorithm (LBFGS by
+default). 
+"""
+struct find_alpha_box <: alpha_optimizer
+    search_method::Symbol
+    start::Real
+    algorithm::Optim.FirstOrderOptimizer
+    opts::Optim.Options
+end
+"""
+    gcv(start; kwargs...)
+Constructor for finding the optimal alpha value via gcv score
+box optimization, given a starting value.
+
+ Necessary (positional) arguments:
+- `start` is the starting alpha value. 
+Choose something sensible, usually a value between 0.1 and 10 would work well.
+
+ Optional (keyword) arguments:
+- `algorithm` determines which method will be used by Optim.jl to solve the problem.
+Default is LBFGS(). Only first order optimizers can be chosen here. 
+For more details, refer to Optim.jl documentation.
+- `opts` an Optim.Options() structure which can provide some preferences to the solver.
+"""
+gcv(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_abstol=1e-3)) = 
+    find_alpha_box(:gcv, Float64(start), algorithm, opts)
+
+"""
+    lcurve(start; kwargs...)
+Constructor for finding the optimal alpha value via lcurve curvature
+box optimization, given a starting value.
+
+ Necessary (positional) arguments:
+- `start` is the starting alpha value. 
+Choose something sensible, usually a value between 0.1 and 10 would work well.
+
+ Optional (keyword) arguments:
+- `algorithm` determines which method will be used by Optim.jl to solve the problem.
+Default is LBFGS(). Only first order optimizers can be chosen here. 
+For more details, refer to Optim.jl documentation.
+- `opts` an Optim.Options() structure which can provide some preferences to the solver.
+Please have a look [here](https://julianlsolvers.github.io/Optim.jl/v1.10/user/config/).
+"""
+lcurve(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_abstol = 1e-3)) = 
+    find_alpha_box(:lcurve, Float64(start), algorithm, opts)
+
+
+
+
+# Full lcurve method
+
+struct lcurve_range <: alpha_optimizer 
+    lowest_value::Real
+    highest_value::Real
+    number_of_steps::Int
+end
+"""
+    lcurve(lowest_value, highest_value, number_of_steps)
+Constructor for testing all L-curve curvatures between some bounds and 
+picking the optimal.
+
+- `lowest_value` is the lowest alpha value.
+- `highest_value` is the highest alpha value.
+- `number_of_steps` is the number of alpha values that will be tested.
+
+This is a very crude and rather slow method, mostly for demonstration purposes.
+"""
+lcurve(lowest_value::Real, highest_value::Real, number_of_steps::Int,) = 
+    lcurve_range(lowest_value::Real, highest_value::Real, number_of_steps::Int)
+
+
+
+# Functions
+
+
 """
 Compute the Generalized Cross Validation (GCV) score for a regularization solution, and return the score, as well as the next α to test. 
 (look Mitchell 2012 paper https://doi.org/10.1016/j.pnmrs.2011.07.002)
@@ -34,7 +188,6 @@ function gcv_cost(α::Real,
                   svds::svd_kernel_struct, 
                   solver::regularization_solver)
 
-    #=display("Testing α = $(round(α,sigdigits=3))")=#
     f, r = solve_regularization(svds.K, svds.g, α, solver)
     return gcv_score(α, r, svds.S, (svds.V' * f), next_alpha = false) 
 end
