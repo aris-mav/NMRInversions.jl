@@ -1,7 +1,7 @@
 ## The following are custom types, defined mainly for multiple dispatch purposes
 
 export pulse_sequence1D, pulse_sequence2D
-export IR, SR, CPMG, PFG, IRCPMG, PFGCPMG
+export IR, SR, CPMG, PFG, IRCPMG, PFGCPMG, CPMGCPMG
 export alpha_optimizer, regularization_solver
 
 abstract type pulse_sequence1D end
@@ -50,6 +50,11 @@ It can be used wherever the `seq` argument is required.
 """
 struct PFGCPMG <: pulse_sequence2D end
 
+"""
+CPMG - CPMG pulse sequence for 2D T2-T2 experiments.
+It can be used wherever the `seq` argument is required.
+"""
+struct CPMGCPMG <: pulse_sequence2D end
 
 export regularization_solver
 

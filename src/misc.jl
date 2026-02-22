@@ -102,7 +102,7 @@ function autophase(data::input2D; rotation::Real=0)
 
         d = real.(y_phased[1,1] - y_phased[1,end])
 
-        if data.seq in (PFGCPMG,) && d < 0
+        if data.seq in (PFGCPMG, CPMGCPMG) && d < 0
             return autophase(data, rotation = pi)
         elseif data.seq in (IRCPMG,) && d > 0
             return autophase(data, rotation = pi)

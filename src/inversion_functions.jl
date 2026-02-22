@@ -150,7 +150,7 @@ function invert(
     end
 
     if isa(lims2, Type{<:pulse_sequence2D})
-        if lims2 == IRCPMG
+        if lims2 in (IRCPMG, CPMGCPMG)
             X_indirect = collect(NMRInversions.logrange(minimum(x_indirect)/7, maximum(x_indirect)*7, 64)) 
         elseif lims2 == PFGCPMG
             X_indirect = collect(NMRInversions.logrange(minimum(x_indirect)*7, maximum(x_indirect)*10, 64)) 

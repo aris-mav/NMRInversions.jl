@@ -242,6 +242,8 @@ function import_spinsolve(files=pick_multi_file(pwd()))
         seq = PFG
     elseif exp == "DT2"
         seq = PFGCPMG
+    elseif exp == "T2T2"
+        seq = CPMGCPMG
     else
         error("Unrecognised pulse sequence")
     end
@@ -257,6 +259,10 @@ function import_spinsolve(files=pick_multi_file(pwd()))
     elseif seq in [PFGCPMG]
 
         return spinsolve_read_PFGCPMG(acqufile, datafile)
+
+    elseif seq in [CPMGCPMG]
+
+        return spinsolve_read_CPMGCPMG(acqufile, datafile)
     end
 
 end
@@ -327,7 +333,40 @@ function spinsolve_read_PFGCPMG(acqufile, datafile)
 
 end
 
+function spinsolve_read_CPMGCPMG(acqufile, datafile)
+    
+    n_echoes = parse(Int32 ,read_acqu(acqufile, "nrEchoes"))
+    t_echo = parse(Float64, read_acqu(acqufile, "echoTime")) * 1e-6
+    τ_steps = parse(Int32, read_acqu(acqufile, "nrEchoSteps"))
+    τ_min = parse(Float64, read_acqu(acqufile, "minEcho")) * 1e-3
+    τ_max = parse(Float64, read_acqu(acqufile, "maxEcho")) * 1e-3
 
+    Raw = readdlm(datafile, ' ')
+
+    if size(Raw, 2) == 1
+        Raw = readdlm(datafile, ',')
+    end
+
+    Data = collect(transpose(complex.(Raw[:, 1:2:end], Raw[:, 2:2:end])))
+
+    ## Make time arrays
+    # Time array in direct dimension
+    t_direct = collect(1:n_echoes) * t_echo
+
+    # Time array in direct dimension
+    if  read_acqu(acqufile, "logspace") == "yes" # if log spacing is selected, do log array
+
+        t_indirect = exp10.(range(log10(τ_min), log10(τ_max), τ_steps))
+    else                   # otherwise, do a linear array
+
+        t_indirect = collect(range(τ_min, τ_max, τ_steps))
+    end
+
+    # make it so that it's multiples of echotime
+    #=map!(x -> round(x / t_echo) * t_echo, t_indirect)=#
+
+    return input2D(CPMGCPMG, t_direct, t_indirect, Data)
+end
 export import_geospec
 """
     import_geospec(dir)

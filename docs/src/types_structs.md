@@ -20,6 +20,7 @@ SR
 CPMG
 PFG
 IRCPMG
+CPMGCPMG
 ```
 
 ## Inversion solvers

@@ -87,16 +87,20 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
         L"T_1 \, \textrm{(s)}"
     elseif seq == PFGCPMG
         L"D \, \textrm{(m^2/s)}"
+    elseif seq == CPMGCPMG
+        L"T_{2A} \,\textrm{(s)}"
     end
 
     ylbl = if seq in [IRCPMG, PFGCPMG]
         L"T_2 \,\textrm{(s)}"
+    elseif seq == CPMGCPMG
+        L"T_{2B} \,\textrm{(s)}"
     end
 
-    x_low = seq == IRCPMG ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(x[1])))
-    x_high = seq == IRCPMG ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(x[end])))
-    y_low = seq == IRCPMG ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(y[1])))
-    y_high = seq == IRCPMG ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(y[end])))
+    x_low = seq in (IRCPMG, CPMGCPMG) ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(x[1])))
+    x_high = seq in (IRCPMG, CPMGCPMG) ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(x[end])))
+    y_low = seq in (IRCPMG, CPMGCPMG) ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(y[1])))
+    y_high = seq in (IRCPMG, CPMGCPMG) ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(y[end])))
 
     gr = fig[1:10, 1:10] = GridLayout()
 
@@ -203,7 +207,7 @@ function draw_on_axes(
     markers = collect('a':'z')
     colors = cgrad(:tab10)
 
-    if res.seq == IRCPMG
+    if res.seq in (IRCPMG, CPMGCPMG)
         plot_diagonal(axmain,x,y)
     end
 
@@ -346,10 +350,14 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
         "T₁"
     elseif res.seq == PFGCPMG
         "D"
+    elseif res.seq == CPMGCPMG
+        "T₂ₐ"
     end
 
     ylbl = if res.seq in [IRCPMG, PFGCPMG]
         "T₂"
+    elseif res.seq == CPMGCPMG
+        "T₂ᵦ"
     end
 
     on(events(gui).mouseposition) do _
