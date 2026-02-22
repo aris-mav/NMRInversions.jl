@@ -33,7 +33,6 @@ brd
 pdhgm
 cdL1
 optim_nnls
-jump_nnls
 ```
 
 ## Finding optimal alpha

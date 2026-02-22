@@ -60,8 +60,8 @@ and ``f_k`` is the fraction of the ``k``th component.
 
 ## Exponential fits
 
-Normally, we would use some type of [nonlinear regression]
-(https://en.wikipedia.org/wiki/Nonlinear_regression)
+Normally, we would use some type of 
+[nonlinear regression](https://en.wikipedia.org/wiki/Nonlinear_regression)
 to handle cases where we already know that the system we 
 study is made up of a limited number of components 
 (``n`` would be 1,2 or maybe 3). 
@@ -120,8 +120,8 @@ However the resulting ``f`` would be terrible for a few reasons:
 
 This is a textbook example of an [inverse problem](https://en.wikipedia.org/wiki/Inverse_problem).
 
-The most commmon way to approach it would be [Tikhonov regularization]
-(https://en.wikipedia.org/wiki/Ridge_regression#Tikhonov_regularization),
+The most commmon way to approach it would be 
+[Tikhonov regularization](https://en.wikipedia.org/wiki/Ridge_regression#Tikhonov_regularization),
 where we solve the following optimization problem : 
 
 ```math
