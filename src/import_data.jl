@@ -135,8 +135,8 @@ function read_tnt_de0_times(filename, len::Int)
         data_length = read(io,Int32) # how much data (in bytes)
         skip(io, data_length)
 
-        readuntil(io, "de0:2")
-        readuntil(io, "de0:2")
+        readuntil(io, "de0:2") # 1st instance is not relevant
+        readuntil(io, "de0:2") # 2nd instance contains data
         read(io,Int32) # discard this (empty bytes)
         x = Vector{Float64}(undef,0)
         while !eof(io)
@@ -147,7 +147,15 @@ function read_tnt_de0_times(filename, len::Int)
             end
         end
         if length(x) > 1
-            return x[1:len]
+            if length(x) >= len
+                return x[1:len]
+            else
+                extra_points = len - length(x)
+                extrapolated = x[end] .* ( (x[end] / x[end-1]) .^ (1:extra_points) )
+                @warn "de0:2 points not enough, extrapolating logarithmically \
+                to match size of the data."
+                return [x ; extrapolated]
+            end
         else
             throw("Could not read de0 times.")
         end
@@ -195,7 +203,7 @@ function import_tnt(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
         x = read_tnt_echo_times(filename, length(y), echotime)
         return autophase(input1D(seq, x, y))
 
-    elseif seq == IRCPMG
+    elseif seq in (IRCPMG, CPMGCPMG)
 
         data_mat = reshape(y , :, header["actual_points_2d"]) 
         x_dir = read_tnt_echo_times(filename, size(data_mat,1), echotime)
