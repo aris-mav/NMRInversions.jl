@@ -161,7 +161,18 @@ function create_kernel(seq::Type{<:pulse_sequence2D},
 
     g̃ = diag(usv_indir.U[:, si]' * G' * usv_dir.U[:, sj])
     Ũ₀ = Array{Float64}(undef, 0, 0) # no such thing as U in this case, it is absorbed by g 
-    Ṽ₀ = repeat(usv_dir.V[:, sj], size(usv_indir.V, 1), 1) .* reshape(repeat(usv_indir.V[:, si]', size(usv_dir.V, 1), 1), ñ, size(usv_indir.V,1)*size(usv_dir.V,1) )'
+
+    Ṽ₀ = zeros(size(usv_indir.V, 1) * size(usv_dir.V, 1), ñ)
+    for k in 1:ñ
+        # Get the specific vectors for this significant component
+        v_indir = usv_indir.V[:, si[k]]
+        v_dir   = usv_dir.V[:, sj[k]]
+
+        # The Kronecker product combines them into a single basis vector
+        # This represents the joint "space" of both dimensions
+        Ṽ₀[:, k] = kron(v_indir, v_dir)
+    end
+
     K̃₀ = Diagonal(s̃) * Ṽ₀'
 
     return svd_kernel_struct(K̃₀, g̃, Ũ₀, s̃, Ṽ₀)
