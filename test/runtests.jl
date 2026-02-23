@@ -31,6 +31,25 @@ function test_artificial_data(seq::Type{<:pulse_sequence1D}, SNR = 100 ; kwargs.
     #=return f=#
 end
 
+function T2T2_data()
+    
+    x_indirect = collect(logrange(1e-5, 1, 30))
+    x_direct = collect(range(1e-5, 1, 500))
+    X = exp10.(range(-5, 1, 128)) # T range
+    f_custom = [0.5exp.(-(x+0.7)^2 / 0.2) + exp.(-(x - 2.3)^2 / 0.2) for x in range(-5, 5, length(X))]
+
+    gd = create_kernel(CPMG, x_direct, X) * f_custom
+    gi = create_kernel(CPMG, x_indirect, X) * f_custom
+
+    G = gd * gi'
+    noise = (maximum(G) * 0.1) .* randn(size(G)...)
+    data = input2D(CPMGCPMG, x_direct, x_indirect, complex.(G,noise))
+
+    # data = input1D(CPMG, x_direct, G[:,1])
+
+    return data
+end
+
 function test_artificial_data_2D() #throws errors, needs fixing
 
     x_direct = exp10.(range(log10(1e-4), log10(5), 1024)) # acquisition range
