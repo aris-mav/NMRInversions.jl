@@ -229,6 +229,9 @@ function draw_on_axes(
         elseif res.seq == PFGCPMG
             "D = $(round(wa_indir[i], sigdigits=3)), T₂ = $(round(wa_dir[i], sigdigits=3))\nVolume = $(round(volumes[i] *100 ,digits = 1))%"
 
+        elseif res.seq == CPMGCPMG
+            "T₂ₐ = $(round(wa_indir[i], sigdigits=3)), T₂ᵦ = $(round(wa_dir[i], sigdigits=3))\nVolume = $(round(volumes[i] *100 ,digits = 1))%"
+
         end
 
         alphas = 0.83
