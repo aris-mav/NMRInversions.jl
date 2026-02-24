@@ -33,19 +33,28 @@ end
 
 function T2T2_data()
     
-    x_indirect = collect(logrange(1e-5, 1, 30))
-    x_direct = collect(range(1e-5, 1, 500))
+    x_direct = range(1:5000,500) .* (250 * 1e-6)
+    x_indirect = logrange(1,5000,32) .* (250 * 1e-6)
     X = exp10.(range(-5, 1, 128)) # T range
-    f_custom = [0.5exp.(-(x+0.7)^2 / 0.2) + exp.(-(x - 2.3)^2 / 0.2) for x in range(-5, 5, length(X))]
+    f = [0.5exp.(-(x+0.7)^2 / 0.2) + exp.(-(x - 1.3)^2 / 1.9) for x in range(-5, 5, length(X))]
 
-    gd = create_kernel(CPMG, x_direct, X) * f_custom
-    gi = create_kernel(CPMG, x_indirect, X) * f_custom
+    # T2a = 5e-1
+    # T2b = 5e-2
+    # A = [exp.(-x_direct ./ T2a)  exp.(-x_direct ./ T2b)]
+    # B = [exp.(-x_indirect ./ T2a)  exp.(-x_indirect ./ T2b)]
+    # K = [0.5  0.0 ; 
+    #     0.1  0.4]
 
-    G = gd * gi'
-    noise = (maximum(G) * 0.1) .* randn(size(G)...)
-    data = input2D(CPMGCPMG, x_direct, x_indirect, complex.(G,noise))
+    A = create_kernel(CPMG, x_direct, X)
+    B = create_kernel(CPMG, x_indirect, X)
+    K = Diagonal(f) # off diagonal peaks are for exchange
 
-    # data = input1D(CPMG, x_direct, G[:,1])
+    G = A * K * B'
+
+    noise_real = (maximum(G) * 0.01) .* randn(size(G)...)
+    noise_imag = (maximum(G) * 0.01) .* randn(size(G)...)
+
+    data = input2D(CPMGCPMG, x_direct, x_indirect, complex.(G .+ noise_real, noise_imag))
 
     return data
 end
