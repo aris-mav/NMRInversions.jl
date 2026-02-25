@@ -73,7 +73,6 @@ end
 function angle_correction(y::AbstractVecOrMat)
     n = min(floor(Int, length(y) / 5) , 15)
     θ = sum(angle.(y[1:n])) / n
-    println(θ)
     return θ
 end
 
