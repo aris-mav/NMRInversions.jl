@@ -83,7 +83,7 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
     x = res.X_indirect
     y = res.X_direct
 
-    xlbl = if seq == IRCPMG
+    xlbl = if seq in (IRCPMG, SRCPMG)
         L"T_1 \, \textrm{(s)}"
     elseif seq == PFGCPMG
         L"D \, \textrm{(m^2/s)}"
@@ -91,16 +91,16 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInvers
         L"T_{2A} \,\textrm{(s)}"
     end
 
-    ylbl = if seq in [IRCPMG, PFGCPMG]
+    ylbl = if seq in (IRCPMG, SRCPMG, PFGCPMG)
         L"T_2 \,\textrm{(s)}"
     elseif seq == CPMGCPMG
         L"T_{2B} \,\textrm{(s)}"
     end
 
-    x_low = seq in (IRCPMG, CPMGCPMG) ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(x[1])))
-    x_high = seq in (IRCPMG, CPMGCPMG) ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(x[end])))
-    y_low = seq in (IRCPMG, CPMGCPMG) ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(y[1])))
-    y_high = seq in (IRCPMG, CPMGCPMG) ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(y[end])))
+    x_low = seq in (IRCPMG, SRCPMG, CPMGCPMG) ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(x[1])))
+    x_high = seq in (IRCPMG, SRCPMG, CPMGCPMG) ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(x[end])))
+    y_low = seq in (IRCPMG, SRCPMG, CPMGCPMG) ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(y[1])))
+    y_high = seq in (IRCPMG, SRCPMG, CPMGCPMG) ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(y[end])))
 
     gr = fig[1:10, 1:10] = GridLayout()
 
@@ -207,7 +207,7 @@ function draw_on_axes(
     markers = collect('a':'z')
     colors = cgrad(:tab10)
 
-    if res.seq in (IRCPMG, CPMGCPMG)
+    if res.seq in (IRCPMG, SRCPMG, CPMGCPMG)
         plot_diagonal(axmain,x,y)
     end
 
@@ -224,7 +224,7 @@ function draw_on_axes(
         xc = xdist ⋅ x / sum(spo)
         yc = ydist ⋅ y / sum(spo)
 
-        lbl = if res.seq == IRCPMG
+        lbl = if res.seq in (IRCPMG, SRCPMG)
             "T₁/T₂ = $(round(wa_indir[i]/wa_dir[i] , digits=1)) \nVolume = $(round(volumes[i] *100 ,digits = 1))%"
         elseif res.seq == PFGCPMG
             "D = $(round(wa_indir[i], sigdigits=3)), T₂ = $(round(wa_dir[i], sigdigits=3))\nVolume = $(round(volumes[i] *100 ,digits = 1))%"
@@ -349,7 +349,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     coord_label = Observable("")
     coord_label[] = "Hover mouse over plot to view coordinates."
 
-    xlbl = if res.seq == IRCPMG
+    xlbl = if res.seq in (IRCPMG, SRCPMG)
         "T₁"
     elseif res.seq == PFGCPMG
         "D"
@@ -357,7 +357,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
         "T₂ₐ"
     end
 
-    ylbl = if res.seq in [IRCPMG, PFGCPMG]
+    ylbl = if res.seq in (IRCPMG, SRCPMG, PFGCPMG)
         "T₂"
     elseif res.seq == CPMGCPMG
         "T₂ᵦ"

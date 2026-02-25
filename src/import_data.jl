@@ -203,7 +203,7 @@ function import_tnt(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
         x = read_tnt_echo_times(filename, length(y), echotime)
         return autophase(input1D(seq, x, y))
 
-    elseif seq in (IRCPMG, CPMGCPMG)
+    elseif seq in (IRCPMG, CPMGCPMG, SRCPMG)
 
         data_mat = reshape(y , :, header["actual_points_2d"]) 
         x_dir = read_tnt_echo_times(filename, size(data_mat,1), echotime)

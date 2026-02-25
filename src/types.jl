@@ -1,7 +1,7 @@
 ## The following are custom types, defined mainly for multiple dispatch purposes
 
 export pulse_sequence1D, pulse_sequence2D
-export IR, SR, CPMG, PFG, IRCPMG, PFGCPMG, CPMGCPMG
+export IR, SR, CPMG, PFG, IRCPMG, SRCPMG, PFGCPMG, CPMGCPMG
 export alpha_optimizer, regularization_solver
 
 abstract type pulse_sequence1D end
@@ -43,6 +43,13 @@ The direct dimension is the T2, and the indirect dimension is the T1 acquisition
 It can be used wherever the `seq` argument is required.
 """
 struct IRCPMG <: pulse_sequence2D end
+
+"""
+Saturation recovery - CPMG pulse sequence for 2D relaxation experiments (T1-T2).
+The direct dimension is the T2, and the indirect dimension is the T1 acquisition times.
+It can be used wherever the `seq` argument is required.
+"""
+struct SRCPMG <: pulse_sequence2D end
 
 """
 PFG - CPMG pulse sequence for 2D D-T2 experiments.

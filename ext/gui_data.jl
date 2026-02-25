@@ -91,7 +91,7 @@ function Makie.plot(data::NMRInversions.input2D)
     ax_dir.xlabel = "time (s)"
     ax_full.xlabel = "time (s)"
 
-    if data.seq in (IRCPMG, CPMGCPMG)
+    if data.seq in (IRCPMG, SRCPMG, CPMGCPMG)
         ax_indir.xlabel = "time (s)"
         ax_full.ylabel = "time (s)"
     elseif data.seq == PFGCPMG

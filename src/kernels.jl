@@ -139,6 +139,9 @@ function create_kernel(seq::Type{<:pulse_sequence2D},
     elseif seq == PFGCPMG
         K_dir = create_kernel(CPMG, x_direct, X_direct, y = vec(Data[:,1]))
         K_indir = create_kernel(PFG, x_indirect, X_indirect, y = vec(Data[1,:]))
+    elseif seq == SRCPMG
+        K_dir = create_kernel(CPMG, x_direct, X_direct, y = vec(Data[:,end]))
+        K_indir = create_kernel(SR, x_indirect, X_indirect, y = vec(Data[1,:]))
     elseif seq == CPMGCPMG
         K_dir = create_kernel(CPMG, x_direct, X_direct, y = vec(Data[:,1]))
         K_indir = create_kernel(CPMG, x_indirect, X_indirect, y = vec(Data[1,:]))
