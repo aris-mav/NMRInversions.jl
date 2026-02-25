@@ -137,7 +137,7 @@ function read_tnt_de0_times(filename, len::Int)
 
         readuntil(io, "de0:2")
         readuntil(io, "de0:2")
-        readuntil(io, UInt8[0xc0, 0x00, 0x00, 0x00])
+        read(io,Int32) # discard this (empty bytes)
         x = Vector{Float64}(undef,0)
         while !eof(io)
             try
@@ -368,26 +368,26 @@ function import_geospec(filedir::String=pick_file(pwd()))
 
     seq = typedict[pulse_sequence_number]
 
-    if seq in [IR, IRCPMG]
-        y_re, y_im, ϕ = autophase(y_re, y_im, -1)
-    else
-        y_re, y_im, ϕ = autophase(y_re, y_im, 1)
-    end
-
     if seq == IRCPMG
 
-        return input2D(IRCPMG, data[1:dimensions[1], 1] .* (1 / 1000), data[1:dimensions[1]:end, 2] .* (1 / 1000), reshape(complex.(y_re, y_im), dimensions[1], dimensions[2]))
+        return autophase(input2D(IRCPMG, 
+                                 data[1:dimensions[1], 1] .* (1 / 1000), 
+                                 data[1:dimensions[1]:end, 2] .* (1 / 1000), 
+                                 reshape(complex.(y_re, y_im), dimensions[1], dimensions[2])))
 
     elseif seq == PFGCPMG
 
-        return input2D(PFGCPMG, data[1:dimensions[1], 1], data[1:dimensions[1]:end, 2] .* (1 / 1000), reshape(complex.(y_re, y_im), dimensions[1], dimensions[2]))
+        return autophase(input2D(PFGCPMG, 
+                                 data[1:dimensions[1], 1], 
+                                 data[1:dimensions[1]:end, 2] .* (1 / 1000), 
+                                 reshape(complex.(y_re, y_im), dimensions[1], dimensions[2])))
 
     elseif seq == PFG
 
-        return input1D(seq, data[:, 1], complex.(y_re, y_im))
+        return autophase(input1D(seq, data[:, 1], complex.(y_re, y_im)))
 
     elseif seq in [IR, CPMG]
 
-        return input1D(seq, data[:, 1] .* (1 / 1000), complex.(y_re, y_im)) # Converts time to seconds
+        return autophase(input1D(seq, data[:, 1] .* (1 / 1000), complex.(y_re, y_im))) # Converts time to seconds
     end
 end

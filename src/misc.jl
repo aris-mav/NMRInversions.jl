@@ -70,90 +70,47 @@ function selections(res::inv_out_2D)
 
 end
 
-
-
-"""
-Cost function - Sum of squares of the imaginary Part of NMR data.
-"""
-function im_cost(u, p)
-
-    Re = p[1]
-    Im = p[2]
-    ϕ = u[1]
-
-    _, Iₙ = phase_shift(Re, Im, ϕ)
-    return sum(Iₙ .^ 2)
+function angle_correction(y::AbstractVecOrMat)
+    n = min(floor(Int, length(y) / 5) , 15)
+    θ = sum(angle.(y[1:n])) / n
+    println(θ)
+    return θ
 end
 
-"""
-Shift the phase of a complex signal by φ radians.
-Re is the real part, and Im is the imaginary.
-"""
-function phase_shift(Re, Im, ϕ)
+function autophase(data::input1D; rotation::Real=0)
 
-    Re_new = Re .* cos(ϕ) - Im .* sin(ϕ)
-    Im_new = Im .* cos(ϕ) + Re .* sin(ϕ)
+    y_phased = data.y .* exp(-im * (angle_correction(data.y)+rotation) )
 
-    return Re_new, Im_new
-end
+    if rotation == 0
 
+        d = real.(y_phased[1] - y_phased[end])
 
-"""
-# Auto phase correcton for input data.
-This function corrects the phase of the inputs so that the real part is mostly pure data and the imaginary part is mostly noise.
-The output is a structure of the same type as the input, but the data within will be phase-corrected.
-"""
-function autophase(input::input1D)
-    re = real.(input.y)
-    im = imag.(input.y)
-    seq = input.seq
-
-    if seq in [IR]
-        re, im, ϕ = autophase(re, im, -1)
-        return input1D(seq, input.x, complex.(re, im))
-
-    elseif seq in [CPMG, PFG]
-        re, im, ϕ = autophase(re, im, 1)
-        return input1D(seq, input.x, complex.(re, im))
-    else
-        error("This function is not yet implemented for this pulse sequence. Please submit an issue on GitHub.")
+        if data.seq in (CPMG, PFG) && d < 0
+            return autophase(data, rotation = pi)
+        elseif data.seq in (IR, SR) && d > 0
+            return autophase(data, rotation = pi)
+        end
     end
 
+    return input1D(data.seq, data.x, y_phased)
 end
 
-function autophase(input::input2D)
-    re = real.(input.data)
-    im = imag.(input.data)
-    seq = input.seq
+function autophase(data::input2D; rotation::Real=0)
 
-    if seq in [IRCPMG]
-        re, im, _ = autophase(re, im, -1)
-        return input2D(seq, input.x_direct, input.x_indirect, complex.(re, im))
-    else
-        error("This function is not yet implemented for this pulse sequence. Please submit an issue on GitHub.")
+    y_phased = data.data .* exp(-im * (angle_correction(data.data)+rotation) )
+
+    if rotation == 0
+
+        d = real.(y_phased[1,1] - y_phased[1,end])
+
+        if data.seq in (PFGCPMG,) && d < 0
+            return autophase(data, rotation = pi)
+        elseif data.seq in (IRCPMG,) && d > 0
+            return autophase(data, rotation = pi)
+        end
     end
 
-end
-
-"""
-## Full syntax:.
-    autophase(re, im, startingpoint)
-- `re` is the real part of the signal.
-- `im` is the imaginary part of the signal.
-- `startingpoint` is a value between -1 and 1. It basically determines what should the 1st point of the real part be (e.g. -1 for IR, 1 for CPMG).
-"""
-function autophase(re, im, startingpoint::Real) # startingpoint is a value between -1 and 1
-
-    ϕ_range = range(0, 2π, 500)
-    Re1_vs_φ = re[1] .* cos.(ϕ_range) - im[1] .* sin.(ϕ_range)
-
-    ϕ₀ = ϕ_range[argmin(abs.(Re1_vs_φ .- startingpoint * maximum(Re1_vs_φ)))]
-
-    ϕ = optimize(u -> im_cost(u,(re, im)), [ϕ₀ - 1], [ϕ₀ + 1], [ϕ₀]).minimizer[1]
-
-    Rₙ, Iₙ = phase_shift(re, im, ϕ)
-
-    return Rₙ, Iₙ, ϕ
+    return input2D(data.seq, data.x_direct, data.x_indirect, y_phased)
 end
 
 

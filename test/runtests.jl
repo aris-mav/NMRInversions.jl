@@ -65,39 +65,6 @@ function test_artificial_data_2D() #throws errors, needs fixing
 end
 
 
-function test_phase_correction(plots=false)
-
-    # Create real and imaginary parts
-    Re_original = exp.(-range(1, 20, 1000)) + randn(1000) .* 0.01
-    Im_original = randn(1000) .* 0.01
-
-    # Get them out of phase
-    ϕd = rand() * 2π
-    Re_shifted, Im_shifted = NMRInversions.phase_shift(Re_original, Im_original, ϕd)
-
-    # Correct the phase
-    Rₙ, Iₙ, ϕc = NMRInversions.autophase(Re_shifted, Im_shifted, 1)
-
-    ## Plots for sanity check (using Plots.jl)
-    if plots == true
-        p1 = plot([Re_original, Im_original], label=["Original real" "Original Imaginary"])
-        p2 = plot([Re_shifted, Im_shifted], label=["Dephased real" "Dephased Imaginary"])
-        p3 = plot([Rₙ, Iₙ], label=["Corrected real" "Corrected Imaginary"])
-        ϕ_range = range(0, 2π, 20000)
-        Re1_vs_φ = Re_shifted[1] .* cos.(ϕ_range) - Im_shifted[1] .* sin.(ϕ_range)
-        Im_sum_vs_φ = [im_cost([ϕ], (Re_shifted, Im_shifted)) for ϕ in ϕ_range]
-        p4 = plot(ϕ_range, Re1_vs_φ, xlabel="ϕ", label="Re[1]")
-        p4 = plot!(ϕ_range, (Im_sum_vs_φ ./ maximum(Im_sum_vs_φ)) .* maximum(Re1_vs_φ), xlabel="ϕ", label="sum(im.^2)", legend=:topleft)
-        p4 = vline!(p4, [ϕc], label="corrected phase")
-        display(plot(p1, p2, p3, p4))
-    end
-
-    display("The correction error is $(round(2π - (ϕd + ϕc), sigdigits=2)) radians")
-
-    return abs(2π - (ϕd + ϕc)) < 0.05
-end
-
-
 function test_expfit()
 
     x = [range(0.001, 3, 32)...]
@@ -124,10 +91,6 @@ end
 
 @testset "expfits" begin
     @test test_expfit()
-end
-
-@testset "Phase correction" begin
-    @test test_phase_correction()
 end
 
 @testset "GLMakie and import_geospec" begin
