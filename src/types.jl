@@ -191,3 +191,55 @@ mutable struct expfit_struct
     eqn::String
     title::String
 end
+
+
+# define structs for extension solvers
+function solve_regularization(K, g, α, solver::regularization_solver)
+    error("The package needed for $(typeof(solver)) is not loaded.")
+end
+
+export nnls
+"""
+    nnls(; L, algorithm)
+Non-negative least squares method for regularization, 
+implemented using the `NonNegLeastSquares` package extension.
+Decent speed for small, 1D regularizations, but very slow for larger, 2D problems.
+It can be used as a "solver" for invert function.
+
+- `L` determines the tikhonov matrix.\
+Can be either a matrix or an integer `n`. The latter will create a finite difference matrix\
+of order `n`, which means that the penalty term will be the `n`'th derivative of the distribution.\
+Defaults to `0`, where `L` becomes the Identity matrix.
+- `algorithm` is one of:
+    * `:nnls`
+    * `:fnnls`
+    * `:pivot`
+"""
+struct nnls <: regularization_solver 
+    L::Union{Int, AbstractMatrix}
+    algorithm::Symbol
+end
+nnls(;L=0, algorithm=:nnls) = nnls(L, algorithm)
+
+
+export jump_nnls
+"""
+    jump_nnls(L, solver)
+Jump non-negative least squares method for tikhonov (L2) regularization, 
+implemented using the JuMP package extension.
+All around effective, but can be slow for large problems, such as 2D inversions, 
+unless a powerful solver like gurobi is used.
+
+- `L` determines the tikhonov matrix.\
+Can be either a matrix or an integer `n`. The latter will create a finite difference matrix\
+of order `n`, which means that the penalty term will be the `n`'th derivative of the distribution.\
+Defaults to `0`, where `L` becomes the Identity matrix.
+- `solver` is passed directly into JuMP, see its documentation for available options. 
+
+This one is still experimental and not well-tested, 
+please submit an issue if you encounter any difficulties.
+"""
+struct jump_nnls <: regularization_solver 
+    order::Int
+    solver::Symbol
+end

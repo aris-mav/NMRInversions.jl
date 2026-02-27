@@ -35,6 +35,14 @@ cdL1
 optim_nnls
 ```
 
+The following are also implemented through
+external package extensions.
+
+```@docs
+nnls
+jump_nnls
+```
+
 ## Finding optimal alpha
 These are methods for finding the optimal regularization parameter. 
 They can be used as input to the `invert` function as the 'alpha' argument
