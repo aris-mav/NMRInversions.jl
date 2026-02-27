@@ -2,7 +2,7 @@ using Optim
 
 export optim_nnls
 """
-    optim_nnls(order)
+    optim_nnls(; L, algorithm, opts)
 Simple non-negative least squares method for regularization, 
 implemented using Optim.jl.
 All around effective, but can be slow for large problems, such as 2D inversions.
@@ -31,7 +31,7 @@ function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, so
         if size(solver.L, 2) == size(K, 2) 
             solver.L 
         else
-            throw("Size mismatch between `optim_nnls.L` and the Kernel.")
+            throw("Size mismatch between `solver.L` and the Kernel.")
         end
     end
 

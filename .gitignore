@@ -1,6 +1,4 @@
 /Manifest.toml
-test.jl
-
 docs/Manifest.toml
+ext/Manifest.toml
 docs/build
-example_data/d_t2/
