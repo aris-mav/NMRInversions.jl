@@ -32,6 +32,7 @@ They can be used as input to the `invert` function as the 'solver' argument.
 brd
 pdhgm
 cdL1
+nnls
 optim_nnls
 ```
 
@@ -39,7 +40,6 @@ The following are also implemented through
 external package extensions.
 
 ```@docs
-nnls
 jump_nnls
 ```
 
