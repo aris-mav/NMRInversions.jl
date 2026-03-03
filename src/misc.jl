@@ -102,9 +102,9 @@ function autophase(data::input2D; rotation::Real=0)
 
         d = real.(y_phased[1,1] - y_phased[1,end])
 
-        if data.seq in (PFGCPMG,) && d < 0
+        if data.seq in (PFGCPMG, CPMGCPMG) && d < 0
             return autophase(data, rotation = pi)
-        elseif data.seq in (IRCPMG,) && d > 0
+        elseif data.seq in (IRCPMG, SRCPMG) && d > 0
             return autophase(data, rotation = pi)
         end
     end
@@ -225,7 +225,7 @@ function weighted_averages(r::inv_out_2D; silent::Bool = false)
         volumes[i] = sum(spo)/sum(z)
 
         dir_lbl = ["<T₂>","s"]
-        ind_lbl = if r.seq == IRCPMG
+        ind_lbl = if r.seq in (IRCPMG, SRCPMG)
             ["<T₁>","s"]
         elseif r.seq == PFGCPMG
             ["<D>", "m²/s"]
@@ -235,7 +235,7 @@ function weighted_averages(r::inv_out_2D; silent::Bool = false)
             display("Selection $(collect('a':'z')[i]) :")
             display(ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) "*ind_lbl[2])
             display(dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) "*dir_lbl[2])
-            if r.seq == IRCPMG
+            if r.seq in (IRCPMG, SRCPMG)
                 display("T₁/T₂ = $(round(wa_indir[i]/wa_dir[i], sigdigits=2)) ")
             end
             display("Volume = $(round(volumes[i], sigdigits=4) * 100) %")

@@ -31,6 +31,34 @@ function test_artificial_data(seq::Type{<:pulse_sequence1D}, SNR = 100 ; kwargs.
     #=return f=#
 end
 
+function T2T2_data()
+    
+    x_direct = range(1:5000,500) .* (250 * 1e-6)
+    x_indirect = logrange(1,5000,32) .* (250 * 1e-6)
+    X = exp10.(range(-5, 1, 128)) # T range
+    f = [0.5exp.(-(x+0.7)^2 / 0.2) + exp.(-(x - 1.3)^2 / 1.9) for x in range(-5, 5, length(X))]
+
+    # T2a = 5e-1
+    # T2b = 5e-2
+    # A = [exp.(-x_direct ./ T2a)  exp.(-x_direct ./ T2b)]
+    # B = [exp.(-x_indirect ./ T2a)  exp.(-x_indirect ./ T2b)]
+    # K = [0.5  0.0 ; 
+    #     0.1  0.4]
+
+    A = create_kernel(CPMG, x_direct, X)
+    B = create_kernel(CPMG, x_indirect, X)
+    K = Diagonal(f) # off diagonal peaks are for exchange
+
+    G = A * K * B'
+
+    noise_real = (maximum(G) * 0.01) .* randn(size(G)...)
+    noise_imag = (maximum(G) * 0.01) .* randn(size(G)...)
+
+    data = input2D(CPMGCPMG, x_direct, x_indirect, complex.(G .+ noise_real, noise_imag))
+
+    return data
+end
+
 function test_artificial_data_2D() #throws errors, needs fixing
 
     x_direct = exp10.(range(log10(1e-4), log10(5), 1024)) # acquisition range
