@@ -1,3 +1,21 @@
+function normalize_to_max_one!(a::VecOrMat)
+    a .= a ./ a[argmax(real(a))]
+end
+
+"""
+Pass some immutable structure and return it with some field(s) changed.
+"""
+function change_field(x::T; kwargs...) where {T}
+    # Convert keyword overrides to a dictionary for fast lookup
+    kw = Dict(kwargs)
+
+    # Get the fields in the correct positional order
+    vals = [ get(kw, f, getfield(x, f)) for f in fieldnames(T) ]
+
+    # Call the canonical positional constructor
+    return T(vals...)
+end
+
 """
 Create a finite difference differentiation matrix of order `order` for a matrix of size `m x m`.
 """
