@@ -98,7 +98,7 @@ function expfit(
     y = real.(y)
 
     if normalize
-        y = y ./ y[argmax(real(y))]
+        normalize_to_max_one!(y)
     end
 
 
