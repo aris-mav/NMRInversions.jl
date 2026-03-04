@@ -39,7 +39,7 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
                 )
 
     if normalize
-        y = y ./ y[argmax(real(y))]
+        normalize_to_max_one!(y)
     end
 
     if isa(lims, Tuple)
@@ -138,7 +138,7 @@ function invert(
 )
 
     if normalize
-        Data = Data ./ Data[argmax(real(Data))]
+        normalize_to_max_one!(Data)
     end
 
     if isa(lims1, Type{<:pulse_sequence2D})
