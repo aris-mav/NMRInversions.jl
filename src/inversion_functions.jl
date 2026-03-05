@@ -54,7 +54,16 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
         end
     end
  
-    ker_struct = create_kernel(seq, x, X, y)
+    ker_struct = create_kernel(seq, x, X, y, sge = isa(solver,sge))
+
+    # Create a sigmoid according to the data
+    if isa(solver, sge) && isempty(solver.s)
+
+        s_vec = solver.s_weight * sigmoid(X, solver.s_centre, width=solver.s_width) 
+        solver = change_field(solver, s = s_vec)
+
+    end
+
     α = 0.0 #placeholder, will be replaced below 
 
     if isa(alpha, Real)
@@ -69,11 +78,11 @@ function invert(seq::Type{<:pulse_sequence1D}, x::AbstractArray, y::Vector;
     end
 
     x_fit = exp10.(range(log10(x[1]), log10(x[end]), 512))
-    y_fit = create_kernel(seq, x_fit, X, y=y) * f
+    y_fit = create_kernel(seq, x_fit, X, y=y, sge = isa(solver,sge)) * f
 
     isreal(y) ? SNR = NaN : SNR = calc_snr(y)
     
-    r = create_kernel(seq, x, X, y=y) * f - y
+    r = create_kernel(seq, x, X, y=y, sge = isa(solver,sge)) * f - y
 
     if seq == PFG
         X .= X ./ 1e9

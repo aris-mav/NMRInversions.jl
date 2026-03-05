@@ -1,7 +1,6 @@
-using Optim
-
 """
     sigmoid
+using Base: return_types
 Return an ascending sigmoid function of the same size as X.
 
 Arguments:
@@ -34,21 +33,51 @@ end
 
 
 """
-    sge
+    sge(;kwargs...)
 Simultaneous Gaussian-Exponential inversion solver.
+Wraps nnls() and utilises sigmoid functions as the diagonal 
+of the Tikhonov matrix to penaltise gaussian components above the 
+centre value, and exponential components below the centre value.
+
+The following optional (Keyword) arguments can be provided.
+
+- `s` is the sigmoid vector. If not provided, it will be constructed from the values below:
+- `s_centre` default value is 1e-4 (seconds).
+- `s_width` default value is 0.05.
+- `s_weight` default value is 1.
+
 """
 struct sge <: regularization_solver
+    s::Vector{<:Real}
     s_centre::Real
     s_width::Real
     s_weight::Real
+    algorithm::Symbol
 end
+
+sge(;s_centre::Real=1e-4, 
+    s_width::Real=0.05, 
+    s_weight::Real=0.001, 
+    s::Vector{<:Real}=zeros(0),
+    algorithm::Symbol = :nnls
+    ) = sge(s, s_centre, s_width, s_weight, algorithm)
 
 function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, solver::sge)
 
-    s = sigmoid(X, solver.s_centre , width = solver.s_width)
+    solver = if !isempty(solver.s)
+        l1 = length(solver.s) * 2
+        l2 = size(K, 2)
+        if l1 == l2
+            nnls(L = Diagonal(√α .+ [solver.s ; maximum(solver.s) .- solver.s]), algorithm = :nnls)
+        else
+            error("Length of sigmoid should be $l2 to match kernel size.")
+        end
+    else
+        error("Provide a sigmoid in the sge solver.")
+    end
 
-    solver = optim_nnls(L = Diagonal([s ; 1 .- s]))
-    f, r = solve_regularization(K_sge, g, α, solver)
+    # using α=1 since we incorporate it in the sigmoid above
+    f, r = solve_regularization(K, g, 1, solver)
 
 end
 
@@ -56,9 +85,9 @@ function log_gaussian(x, μ, σ, amp)
     return amp .* exp.(-(log10.(x) .- log10(μ)).^2 ./ (2 * σ^2))
 end
 
-function test_sge(mode::Int = 1)
+function test_sge()
 
-    X = collect(logrange(1e-5, 1, floor(Int, 128/mode)))
+    X = collect(logrange(1e-5, 1, 100))
     f_gauss = log_gaussian(X, 0.2e-3, 0.2, 0.6)
     f_exp = log_gaussian(X, 0.6e-1, 0.2, 0.4)
 
@@ -67,31 +96,14 @@ function test_sge(mode::Int = 1)
     K_g = create_kernel(CPMG, x, X, gaussian = true)
     K_e = create_kernel(CPMG, x, X)
 
+
     y_gaussian = K_g * f_gauss
     y_exp = K_e * f_exp
 
     y = y_gaussian + y_exp
 
-    s = sigmoid(X, 5e-3 , width = 0.001)
+    data = input1D(CPMG, x, y)
 
-    K_sge = [K_g K_e]
+    f = invert(data, solver=sge(), alpha=lcurve(1e-6,1e1), lims=X).f
 
-    s_weight = 1
-
-    if mode == 1
-
-        # solver=optim_nnls(opts= Optim.Options(show_trace=true))
-        # return @time invert(CPMG,x,y, alpha = 1.0, solver=solver )
-
-        solver = nnls(L = 0, algorithm=:fnnls)
-        return @time invert(CPMG,x,y,  solver=solver )
-
-    elseif mode ==2
-
-        # solver = optim_nnls(L = Diagonal(s_weight .* [s ; 1 .- s]), opts= Optim.Options(show_trace=true))
-        solver = nnls(L = Diagonal(s_weight .* [s ; 1 .- s]),algorithm=:pivot)
-
-        f, r = @time solve_regularization(K_sge, y, 0.1, solver)
-        return f
-    end
 end

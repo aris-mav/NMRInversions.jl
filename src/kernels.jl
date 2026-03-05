@@ -67,9 +67,16 @@ The output is a matrix, `K`.
 
 """
 function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector; 
-                       y::Vector=ones(1), gaussian = false)
+                       y::Vector=ones(1), gaussian::Bool = false, sge::Bool=false)
 
-    return kernel_eq.(seq, x, X'; x0= x[1], y= real.(y), n= gaussian ? 2 : 1)
+    if !sge
+        return kernel_eq.(seq, x, X'; x0= x[1], y= real.(y), n= gaussian ? 2 : 1)
+    else
+        return hcat(
+            kernel_eq.(seq, x, X'; x0= x[1], y= real.(y), n = 2),
+            kernel_eq.(seq, x, X'; x0= x[1], y= real.(y), n = 1) 
+        )
+    end
 
 end
 
@@ -81,24 +88,36 @@ If data vector of real values is provided, SVD is performed on the kernel, and t
 If data vector is complex, the SNR is calculated and the SVD is automatically truncated accordingly,
 to remove the "noisy" singular values.
 """
-function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::Vector{<:Real})
+function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::Vector{<:Real}; 
+                       sge::Bool = false, silent::Bool = true)
 
-    usv = svd(create_kernel(seq, x , X, y=g))
+    K = create_kernel(seq, x , X, y=g, sge = sge)
+
+    usv = svd(K)
     K_new = Diagonal(usv.S) * usv.V'
     g_new = usv.U' * g
+
+    if !silent
+        display("Kernel not truncated, keeping all $(length(usv.S)) singular values.")
+    end
 
     return svd_kernel_struct(K_new, g_new, usv.U, usv.S, usv.V)
 
 end
 
-function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::Vector{<:Complex})
+function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::Vector{<:Complex};
+                       sge::Bool = false, silent::Bool = true)
 
-    usv = svd(create_kernel(seq, x , X, y = g))
+    K = create_kernel(seq, x , X, y=g, sge = sge)
+
+    usv = svd(K)
 
     SNR = calc_snr(g)
     indices = findall(i -> i .> (1 / SNR), usv.S) # find elements in S12 above the noise threshold
 
-    #=display("SVD truncated to $(length(indices)) singular values out of $(length(usv.S))")=#
+    if !silent
+        display("Kernel truncated to $(length(indices)) singular values out of $(length(usv.S))")
+    end
 
     U = usv.U[:, indices]
     S = usv.S[indices]
