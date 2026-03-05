@@ -326,19 +326,6 @@ function find_alpha(svds::svd_kernel_struct,
 end
 
  
-# used below to add silend option to Optim.Options immutable struct
-function change_field(x::T; kwargs...) where {T}
-    # Convert keyword overrides to a dictionary for fast lookup
-    kw = Dict(kwargs)
-
-    # Get the fields in the correct positional order
-    vals = [ get(kw, f, getfield(x, f)) for f in fieldnames(T) ]
-
-    # Call the canonical positional constructor
-    return T(vals...)
-end
-
-
 """
 Find alpha using Fminbox optimization.
 """
