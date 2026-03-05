@@ -88,7 +88,7 @@ function selections(res::inv_out_2D)
 
 end
 
-function angle_correction(y::AbstractVecOrMat)
+function correction_angle(y::AbstractVecOrMat)
     n = min(floor(Int, length(y) / 5) , 15)
     θ = sum(angle.(y[1:n])) / n
     return θ
@@ -96,7 +96,7 @@ end
 
 function autophase(data::input1D; rotation::Real=0)
 
-    y_phased = data.y .* exp(-im * (angle_correction(data.y)+rotation) )
+    y_phased = data.y .* exp(-im * (correction_angle(data.y)+rotation) )
 
     if rotation == 0
 
@@ -114,7 +114,7 @@ end
 
 function autophase(data::input2D; rotation::Real=0)
 
-    y_phased = data.data .* exp(-im * (angle_correction(data.data)+rotation) )
+    y_phased = data.data .* exp(-im * (correction_angle(data.data)+rotation) )
 
     if rotation == 0
 
