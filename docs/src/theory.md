@@ -1,11 +1,17 @@
 What follows is a rough explanation of what this
 package is about. If you're looking for more
-rigor, please refer to sources [Hansen2010,
+rigour, please refer to sources [Hansen2010,
 Mitchell2012, Song2002, Venka2002](@cite) in the
 [References](references.md) section. If you
 believe something mentioned below is wrong or
 misleading, please [submit an
 issue](https://github.com/arismavridis/NMRInversions.jl/issues/new).
+
+Note that a full understanding of the concepts
+below is by no means necessary to use the package.
+All you need is some suitable NMR data and the
+knowledge provided in the [tutorial](tutorial.md)
+section.
 
 ## Exponentials in NMR For NMR relaxation and
 diffusion experiments in liquids, we expect the
@@ -118,7 +124,7 @@ Kf = g \ ,
 where :
 - ``g`` is a vector containing the ``M`` values recorded from an experiment,
 - ``f`` is a vector containing the ``f_k`` values present in the system,
-- ``K`` is a "kernel" matrix, which can be
+- ``K`` is a matrix (we call it the Kernel), which can be
   constructed for a predetermined, usually
   logarithmically-spaced range of ``T_2`` values.
 

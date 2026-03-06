@@ -229,36 +229,4 @@ plot(results)
 weighted_averages(results)
 ```
 
-### Trimming data
 
-If you want a "quick and dirty" way to exclude
-some data points from your imported data, you may
-use indexing on the `input1D`and `input2D`
-structures, just like you would on any array.
-
-e.g.: `invert(data[x:end])`, if your first `x`
-number of points are noisy.
-
-- `data1D[3:end-2]` excludes the 3 first and last
-2 data points for both `x` and `y` elements within
-the structure.
-
-- `data2D[3:end-2, :]` excludes the 3 first and
-last 2 data points in the direct dimension, and
-includes all points on the indirect dimension.
-
-
-The `trim` function also works:
-
-```@docs
-trim(::input1D, ::Int, ::Int)
-trim(::input2D; direct::Tuple{Int,Int}=(0,0), indirect::Tuple{Int,Int}=(0,0))
-```
-
-You can use the output of `trim()` directly as the inversion input:
-```julia
-invert(trim(import_csv(CPMG,"/path/to/data") , 3 ))
-```
-The one-liner above will remove the first three
-data points from the data and pass that into the
-inversion function.

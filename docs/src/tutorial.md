@@ -9,17 +9,31 @@ For more details, it's best to refer to the [functions](functions.md) page.
 
 ## Performing an inversion
 
-Suppose we're working with data coming from a Spinsolve instrument
+Suppose we're working with data coming from a Spinsolve instrument 
+(you can find some example data in 
+[here](https://github.com/aris-mav/NMRInversions.jl/tree/master/example_data)).
+
+!!! info
+    If you want to work with different data, have a
+    look [in this section](functions.md#Importing data) 
+    for available functions. If your instrument 
+    manufacturer is not mentioned, [submit an
+    issue](https://github.com/aris-mav/NMRInversions.jl/issues)
+    and we can work on it!
+
 Then we can do the following:
 
-(you can find some example data in the files of this package, 
-look at the github page for the example_data folder).
 
 ```julia
 using NMRInversions
 
 data = import_spinsolve()
 ```
+
+This will put all the necessary information from
+your data file(s) into a variable named `data`.
+You could name it whatever you like, e.g.
+`a`, `sample_231`, etc.
 
 !!! info
     Since we called the `import_spinsolve` function without an argument, 
@@ -28,7 +42,10 @@ data = import_spinsolve()
     containing aqcuistion parameters, plus the `.dat` or `.csv` file 
     containing the experiment data.)
 
-Now we have the data imported, the inversion can be performed using a single line of code!
+Now we have the data imported, the inversion can
+be performed using a single line of code!
+Just pass the variable containing the data into
+the `invert()` function.
 
 ```julia
 results = invert(data)
@@ -37,10 +54,12 @@ results = invert(data)
 !!! info
     The `results` variable above is an `inv_out_1D` or `inv_out_2D` structure, 
     which contains all the relevant information produced by the `inversion` function.
-    To access that information, we can look at the fields of the structure using the dot notation.
-    The field names contained in the structure can be shown by using the REPL help mode 
-    (typing ? at the julia> prompt), and typing the variable's name (in this case, `?results`). 
-    Alternatively, running `@doc results` will also give you the same answers.
+    To access that information, we can look at the fields of the structure using the 
+    [dot notation](https://docs.julialang.org/en/v1/manual/types/#Composite-Types).
+    The field names contained in the structure can be shown by using the REPL "help mode" 
+    (type ? at the julia> prompt), and entering the variable's name (in this case, `?results`, 
+    where `results` is whatever you chose to name that variable). 
+    Alternatively, running `@doc results`  will also give you the same answers.
 
 The results can easily be visualised through the GLMakie extension of the package.
 
@@ -63,6 +82,33 @@ The process above can also be achieved by a single line of code:
 using NMRInversions, GLMakie
 plot(invert(import_spinsolve()))
 ```
+
+
+!!! tip
+    If you want a "quick and dirty" way to exclude
+    some unwanted data points from your imported data, 
+    you may use indexing notation on the `input1D`and 
+    `input2D` structures, just like you would on any 
+    Julia array! That can be very useful if some points
+    are noisy.
+
+    !!! details "Click this box to see examples."
+        Indexing works for 1D data:
+
+        - `invert(data[n:end])`, will exclude the first 
+            `n` number of points and pass all the remaining 
+            ones to the `invert` function. 
+
+        - `data[3:end-2]` excludes the first 3 and last 2 data points. 
+
+        - `data[1:2:100]` uses the 1st, 3rd, 5th, 7th, ... , 99th data points.
+
+        and for 2D data:
+
+        - `data[3:end-2, :]` excludes the 3 first and
+            last 2 data points in the direct dimension, and
+            includes all points (`:`) on the indirect dimension.
+
 
 Note that the workflow above can work for both 1D and 2D inversions!
 
