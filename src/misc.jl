@@ -1,3 +1,4 @@
+export scale_to_one!
 function scale_to_one!(a::VecOrMat)
     a .= a ./ a[argmax(real(a))]
 end
