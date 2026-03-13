@@ -98,7 +98,7 @@ function expfit(
     y = real.(y)
 
     if normalize
-        normalize_to_max_one!(y)
+        scale_to_one!(y)
     end
 
 

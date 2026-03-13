@@ -1,4 +1,4 @@
-function normalize_to_max_one!(a::VecOrMat)
+function scale_to_one!(a::VecOrMat)
     a .= a ./ a[argmax(real(a))]
 end
 
