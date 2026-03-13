@@ -7,61 +7,80 @@ Plot the results contained in a vector of `inv_out_1D` structures.
 
 The keyword (optional) arguments are:
 
-- `selections` : Whether to highlight the selections in the plots (default is `false`).
+- `selections` : Whether to highlight the selections in each of the plots (default is `true`).
+- `stacked` : Whether to plot different curves as a stack, instead of superimposed. (default is `true`).
 
 """
 function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.inv_out_1D}; 
-                    selections = false , yscale = identity, xscale = identity)
+                    selections::Bool = true,
+                    stacked::Bool = true, 
+                    yscale = identity, 
+                    xscale = identity,
+                    )
 
     fig = Figure(size=(700, 600))
 
     res = res_mat[1]
+
+    position1 = fig[1:5, 1:5]
+    position2 = (stacked && length(res_mat) > 1 ) ? fig[1:10, 6:10] : fig[1:5, 6:10]
+    position3 = fig[6:10,1:5]
+
     # Make axes
-    if res.seq in [NMRInversions.IR]
-        ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)", yscale = yscale, xscale = xscale)
-        ax2 = Axis(fig[1:5, 6:10], xlabel=L"T_1 \, \textrm{(s)}", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)", xscale = xscale)
+    if res.seq in [NMRInversions.IR, NMRInversions.SR]
+        ax1 = Axis(position1, xlabel="time (s)", ylabel="Signal (a.u.)", yscale = yscale, xscale = xscale)
+        ax2 = Axis(position2, xlabel=L"T_1 \, \textrm{(s)}", xscale=log10)
+        ax3 = Axis(position3, xlabel= "time (s)", ylabel="Residuals (a.u.)", xscale = xscale)
 
     elseif res.seq in [NMRInversions.CPMG]
-        ax1 = Axis(fig[1:5, 1:5], xlabel="time (s)", ylabel="Signal (a.u.)")
-        ax2 = Axis(fig[1:5, 6:10], xlabel=L"T_2 \, \textrm{(s)}", xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "time (s)", ylabel="Residuals (a.u.)")
+        ax1 = Axis(position1, xlabel="time (s)", ylabel="Signal (a.u.)")
+        ax2 = Axis(position2, xlabel=L"T_2 \, \textrm{(s)}", xscale=log10)
+        ax3 = Axis(position3, xlabel= "time (s)", ylabel="Residuals (a.u.)")
 
     elseif res.seq in [NMRInversions.PFG]
-        ax1 = Axis(fig[1:5, 1:5], xlabel="b factor (s/m² e-9)", ylabel="Signal (a.u.)")
-        ax2 = Axis(fig[1:5, 6:10], xlabel=L"D \, \textrm{(m^2/s)}" , xscale=log10)
-        ax3 = Axis(fig[6:10,1:5], xlabel= "b factor (s/m² e-9)", ylabel="Residuals (a.u.)")
+        ax1 = Axis(position1, xlabel="b factor (s/m² e-9)", ylabel="Signal (a.u.)")
+        ax2 = Axis(position2, xlabel=L"D \, \textrm{(m^2/s)}" , xscale=log10)
+        ax3 = Axis(position3, xlabel= "b factor (s/m² e-9)", ylabel="Residuals (a.u.)")
     end
 
     ax2.xlabelsize = 18
 
     linkxaxes!(ax1, ax3)
 
-    for r in res_mat
-        draw_on_axes(ax1, ax2, ax3, r, selections = selections)
+    for (i,r) in enumerate(res_mat)
+        draw_on_axes(ax1, ax2, ax3, r, 
+                     selections = selections, 
+                     offset = stacked ? i * 1.1 : 0,
+                     n_plots = length(res_mat),
+                     i = i,
+                     )
     end
 
     ax1.yscale = yscale
     ax1.xscale = xscale
 
-    if length(fig.content[2].scene.plots) > 1
-
-        Legend(fig[6:10,6:10], ax2)
-
-        ax2.limits = (
-            minimum(minimum(getfield.(res_mat,:X))),
-            maximum(maximum(getfield.(res_mat,:X))),
-            minimum(map(res -> -0.025 * maximum(res.f .* res.filter), res_mat)),
-            maximum(map(res ->  1.025 * maximum(res.f .* res.filter), res_mat)),
-        )
+    if length(res_mat) > 1
+        if stacked
+        else
+            Legend(fig[6:10,6:10], ax2)
+        end
     end
 
     ax2.limits = (
         minimum(minimum(getfield.(res_mat,:X))),
         maximum(maximum(getfield.(res_mat,:X))),
-        minimum(map(res -> -0.025 * maximum(res.f .* res.filter), res_mat)),
-        maximum(map(res ->  1.025 * maximum(res.f .* res.filter), res_mat)),
+        stacked ? nothing : minimum(map(res -> -0.025 * maximum(res.f .* res.filter), res_mat)),
+        stacked ? nothing : maximum(map(res ->  1.025 * maximum(res.f .* res.filter), res_mat)),
     )
+
+
+    if stacked 
+        for a in (ax1, ax2, ax3)
+            a.yticksvisible = false
+            a.yticklabelsvisible = false
+            a.yticks = 1.1:1.1:length(res_mat) * 1.1
+        end
+    end
 
     return fig
 end
@@ -84,7 +103,7 @@ Run the GUI to plot the 1D inversion results and select peaks you want to label.
 function Makie.plot(res::NMRInversions.inv_out_1D)
 
     GLMakie.activate!(;title= "1D inversion GUI")
-    fig = plot([res], selections = true)
+    fig = plot([res], selections = true, stacked= false)
 
     slider = IntervalSlider(fig[6,6:10], range = [1:length(res.X)...], startvalues = (1, length(res.X)))
 
@@ -183,7 +202,11 @@ function Makie.plot(res::NMRInversions.inv_out_1D)
 end
 
 
-function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections = false)
+"""
+- `offset` normalises the data to 1 and plots them as `data .+ offset`, used to stack many graphs.
+"""
+function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; 
+                      selections = false, offset::Real = 0, n_plots::Int =1, i = 1)
 
     # apply filter to f and update fitted curve and residuals
     f_prime = res.filter .* res.f
@@ -196,13 +219,21 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
         res.seq, res.x, (res.seq == PFG ? res.X .* 1e9 : res.X), y = res.y
     ) * f_prime - real.(res.y)
 
-    i = length(ax2.scene.plots) + 1
-
-    scatter!(ax1, res.x, real.(res.y), colormap=:tab10, colorrange=(1, 10), color=i)
-    lines!(ax1, res.xfit, yfit_prime, colormap=:tab10, colorrange=(1, 10), color=i)
-    !selections && lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=i, label = res.title)
-    lines!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
-    scatter!(ax3, res.x, r_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+    scatter!(ax1, res.x, 
+             offset == 0 ? real.(res.y) : (scale_to_one!(real.(res.y)) .+ offset), 
+             colormap=:tab10, colorrange=(1, 10), color=i)
+    lines!(ax1, res.xfit, 
+           offset == 0 ? real.(yfit_prime) : (scale_to_one!(real.(yfit_prime)) .+ offset), 
+           colormap=:tab10, colorrange=(1, 10), color=i)
+    !selections && lines!(ax2, res.X, 
+                          offset == 0 ? real.(f_prime) : (scale_to_one!(real.(f_prime)) .+ offset), 
+                          colormap=:tab10, colorrange=(1, 10), color=i, label = res.title)
+    lines!(ax3, res.x, 
+           offset == 0 ? real.(r_prime) : (scale_to_one!(real.(r_prime)) .* 0.5 .+ offset ), 
+           colormap=:tab10, colorrange=(1, 10), color=i)
+    scatter!(ax3, res.x, 
+             offset == 0 ? real.(r_prime) : (scale_to_one!(real.(r_prime)) .* 0.5 .+ offset ), 
+             colormap=:tab10, colorrange=(1, 10), color=i)
 
 
     if selections
@@ -218,23 +249,29 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.inv_out_1D; selections =
         wa, areas = weighted_averages(res, silent = true)
 
         for (i,s) in enumerate(res.selections)
+            b_low = zeros(length(res.f[s[1]:s[2]])) .+ offset
+            b_high = if (offset == 0)
+                f_prime[s[1]:s[2]]
+            else
+                scale_to_one!(f_prime)[s[1]:s[2]] .+ offset
+            end
+
             band!(
-                ax2, 
-                res.X[s[1]:s[2]],
-                zeros(length(res.f[s[1]:s[2]])),
-                (res.f .* res.filter)[s[1]:s[2]],
+                ax2, res.X[s[1]:s[2]], b_low, b_high,
                 colormap=:tab10, colorrange=(1, 10), color=i,alpha = 0.35,
             )
         end
 
-        lines!(ax2, res.X, f_prime, colormap=:tab10, colorrange=(1, 10), color=i)
+        lines!(ax2, res.X, 
+               offset == 0 ? real.(f_prime) : (scale_to_one!(real.(f_prime)) .+ offset), 
+                          colormap=:tab10, colorrange=(1, 10), color= i, label = res.title)
 
         for (i,s) in enumerate(res.selections)
 
-            height = (1 - (i-1) * 0.1) * maximum(res.f .* res.filter) 
+            height = (1 - (i-1) * (0.1 + 0.07*log(n_plots))) * maximum(f_prime) + offset 
 
             sel = collect('a':'z')[i]
-            h =(res.f .* res.filter)[argmin(abs.(res.X .- wa[i]))]/2
+            h = f_prime[argmin(abs.(res.X .- wa[i]))]/2 + offset
 
             scatter!(ax2, 
                      wa[i], 
