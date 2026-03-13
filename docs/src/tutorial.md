@@ -55,7 +55,8 @@ results = invert(data)
     The `results` variable above is an `inv_out_1D` or `inv_out_2D` structure, 
     which contains all the relevant information produced by the `inversion` function.
     To access that information, we can look at the fields of the structure using the 
-    [dot notation](https://docs.julialang.org/en/v1/manual/types/#Composite-Types).
+    [dot notation](https://docs.julialang.org/en/v1/manual/types/#Composite-Types) 
+    (e.g., `results.SNR` will return the value stored in the `SNR` field).
     The field names contained in the structure can be shown by using the REPL "help mode" 
     (type ? at the julia> prompt), and entering the variable's name (in this case, `?results`, 
     where `results` is whatever you chose to name that variable). 
