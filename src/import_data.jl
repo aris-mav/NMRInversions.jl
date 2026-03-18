@@ -1,11 +1,16 @@
 export import_csv
 """
     import_csv(seq, file)
-Import data from a CSV file.
+Import data from a CSV file. 
+
+The 1st column should include the x array (time or b-factor).
+The 2nd column should be the y data points.
+For imaginary numbers, the 2nd and 3rd columns can be used for 
+the real and imaginary part.
+
 The function reads the file and returns an `input1D` structure.
 - `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
 - `file` is the path to the CSV file which contains the data (x, y) in two respective columns.
-
 
 The function can be called without the seq argument,
 and the output will be the x and y vectors 
@@ -22,16 +27,31 @@ or in `seconds/metres² * 1e-9` for PFG experiments.
 """
 function import_csv(seq::Type{<:pulse_sequence1D}, file=pick_file(pwd()))
     x, y = import_csv(file)
-    return input1D(seq, x, y)
+
+    if isa(y, Vector{<:Complex})
+        return autophase(input1D(seq, x, y))
+    else
+        return input1D(seq, x, y)
+    end
 end
 
 function import_csv(file=pick_file(pwd()))
     data = readdlm(file, ',')
-    x = vec(data[:, 1])
-    y = vec(data[:, 2])
-    return x, y
-end
 
+    if size(data,2) == 2
+
+        x = vec(data[:, 1])
+        y = vec(data[:, 2])
+        return x, y
+
+    elseif size(data,2) == 3
+
+        x = vec(data[:, 1]) 
+        y = complex.(vec(data[:, 2]) , vec(data[:, 3]))
+        return x, y
+
+    end
+end
 
 function read_acqu(filename, parameter)
 
