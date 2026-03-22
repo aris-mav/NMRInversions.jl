@@ -36,7 +36,7 @@ Arguments:
 The ones below are set as keyword arguments so that they 
 are not broadcasted in `create_kernel`.
 
-- `x0` is the offset in `x` (normally the first point `x[1]`).
+- `x0` is the offset in `x` (can be the first point `x[1]`).
 - `y` is the recorded data, used to normalise the kernel.
 - `n` should be `1` for exponential and `2` for gaussian decays.
 """
@@ -62,14 +62,18 @@ will be normalised to match the highest value in `y`. Defaults
 to an array containing `1.0`.
 - `gaussian` determines whether the kernel is exponential or 
 gaussian. Defaults to `false` (exponential by default).
+- `x0` is the offset in `x` (can be the first point `x[1]`).
 
 The output is a matrix, `K`.
 
 """
 function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector; 
-                       y::Vector=ones(1), gaussian = false)
+                       y::Vector=ones(1), 
+                       gaussian::Bool = false, 
+                       x0::Real=0
+                       )
 
-    return kernel_eq.(seq, x, X'; x0= x[1], y= real.(y), n= gaussian ? 2 : 1)
+    return kernel_eq.(seq, x, X'; x0= x0, y= real.(y), n= gaussian ? 2 : 1)
 
 end
 
