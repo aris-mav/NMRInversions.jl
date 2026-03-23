@@ -93,7 +93,7 @@ of the import functions (look documentation tutorial section).
 """
 function invert(data::input1D; kwargs...)
 
-    return invert(data.seq, data.x, data.y; kwargs...)
+    return invert(data.seq, data.x, copy(data.y); kwargs...)
 
 end
 
@@ -199,6 +199,6 @@ import functions (look documentation tutorial section).
 """
 function invert(input::input2D; kwargs...)
 
-    invert(input.seq, input.x_direct, input.x_indirect, input.data; kwargs...)
+    invert(input.seq, input.x_direct, input.x_indirect, copy(input.data); kwargs...)
 
 end
