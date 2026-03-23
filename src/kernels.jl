@@ -73,7 +73,11 @@ function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector;
                        x0::Real=0
                        )
 
-    return kernel_eq.(seq, x, X'; x0= x0, y= real.(y), n= gaussian ? 2 : 1)
+    return kernel_eq.(seq, x, X'; 
+                      y= real.(y), 
+                      n= gaussian ? 2 : 1,
+                      x0= (seq == CPMG ? x0 : x[1]), 
+                      )
 
 end
 
@@ -184,4 +188,3 @@ function create_kernel(seq::Type{<:pulse_sequence2D},
 
     return svd_kernel_struct(K̃₀, g̃, Ũ₀, s̃, Ṽ₀)
 end
-
