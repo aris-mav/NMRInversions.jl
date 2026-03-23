@@ -18,11 +18,12 @@ function test_artificial_data(seq::Type{<:pulse_sequence1D}, SNR = 100 ; kwargs.
     results = invert( seq, x, y, lims=(-5,1,128);kwargs...) 
 
     score = LinearAlgebra.norm(f_custom - (results.f ./ (maximum(results.f)) .* maximum(f_custom)))
-    display("Sequence: $seq, SNR: $SNR, Score: $score")
+    threshold = 10 * SNR^(-0.35)
+    display("Sequence: $seq, SNR: $SNR, Score: $score, Threshold: $threshold")
     
     # The condition below is COMPLETELY arbitrary
     # just happens to match what we expect as sensible results
-    return score < 10 * SNR^(-0.35)
+    return score < threshold
 
     #=f = Figure()=#
     #=ax = Axis(f[:,:])=#
@@ -106,7 +107,7 @@ end
 
 
 @testset "Inversions on artificial data" begin
-    for seq in [IR, CPMG]
+    for seq in [IR, CPMG, SR]
         for snr in exp10.(2:1:4) 
             @test test_artificial_data(seq,snr,alpha=gcv(),silent=true)
         end
