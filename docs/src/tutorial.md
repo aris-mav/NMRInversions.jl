@@ -162,8 +162,6 @@ plot(results)
 ![Resulting plot](./assets/2D_gui.png)
 
 Similarly, now we can select regions by left-clicking at points within 
-the plot which enclose a region of interest. Then, we can :
-
 - `Label current selection` will highlight the selected polygon 
   with a dashed line and add some text in the plot with the weighed 
   average ``T_1/T_2`` of that region, as well as the volume fraction of it.
@@ -174,6 +172,11 @@ the plot which enclose a region of interest. Then, we can :
 - `Reset filter` will undo anything you filtered-out.
 - `Save and exit` will bring up a window so that you can save your 
    plot as a .png (without the buttons).
+
+After making some selections, the
+[weighted_averages](functions.md#Miscellaneous)
+function can be used to get some information about
+them.
 
 There are also some options to change the appearance of the plot, in 
 terms of colormap, contour levels and toggling between filled and non-filled
