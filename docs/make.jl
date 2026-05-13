@@ -24,6 +24,7 @@ makedocs(sitename="NMRInversions.jl",
                 "Functions" => "functions.md",
                 "Types and Structures" => "types_structs.md",
                 "Saving data" => "savefiles.md",
+                "Writing scripts" => "scripts.md",
                 "References" => "references.md",
                 "Contributing" => "contributing.md"
                ],
