@@ -3,7 +3,7 @@ export import_csv
     import_csv(seq, file)
 Import data from a CSV file. 
 
-The 1st column should include the x array (time or b-factor).
+The 1st column should include the x data points (time or b-factor).
 The 2nd column should be the y data points.
 For imaginary numbers, the 2nd and 3rd columns can be used for 
 the real and imaginary part.
@@ -51,6 +51,28 @@ function import_csv(file=pick_file(pwd()))
         return x, y
 
     end
+end
+
+export import_dps
+"""
+    import_dps(seq, file)
+Import data from a dps file, output from Bruker's minispec. 
+
+The 1st column should be the data point index.
+The 2nd column should include the x data point (time in ms).
+The 3rd column should be the y data points.
+
+The function reads the file and returns an `input1D` structure.
+- `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
+- `file` is the path to the dps file which contains the data (x, y) in two respective columns.
+
+"""
+function import_dps(seq::Type{<:pulse_sequence1D}, file=pick_file(pwd()))
+
+    data = readdlm(file, '\t')
+    x = vec(data[:, 2]) .* 1e-3
+    y = vec(data[:, 3])
+    return input1D(seq, x, y)
 end
 
 function read_acqu(filename, parameter)
