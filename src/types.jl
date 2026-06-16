@@ -1,134 +1,123 @@
 ## The following are custom types, defined mainly for multiple dispatch purposes
 
-export pulse_sequence1D, pulse_sequence2D
-export IR, SR, CPMG, PFG, IRCPMG, SRCPMG, PFGCPMG, CPMGCPMG
-export alpha_optimizer, regularization_solver
+"Superset of supported solvers for regularization."
+abstract type regularization_solver end ; export regularization_solver
 
-export sequence_type
-abstract type sequence_type{D} end
+"Superset of supported methods to determine the α parameter in tikhonov
+regularization."
+abstract type alpha_optimizer end; export alpha_optimizer
 
-export nmr_data
-struct nmr_data{D}
-    seq::Type{<:sequence_type{D}}
-    x::NTuple{D, AbstractVector{<:Real}} 
-    y::AbstractArray{<:Number, D}
-end
+"Superset of abstract NMR experiment types."
+abstract type NMRExperiment end
 
-for (name, D, desc) in [
-    (:T1,   1, "Inversion recovery"),
-    (:T2,   1, "CPMG"),
-    (:D,    1, "PFG"),
-    (:T1T2, 2, "IR-CPMG")
-]
-    doc_text = """
-        $desc pulse sequence type, refering to a $(D)D NMR measurement.
-        It can be used wherever the `seq` argument is required.
-        """
-    @eval begin
-        struct $name <: sequence_type{$D} end
-        @doc $doc_text $name
-        export $name
+# The reason why we don't do IR(x,y) is to be able to compose multidimensional
+# experiments where x axes are independent but y data correlated
+"""
+    IR{T<:Real} <: NMRExperiment
+
+`NMRExperiment` type for inversion recovery measurements.
+The `x` field contains the corresponding time data.
+"""
+struct IR{T<:Real} <: NMRExperiment x::Vector{T} end; export IR
+
+"""
+    SR{T<:Real} <: NMRExperiment
+
+`NMRExperiment` type for saturation recovery measurements.
+The `x` field contains the corresponding time data.
+"""
+struct SR{T<:Real} <: NMRExperiment x::Vector{T} end; export SR
+
+"""
+    CPMG{T<:Real} <: NMRExperiment
+
+`NMRExperiment` type for CPMG measurements.
+The `x` field contains the corresponding time data.
+"""
+struct CPMG{T<:Real} <: NMRExperiment x::Vector{T} end; export CPMG
+
+"""
+    PFG{T<:Real} <: NMRExperiment
+
+`NMRExperiment` type for pulsed field gradient measurements.
+The `x` field contains the corresponding b-factor data.
+"""
+struct PFG{T<:Real} <: NMRExperiment x::Vector{T} end; export PFG
+
+"""
+    Spectrum{T<:Real} <: NMRExperiment
+
+`NMRExperiment` type for NMR spectra.
+The `x` field contains the corresponding ppm data.
+"""
+struct Spectrum{T<:Real} <: NMRExperiment x::Vector{T} end; export Spectrum
+
+"""
+    FID{T<:Real} <: NMRExperiment
+
+`NMRExperiment` type for free induction decay measurements.
+The `x` field contains the corresponding time data.
+"""
+struct FID{T<:Real} <: NMRExperiment x::Vector{T} end; export FID
+
+"""
+    Dispersion{T<:Real} <: NMRExperiment
+
+`NMRExperiment` type for field cycling dispersion measurements.
+The `x` field contains the corresponding B0 data.
+"""
+struct Dispersion{T<:Real} <: NMRExperiment x::Vector{T} end; export Dispersion
+
+
+"""
+Struct containing NMR data.
+- `axes` should be a tuple of `NMRExperiment`s with the `x` data in each of them.
+- `data` should be an aray of n-dimensions with the recorded data.
+"""
+struct NMRData{
+    D,
+    X <: NTuple{D, NMRExperiment},
+    Y <: AbstractArray{<:Number, D}
+}
+    axes::X
+    data::Y
+    # Strict inner constructor to enforce matching types
+    function NMRData{D, X, Y}(axes::X, data::Y) where {D, X, Y}
+        return new{D, X, Y}(axes, data)
     end
 end
 
-# Pulse sequences
-abstract type pulse_sequence1D end
-abstract type pulse_sequence2D end
+# Flexible outer constructor to catch dimension size mismatches
+function NMRData(
+    axes::Tuple{Vararg{NMRExperiment}}, 
+    data::AbstractArray{<:Number,D}
+) where {D}
+    len_x = length(axes)
+    
+    if len_x != D
+        throw(DimensionMismatch(
+            """
+            The number of experiments (you gave $len_x) must match 
+            the number of array dimensions (you gave $D).
+            """
+        ))
+    end
 
-"Supported solvers for regularization"
-abstract type regularization_solver end 
+    for i in 1:D
+        if length(axes[i].x) != size(data, i)
+            throw(DimensionMismatch(
+                """
+                The `x` field in $(typeof(axes[i])) has length 
+                $(length(axes[i].x)), but the `data` array has length 
+                $(size(data, i)) at the corresponding dimension $i.
+                These must match.
+                """
+            ))
+        end
+    end
 
-"Supported methods to determine the α parameter in tikhonov regularization"
-abstract type alpha_optimizer end
-
-"""
-Inversion recovery pulse sequence for 1D relaxation experiments.
-It can be used wherever the `seq` argument is required. 
-"""
-struct IR <: pulse_sequence1D end
-
-"""
-Saturation recovery pulse sequence for 1D relaxation experiments.
-It can be used wherever the `seq` argument is required. 
-"""
-struct SR <: pulse_sequence1D end
-
-"""
-CPMG pulse sequence for 1D relaxation experiments.
-It can be used wherever the `seq` argument is required. 
-"""
-struct CPMG <: pulse_sequence1D end
-
-"""
-Pulsed field gradient pulse sequence for 1D diffusion experiments.
-It can be used wherever the `seq` argument is required. 
-"""
-struct PFG <: pulse_sequence1D end
-
-"""
-Inversion recovery - CPMG pulse sequence for 2D relaxation experiments (T1-T2).
-The direct dimension is the T2, and the indirect dimension is the T1 acquisition times.
-It can be used wherever the `seq` argument is required.
-"""
-struct IRCPMG <: pulse_sequence2D end
-
-"""
-Saturation recovery - CPMG pulse sequence for 2D relaxation experiments (T1-T2).
-The direct dimension is the T2, and the indirect dimension is the T1 acquisition times.
-It can be used wherever the `seq` argument is required.
-"""
-struct SRCPMG <: pulse_sequence2D end
-
-"""
-PFG - CPMG pulse sequence for 2D D-T2 experiments.
-It can be used wherever the `seq` argument is required.
-"""
-struct PFGCPMG <: pulse_sequence2D end
-
-"""
-CPMG - CPMG pulse sequence for 2D T2-T2 experiments.
-It can be used wherever the `seq` argument is required.
-"""
-struct CPMGCPMG <: pulse_sequence2D end
-
-export regularization_solver
-
-
-export input1D
-"""
-    input1D(seq, x, y)
-A structure containing the following fields:
-- `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
-- `x`, the x values of the measurement (e.g time for relaxation or b-factor for diffusion).
-- `y`, the y values of the measurement. 
-
-It can be used as an input for the invert and expfit functions.
-"""
-struct input1D
-    seq::Type{<:pulse_sequence1D}
-    x::AbstractVector{<:Real}
-    y::AbstractVector
+    return NMRData{D, typeof(axes), typeof(data)}(axes, data)
 end
-
-export input2D
-"""
-    input2D(seq, x, y)
-
-A structure containing the following fields:
-- `seq` is the 2D pulse sequence (e.g. IRCPMG)
-- `x_direct` is the direct dimension acquisition parameter (e.g. the times when you aquire CPMG echoes).
-- `x_indirect` is the indirect dimension acquisition parameter (e.g. all the delay times τ in your IR sequence).
-- `data` is the 2D data matrix.
-
-It can be used as an input for the invert function.
-"""
-struct input2D
-    seq::Type{<:pulse_sequence2D}
-    x_direct::AbstractVector{<:Real}
-    x_indirect::AbstractVector{<:Real}
-    data::AbstractMatrix
-end
-
 
 export inv_out_1D
 """
