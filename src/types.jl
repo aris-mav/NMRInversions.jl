@@ -7,69 +7,83 @@ abstract type regularization_solver end ; export regularization_solver
 regularization."
 abstract type alpha_optimizer end; export alpha_optimizer
 
-"Superset of abstract NMR experiment types."
-abstract type NMRExperiment end
-
-# The reason why we don't do IR(x,y) is to be able to compose multidimensional
-# experiments where x axes are independent but y data correlated
 """
-    IR{T<:Real} <: NMRExperiment
+    NMRExperiment{T} <: AbstractVector{T}
+
+Superset of abstract NMR experiment types.
+Subtypes are:
+- `IR` (Inversion recovery)
+- `SR` (Saturation recovery)
+- `CPMG`
+- `PFG` (Pulsed field gradient)
+- `Spectrum`
+- `FID` (Free Induction Decay)
+- `FC` (Field cycling)
+"""
+abstract type NMRExperiment{T} <: AbstractVector{T} end
+
+Base.size(E::NMRExperiment) = size(E.x)
+Base.getindex(E::NMRExperiment, i::Int) = E.x[i]
+Base.setindex!(E::NMRExperiment, val, i::Int) = (E.x[i] = val)
+
+"""
+    IR{T<:Real} <: NMRExperiment{T}
 
 `NMRExperiment` type for inversion recovery measurements.
 The `x` field contains the corresponding time data.
 """
-struct IR{T<:Real} <: NMRExperiment x::Vector{T} end; export IR
+struct IR{T<:Real} <: NMRExperiment{T} x::Vector{T} end; export IR
 
 """
-    SR{T<:Real} <: NMRExperiment
+    SR{T<:Real} <: NMRExperiment{T}
 
 `NMRExperiment` type for saturation recovery measurements.
 The `x` field contains the corresponding time data.
 """
-struct SR{T<:Real} <: NMRExperiment x::Vector{T} end; export SR
+struct SR{T<:Real} <: NMRExperiment{T} x::Vector{T} end; export SR
 
 """
-    CPMG{T<:Real} <: NMRExperiment
+    CPMG{T<:Real} <: NMRExperiment{T}
 
 `NMRExperiment` type for CPMG measurements.
 The `x` field contains the corresponding time data.
 """
-struct CPMG{T<:Real} <: NMRExperiment x::Vector{T} end; export CPMG
+struct CPMG{T<:Real} <: NMRExperiment{T} x::Vector{T} end; export CPMG
 
 """
-    PFG{T<:Real} <: NMRExperiment
+    PFG{T<:Real} <: NMRExperiment{T}
 
 `NMRExperiment` type for pulsed field gradient measurements.
 The `x` field contains the corresponding b-factor data.
 """
-struct PFG{T<:Real} <: NMRExperiment x::Vector{T} end; export PFG
+struct PFG{T<:Real} <: NMRExperiment{T} x::Vector{T} end; export PFG
 
 """
-    Spectrum{T<:Real} <: NMRExperiment
+    Spectrum{T<:Real} <: NMRExperiment{T}
 
 `NMRExperiment` type for NMR spectra.
 The `x` field contains the corresponding ppm data.
 """
-struct Spectrum{T<:Real} <: NMRExperiment x::Vector{T} end; export Spectrum
+struct Spectrum{T<:Real} <: NMRExperiment{T} x::Vector{T} end; export Spectrum
 
 """
-    FID{T<:Real} <: NMRExperiment
+    FID{T<:Real} <: NMRExperiment{T}
 
 `NMRExperiment` type for free induction decay measurements.
 The `x` field contains the corresponding time data.
 """
-struct FID{T<:Real} <: NMRExperiment x::Vector{T} end; export FID
+struct FID{T<:Real} <: NMRExperiment{T} x::Vector{T} end; export FID
 
 """
-    Dispersion{T<:Real} <: NMRExperiment
+    FC{T<:Real} <: NMRExperiment{T}
 
-`NMRExperiment` type for field cycling dispersion measurements.
+`NMRExperiment` type for field cycling (or "dispersion") measurements.
 The `x` field contains the corresponding B0 data.
 """
-struct Dispersion{T<:Real} <: NMRExperiment x::Vector{T} end; export Dispersion
-
+struct FC{T<:Real} <: NMRExperiment{T} x::Vector{T} end; export FC
 
 """
+    NMRData(axes, data)
 Struct containing NMR data.
 - `axes` should be a tuple of `NMRExperiment`s with the `x` data in each of them.
 - `data` should be an aray of n-dimensions with the recorded data.
@@ -97,8 +111,8 @@ function NMRData(
     if len_x != D
         throw(DimensionMismatch(
             """
-            The number of experiments (you gave $len_x) must match 
-            the number of array dimensions (you gave $D).
+            The number of axes (you gave $len_x) \
+            must match the dimensions of the data ($D).
             """
         ))
     end
@@ -107,10 +121,9 @@ function NMRData(
         if length(axes[i].x) != size(data, i)
             throw(DimensionMismatch(
                 """
-                The `x` field in $(typeof(axes[i])) has length 
-                $(length(axes[i].x)), but the `data` array has length 
-                $(size(data, i)) at the corresponding dimension $i.
-                These must match.
+                The axis $(typeof(axes[i])) has length $(length(axes[i].x)), \
+                but the `data` array has length $(size(data, i)) \
+                at the corresponding dimension $i.
                 """
             ))
         end
@@ -119,100 +132,78 @@ function NMRData(
     return NMRData{D, typeof(axes), typeof(data)}(axes, data)
 end
 
-export inv_out_1D
+# Outer constructor for 1-dimensional case
+function NMRData(axes::NMRExperiment, data::Vector{T}) where {T}
+
+    if size(axes) != size(data)
+        throw(DimensionMismatch(
+            """
+            The length of $(typeof(axes)) is $(length(axes.x)), 
+            and the length of `data` is $(length(data)). 
+            These must match.
+            """
+        ))
+    end
+
+    return NMRData{1, Tuple{typeof(axes)}, Vector{T}}((axes,), data)
+end
+
+export InversionData
 """
-    inv_out_1D(seq, x, y, xfit, yfit, X, f, r, SNR, α, selections, filter, title)
+    InversionData()
 
 Output of the invert function for 1D pulse sequences.
 A structure containing the following fields:
 - `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
-- `x`, the x values of the measurement (e.g time for relaxation or b-factor for diffusion).
-- `y`, the y values of the measurement.
-- `xfit`, the x values of the fitted data.
-- `yfit`, the y values of the fitted data.
 - `X`, the x values of the inversion results.
 - `f`, the inversion results.
 - `r`, the residuals.
 - `SNR`, the signal-to-noise ratio.
 - `α`, the regularization parameter.
-- `selections`, a vector of tuples whose elements indicate the first and last index of the selected peaks.
+- `selections` look like: `selections[sel_a[[x1,y1,..],[x2,y2,..],..], sel_b..]`
 - `filter`, a vector representing the mask used to filter and scale the data.
 - `title`, a title describing the data.
 
 """
-mutable struct inv_out_1D
-    seq::Type{<:pulse_sequence1D}
-    x::Vector
-    y::Vector
-    xfit::Vector
-    yfit::Vector
-    X::Vector
-    f::Vector
-    r::Vector
+mutable struct InversionData{
+    D,
+    X <: NTuple{D, NMRExperiment},
+    Y <: AbstractArray{<:Number, D}
+}
+    axes::X
+    data::Y
+    f::Y
+    r::Y
     SNR::Real
     alpha::Real
-    selections::Vector{Tuple}
-    filter::Vector
+    filter::Y
+    selections::Vector{Vector{Array{<:Number, D}}} 
     title::String
 end
 
-export inv_out_2D
-"""
-    inv_out_2D(seq, X_direct, X_indirect, F, r, SNR, α, filter, selections)
-
-Output of the invert function for 2D pulse sequences.
-A structure containing the following fields:
-- `seq` is the 2D pulse sequence (e.g. IRCPMG)
-- `X_direct`, the x values of the direct dimension.
-- `X_indirect`, the x values of the indirect dimension.
-- `F`, the inversion results as a matrix.
-- `r`, the residuals.
-- `SNR`, the signal-to-noise ratio.
-- `alpha`, the regularization parameter.
-- `filter`, apply a mask to filter out artefacts when plotting.
-- `selections`, the selection masks (e.g. when you want to highlight some peaks in a T₁-T₂ map).
-- `title`, a title describing the data.
-
-"""
-mutable struct inv_out_2D
-    seq::Type{<:pulse_sequence2D}
-    X_direct::Vector
-    X_indirect::Vector
-    F::Matrix
-    r::Vector
-    SNR::Real
-    alpha::Real
-    filter::Matrix
-    selections::Vector{Vector{Vector}}
-    title::String
-end
+# add external constructor
 
 
-export expfit_struct
+export ExpfitData
 """
 Output of the expfit function.
 Structure containing information about multiexponential fits.
 
 The fields are as follows:
-- `seq`: The pulse sequence
-- `x` : The x acquisition values (e.g. time for relaxation or b-factor for diffusion).
-- `y` : The y acquisition values.
-- `xfit` : An array with fitted x values (for plotting purposes).
-- `yfit` : An array with fitted y values (for plotting purposes).
 - `u` : The fitted parameters for the `mexp` function.
 - `u0` : The initial parameters for the `mexp` function.
 - `r` : The residuals.
 - `eq` : The equation of the fitted function.
-- `eqn` : The equation of the initial function.
+- `eqn` : Same as above, normalised.
 - `title` : A title describing the data.
-
 """
-mutable struct expfit_struct
-    seq::Type{<:NMRInversions.pulse_sequence1D}
-    x::Vector
-    y::Vector
-    xfit::Vector
-    yfit::Vector
+mutable struct ExpfitData{
+    D,
+    X <: NTuple{D, NMRExperiment},
+    Y <: AbstractArray{<:Number, D}
+}
+    axes::X
+    data::Y
     u::Vector
     u0::Vector
     r::Vector
