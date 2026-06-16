@@ -8,7 +8,7 @@ regularization."
 abstract type alpha_optimizer end; export alpha_optimizer
 
 """
-    NMRAxis{T} <: AbstractVector{T}
+    DataAxis{T} <: AbstractVector{T}
 
 Superset for abstract NMR experiment types.
 Subtypes are:
@@ -20,90 +20,90 @@ Subtypes are:
 - `FID` (Free induction decay)
 - `FC` (Field cycling)
 """
-abstract type NMRAxis{T} <: AbstractVector{T} end
+abstract type DataAxis{T} <: AbstractVector{T} end
 
-Base.size(E::NMRAxis) = size(E.x)
-Base.getindex(E::NMRAxis, i::Int) = E.x[i]
-Base.setindex!(E::NMRAxis, val, i::Int) = (E.x[i] = val)
+Base.size(E::DataAxis) = size(E.x)
+Base.getindex(E::DataAxis, i::Int) = E.x[i]
+Base.setindex!(E::DataAxis, val, i::Int) = (E.x[i] = val)
 
 """
-    IR{T<:Real} <: NMRAxis{T}
+    IR{T<:Real} <: DataAxis{T}
 
-`NMRAxis` type for inversion recovery measurements.
+`DataAxis` type for inversion recovery measurements.
 The `x` field contains the corresponding time data.
 """
-struct IR{T<:Real} <: NMRAxis{T} x::Vector{T} end; export IR
+struct IR{T<:Real} <: DataAxis{T} x::Vector{T} end; export IR
 
 """
-    SR{T<:Real} <: NMRAxis{T}
+    SR{T<:Real} <: DataAxis{T}
 
-`NMRAxis` type for saturation recovery measurements.
+`DataAxis` type for saturation recovery measurements.
 The `x` field contains the corresponding time data.
 """
-struct SR{T<:Real} <: NMRAxis{T} x::Vector{T} end; export SR
+struct SR{T<:Real} <: DataAxis{T} x::Vector{T} end; export SR
 
 """
-    CPMG{T<:Real} <: NMRAxis{T}
+    CPMG{T<:Real} <: DataAxis{T}
 
-`NMRAxis` type for CPMG measurements.
+`DataAxis` type for CPMG measurements.
 The `x` field contains the corresponding time data.
 """
-struct CPMG{T<:Real} <: NMRAxis{T} x::Vector{T} end; export CPMG
+struct CPMG{T<:Real} <: DataAxis{T} x::Vector{T} end; export CPMG
 
 """
-    PFG{T<:Real} <: NMRAxis{T}
+    PFG{T<:Real} <: DataAxis{T}
 
-`NMRAxis` type for pulsed field gradient measurements.
+`DataAxis` type for pulsed field gradient measurements.
 The `x` field contains the corresponding b-factor data.
 """
-struct PFG{T<:Real} <: NMRAxis{T} x::Vector{T} end; export PFG
+struct PFG{T<:Real} <: DataAxis{T} x::Vector{T} end; export PFG
 
 """
-    Spectrum{T<:Real} <: NMRAxis{T}
+    Spectrum{T<:Real} <: DataAxis{T}
 
-`NMRAxis` type for NMR spectra.
+`DataAxis` type for NMR spectra.
 The `x` field contains the corresponding ppm data.
 """
-struct Spectrum{T<:Real} <: NMRAxis{T} x::Vector{T} end; export Spectrum
+struct Spectrum{T<:Real} <: DataAxis{T} x::Vector{T} end; export Spectrum
 
 """
-    FID{T<:Real} <: NMRAxis{T}
+    FID{T<:Real} <: DataAxis{T}
 
-`NMRAxis` type for free induction decay measurements.
+`DataAxis` type for free induction decay measurements.
 The `x` field contains the corresponding time data.
 """
-struct FID{T<:Real} <: NMRAxis{T} x::Vector{T} end; export FID
+struct FID{T<:Real} <: DataAxis{T} x::Vector{T} end; export FID
 
 """
-    FC{T<:Real} <: NMRAxis{T}
+    FC{T<:Real} <: DataAxis{T}
 
-`NMRAxis` type for field cycling (or "dispersion") measurements.
+`DataAxis` type for field cycling (or "dispersion") measurements.
 The `x` field contains the corresponding B0 data.
 """
-struct FC{T<:Real} <: NMRAxis{T} x::Vector{T} end; export FC
+struct FC{T<:Real} <: DataAxis{T} x::Vector{T} end; export FC
 
 """
-    NMRData(axes, data)
+    ExperimentData(axes, data)
 Struct containing NMR data.
-- `axes` should be a tuple of `NMRAxis`s with the `x` data in each of them.
+- `axes` should be a tuple of `DataAxis`s with the `x` data in each of them.
 - `data` should be an aray of n-dimensions with the recorded data.
 """
-struct NMRData{
+struct ExperimentData{
     D,
-    X <: NTuple{D, NMRAxis},
+    X <: NTuple{D, DataAxis},
     Y <: AbstractArray{<:Number, D}
 }
     axes::X
     data::Y
     # Strict inner constructor to enforce matching types
-    function NMRData{D, X, Y}(axes::X, data::Y) where {D, X, Y}
+    function ExperimentData{D, X, Y}(axes::X, data::Y) where {D, X, Y}
         return new{D, X, Y}(axes, data)
     end
 end
 
 # Flexible outer constructor to catch dimension size mismatches
-function NMRData(
-    axes::Tuple{Vararg{NMRAxis}}, 
+function ExperimentData(
+    axes::Tuple{Vararg{DataAxis}}, 
     data::AbstractArray{<:Number,D}
 ) where {D}
     len_x = length(axes)
@@ -129,12 +129,12 @@ function NMRData(
         end
     end
 
-    return NMRData{D, typeof(axes), typeof(data)}(axes, data)
+    return ExperimentData{D, typeof(axes), typeof(data)}(axes, data)
 end
 
 # Outer constructor for 1-dimensional case
-function NMRData(axes::NMRAxis, data::AbstractVector)
-    return NMRData((axes,), data)
+function ExperimentData(axes::DataAxis, data::AbstractVector)
+    return ExperimentData((axes,), data)
 end
 
 export InversionData
@@ -144,19 +144,18 @@ export InversionData
 Output of the invert function for 1D pulse sequences.
 A structure containing the following fields:
 - `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
-- `X`, the x values of the inversion results.
 - `f`, the inversion results.
 - `r`, the residuals.
 - `SNR`, the signal-to-noise ratio.
 - `α`, the regularization parameter.
+- `filter`, a vector representing the mask used to filter/scale the data.
 - `selections` look like: `selections[sel_a[[x1,y1,..],[x2,y2,..],..], sel_b..]`
-- `filter`, a vector representing the mask used to filter and scale the data.
 - `title`, a title describing the data.
 
 """
 mutable struct InversionData{
     D,
-    X <: NTuple{D, NMRAxis},
+    X <: NTuple{D, DataAxis},
     Y <: AbstractArray{<:Number, D}
 }
     axes::X
@@ -171,7 +170,7 @@ mutable struct InversionData{
 end
 
 function InversionData(
-    axes::Tuple{Vararg{NMRAxis}}, 
+    axes::Tuple{Vararg{DataAxis}}, 
     data::AbstractArray{<:Number,D},
     f::AbstractArray{<:Number,D},
     r::AbstractArray{<:Number,D};
@@ -217,7 +216,7 @@ The fields are as follows:
 """
 mutable struct ExpfitData{
     D,
-    X <: NTuple{D, NMRAxis},
+    X <: NTuple{D, DataAxis},
     Y <: AbstractArray{<:Number, D}
 }
     axes::X
