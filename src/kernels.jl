@@ -29,9 +29,8 @@ Return the value of the kernel at a given element.
 
 Arguments:
 
-- `seq` is the pulse sequence (e.g. IR, CPMG, PFG)
-- `x` is the experiment x axis (time or b factor etc.)
-- `X` is the range for the output x axis (T1, T2, D etc.)
+- `axis` is the `DataAxis` for the experiment.
+- `X` is the array for T1, T2, D etc..
 
 The ones below are set as keyword arguments so that they 
 are not broadcasted in `create_kernel`.
@@ -40,20 +39,26 @@ are not broadcasted in `create_kernel`.
 - `y` is the recorded data, used to normalise the kernel.
 - `n` should be `1` for exponential and `2` for gaussian decays.
 """
-kernel_eq(::Type{IR}, x, X; x0, y, n) = y[end] - (y[end] + abs(y[1])) * exp(-((x-x0) / X)^n)
-kernel_eq(::Type{SR}, x, X; x0, y, n) = y[end] * (1 - exp(-((x-x0) / X))^n)
-kernel_eq(::Type{CPMG}, x, X; x0, y, n) = y[1] * exp(-((x-x0) / X)^n)
-kernel_eq(::Type{PFG}, x, X; x0, y, n) = y[1] * exp(-((x-x0) * X)^n)
+kernel_eq(axis::Type{IR}, X; x0, y, n) = 
+    y[end] - (y[end] + abs(y[1])) * exp(-((axis.x-x0) / X)^n)
+
+kernel_eq(axis::Type{SR}, X; x0, y, n) = 
+    y[end] * (1 - exp(-((axis.x-x0) / X))^n)
+
+kernel_eq(axis::Type{CPMG}, X; x0, y, n) = 
+    y[1] * exp(-((axis.x-x0) / X)^n)
+
+kernel_eq(axis::Type{PFG}, X; x0, y, n) = 
+    y[1] * exp(-((axis.x-x0) * X)^n)
 
 
 """
 # Create a kernel for the inversion of 1D data.
-    create_kernel(seq, x, X)
+    create_kernel(axis, X)
 
 Arguments:
-- `seq` is the pulse sequence (e.g. IR, CPMG, PFG)
-- `x` is the experiment x axis (time or b factor etc.)
-- `X` is the range for the output x axis (T1, T2, D etc.)
+- `axis` is the `DataAxis` for the experiment.
+- `X` is the vector for the output's x-axis (T1, T2, D etc.)
 
 Keyword (optional) arguments:
 
@@ -67,18 +72,18 @@ gaussian. Defaults to `false` (exponential by default).
 The output is a matrix, `K`.
 
 """
-function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector; 
-                       y::Vector=ones(1), 
-                       gaussian::Bool = false, 
-                       x0::Real=0
-                       )
-
-    return kernel_eq.(seq, x, X'; 
-                      y= real.(y), 
-                      n= gaussian ? 2 : 1,
-                      x0= (seq == CPMG ? x0 : x[1]), 
-                      )
-
+function create_kernel(
+    axis::DataAxis, X::Vector; 
+    y::Vector=ones(1), 
+    gaussian::Bool = false, 
+    x0::Real=0
+)
+    return kernel_eq.(
+        axis.x, X'; 
+        y= real.(y), 
+        n= gaussian ? 2 : 1,
+        x0= (isa(axis, CPMG) ? x0 : axis.x[1]), 
+    )
 end
 
 
@@ -89,9 +94,9 @@ If data vector of real values is provided, SVD is performed on the kernel, and t
 If data vector is complex, the SNR is calculated and the SVD is automatically truncated accordingly,
 to remove the "noisy" singular values.
 """
-function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::Vector{<:Real})
+function create_kernel(axis::DataAxis, X::Vector, g::Vector{<:Real})
 
-    usv = svd(create_kernel(seq, x , X, y=g))
+    usv = svd(create_kernel(axis , X, y=g))
     K_new = Diagonal(usv.S) * usv.V'
     g_new = usv.U' * g
 
@@ -99,9 +104,10 @@ function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::V
 
 end
 
-function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::Vector{<:Complex})
 
-    usv = svd(create_kernel(seq, x , X, y = g))
+function create_kernel(axis::DataAxis, X::Vector, g::Vector{<:Complex})
+
+    usv = svd(create_kernel(axis , X, y=g))
 
     SNR = calc_snr(g)
     indices = findall(i -> i .> (1 / SNR), usv.S) # find elements in S12 above the noise threshold
@@ -119,43 +125,42 @@ function create_kernel(seq::Type{<:pulse_sequence1D}, x::Vector, X::Vector, g::V
 
 end
 
+
+## Multidimensional cases
+
+"Passing the 1D tuple to the one of the 1D functions."
+function create_kernel(
+    axes::NTuple{1, DataAxis},
+    X::NTuple{1, AbstractVector},
+    Data::AbstractMatrix{<:Complex};
+    kwargs...
+)
+    create_kernel(axes[1], X[1], Data; kwargs...)
+end
+
+
 """
 # Generating a kernel for a 2D inversion
     create_kernel(seq, x_direct, x_indirect, X_direct, X_indirect, Data)
 
-- `seq` is the 2D pulse sequence (e.g. IRCPMG)
-- `x_direct` is the direct dimension acquisition parameter (e.g. the times when you aquire CPMG echoes).
-- `x_indirect` is the indirect dimension acquisition parameter (e.g. all the delay times τ in your IR sequence).
-- `X_direct` is output "range" of the inversion in the direct dimension (e.g. T₂ times in IRCPMG)
-- `X_indirect` is output "range" of the inversion in the indirect dimension (e.g. T₁ times in IRCPMG)
+- `axis` is a tuple of the two `DataAxis` objects.
+- `X` is a tuple of the two vectors containing the output values (T1,T2,D etc..).
 - `Data` is the 2D data matrix of complex data.
 The output is an `svd_kernel_struct`
 
 """
-function create_kernel(seq::Type{<:pulse_sequence2D},
-    x_direct::AbstractVector, x_indirect::AbstractVector,
-    X_direct::AbstractVector, X_indirect::AbstractVector,
-    Data::AbstractMatrix{<:Complex})
+function create_kernel(
+    axes::NTuple{2, DataAxis},
+    X::NTuple{2, AbstractVector},
+    Data::AbstractMatrix{<:Complex}
+)
 
     G = real.(Data)
     SNR = calc_snr(Data)
 
     # Generate Kernels
-    if seq == IRCPMG
-        K_dir = create_kernel(CPMG, x_direct, X_direct, y = vec(Data[:,end]))
-        K_indir = create_kernel(IR, x_indirect, X_indirect, y = vec(Data[1,:]))
-    elseif seq == PFGCPMG
-        K_dir = create_kernel(CPMG, x_direct, X_direct, y = vec(Data[:,1]))
-        K_indir = create_kernel(PFG, x_indirect, X_indirect, y = vec(Data[1,:]))
-    elseif seq == SRCPMG
-        K_dir = create_kernel(CPMG, x_direct, X_direct, y = vec(Data[:,end]))
-        K_indir = create_kernel(SR, x_indirect, X_indirect, y = vec(Data[1,:]))
-    elseif seq == CPMGCPMG
-        K_dir = create_kernel(CPMG, x_direct, X_direct, y = vec(Data[:,1]))
-        K_indir = create_kernel(CPMG, x_indirect, X_indirect, y = vec(Data[1,:]))
-    else
-        error("2D inversion not yet implemented for $(seq)")
-    end
+    K_dir = create_kernel(axes[1], X[1], y = vec(Data[:,end]))
+    K_indir = create_kernel(axes[2], X[2], y = vec(Data[1,:]))
 
     ## Perform SVD truncation
     usv_dir = svd(K_dir) #paper (13)
