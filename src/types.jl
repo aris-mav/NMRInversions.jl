@@ -1,5 +1,3 @@
-## The following are custom types, defined mainly for multiple dispatch purposes
-
 "Superset of supported solvers for regularization."
 abstract type regularization_solver end ; export regularization_solver
 
@@ -22,9 +20,22 @@ Subtypes are:
 """
 abstract type DataAxis{T} <: AbstractVector{T} end
 
+# Make DataAxis indexable
+#
 Base.size(E::DataAxis) = size(E.x)
+Base.length(E::DataAxis) = length(E.x)
+Base.IndexStyle(::Type{<:DataAxis}) = IndexLinear()
 Base.getindex(E::DataAxis, i::Int) = E.x[i]
 Base.setindex!(E::DataAxis, val, i::Int) = (E.x[i] = val)
+
+function Base.getindex(E::T, I::AbstractArray{<:Integer}) where {T<:DataAxis}
+    T(E.x[I])
+end
+function Base.getindex(E::T, I::AbstractRange{<:Integer}) where {T<:DataAxis}
+    T(E.x[I])
+end
+
+# Define all the DataAxis types
 
 """
     IR{T<:Real} <: DataAxis{T}
@@ -82,23 +93,18 @@ The `x` field contains the corresponding B0 data.
 """
 struct FC{T<:Real} <: DataAxis{T} x::Vector{T} end; export FC
 
+
+# Define experiment data containing both Axis (x) and data (y)
+
 """
     ExperimentData(axes, data)
 Struct containing NMR data.
 - `axes` should be a tuple of `DataAxis`s with the `x` data in each of them.
 - `data` should be an aray of n-dimensions with the recorded data.
 """
-struct ExperimentData{
-    D,
-    X <: NTuple{D, DataAxis},
-    Y <: AbstractArray{<:Number, D}
-}
-    axes::X
-    data::Y
-    # Strict inner constructor to enforce matching types
-    function ExperimentData{D, X, Y}(axes::X, data::Y) where {D, X, Y}
-        return new{D, X, Y}(axes, data)
-    end
+struct ExperimentData{D}
+    axes::NTuple{D, DataAxis}
+    data::AbstractArray{<:Number, D}
 end
 
 # Flexible outer constructor to catch dimension size mismatches
@@ -106,12 +112,11 @@ function ExperimentData(
     axes::Tuple{Vararg{DataAxis}}, 
     data::AbstractArray{<:Number,D}
 ) where {D}
-    len_x = length(axes)
-    
-    if len_x != D
+
+    if length(axes) != D
         throw(DimensionMismatch(
             """
-            The number of axes (you gave $len_x) \
+            The number of axes (you gave $(length(axes))) \
             must match the dimensions of the data ($D).
             """
         ))
@@ -129,12 +134,38 @@ function ExperimentData(
         end
     end
 
-    return ExperimentData{D, typeof(axes), typeof(data)}(axes, data)
+    return ExperimentData{D}(axes, data)
 end
 
 # Outer constructor for 1-dimensional case
 function ExperimentData(axes::DataAxis, data::AbstractVector)
     return ExperimentData((axes,), data)
+end
+
+# Implement indexing
+#
+# Tell Julia the length is based on the data vectors
+Base.length(d::ExperimentData) = length(d.data)
+Base.size(d::ExperimentData) = size(d.data)
+Base.size(d::ExperimentData, dim::Int) = size(d.data, dim)
+Base.lastindex(d::ExperimentData) = lastindex(d.data)
+Base.lastindex(d::ExperimentData, dim::Int) = size(d.data, dim)
+Base.axes(d::ExperimentData, dim::Int) = axes(d.data, dim)
+
+function Base.getindex(
+    E::ExperimentData{D}, 
+    I::Vararg{Union{
+        Integer, 
+        AbstractRange{<:Integer},
+        AbstractVector{<:Integer},
+    }, D}
+) where {D}
+
+    return ExperimentData(
+        ntuple(i -> E.axes[i][I[i]], D),
+        E.data[I...]
+    )
+
 end
 
 export InversionData
