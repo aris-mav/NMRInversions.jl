@@ -23,33 +23,29 @@ struct svd_kernel_struct
 end
 
 """
-    kernel_eq
-# Internal function
-Return the value of the kernel at a given element.
+    _kernel_eq
 
 Arguments:
 
 - `axis` is the `DataAxis` for the experiment.
 - `X` is the array for T1, T2, D etc..
 
-The ones below are set as keyword arguments so that they 
-are not broadcasted in `create_kernel`.
 
 - `x0` is the offset in `x` (can be the first point `x[1]`).
 - `y` is the recorded data, used to normalise the kernel.
 - `n` should be `1` for exponential and `2` for gaussian decays.
 """
-kernel_eq(axis::Type{IR}, X; x0, y, n) = 
-    y[end] - (y[end] + abs(y[1])) * exp(-((axis.x-x0) / X)^n)
+_kernel_eq(axis::IR, X; x0, y, n) = 
+    @. y[end] - (y[end] + abs(y[1])) * exp(-((axis.x-x0) / X)^n)
 
-kernel_eq(axis::Type{SR}, X; x0, y, n) = 
-    y[end] * (1 - exp(-((axis.x-x0) / X))^n)
+_kernel_eq(axis::SR, X; x0, y, n) = 
+    @. y[end] * (1 - exp(-((axis.x-x0) / X))^n)
 
-kernel_eq(axis::Type{CPMG}, X; x0, y, n) = 
-    y[1] * exp(-((axis.x-x0) / X)^n)
+_kernel_eq(axis::CPMG, X; x0, y, n) = 
+    @. y[1] * exp(-((axis.x-x0) / X)^n)
 
-kernel_eq(axis::Type{PFG}, X; x0, y, n) = 
-    y[1] * exp(-((axis.x-x0) * X)^n)
+_kernel_eq(axis::PFG, X; x0, y, n) = 
+    @. y[1] * exp(-((axis.x-x0) * X)^n)
 
 
 """
@@ -78,8 +74,8 @@ function create_kernel(
     gaussian::Bool = false, 
     x0::Real=0
 )
-    return kernel_eq.(
-        axis.x, X'; 
+    return _kernel_eq(
+        axis, X'; 
         y= real.(y), 
         n= gaussian ? 2 : 1,
         x0= (isa(axis, CPMG) ? x0 : axis.x[1]), 
@@ -132,10 +128,11 @@ end
 function create_kernel(
     axes::NTuple{1, DataAxis},
     X::NTuple{1, AbstractVector},
-    Data::AbstractMatrix{<:Complex};
+    Data::AbstractVector{<:Number};
     kwargs...
 )
     create_kernel(axes[1], X[1], Data; kwargs...)
+
 end
 
 

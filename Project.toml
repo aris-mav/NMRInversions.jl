@@ -20,7 +20,7 @@ QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19"
 RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
 
 [extensions]
-gui_ext = "GLMakie"
+# gui_ext = "GLMakie"
 tikhonov_jump_ext = "JuMP"
 tikhonov_ripqp_ext = ["RipQP", "QuadraticModels"]
 

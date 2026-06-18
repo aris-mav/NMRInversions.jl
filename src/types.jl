@@ -18,7 +18,7 @@ Subtypes are:
 - `FID` (Free induction decay)
 - `FC` (Field cycling)
 """
-abstract type DataAxis{T} <: AbstractVector{T} end
+abstract type DataAxis{T} <: AbstractVector{T} end; export DataAxis
 
 # Make DataAxis indexable
 #
@@ -184,51 +184,17 @@ A structure containing the following fields:
 - `title`, a title describing the data.
 
 """
-mutable struct InversionData{
-    D,
-    X <: NTuple{D, DataAxis},
-    Y <: AbstractArray{<:Number, D}
-}
-    axes::X
-    data::Y
-    f::Y
-    r::Y
+mutable struct InversionData{D}
+    axes::NTuple{D, DataAxis}
+    data::AbstractArray{<:Number, D}
+    X::NTuple{ D, Vector{Real} }
+    f::AbstractArray{<:Number, D}
+    r::AbstractArray
     SNR::Real
     alpha::Real
-    filter::Y
+    filter::AbstractArray{<:Number, D}
     selections::Vector{Vector{Vector}} 
     title::String
-end
-
-function InversionData(
-    axes::Tuple{Vararg{DataAxis}}, 
-    data::AbstractArray{<:Number,D},
-    f::AbstractArray{<:Number,D},
-    r::AbstractArray{<:Number,D};
-    SNR::Real = NaN,
-    alpha::Real = NaN,
-    filter::AbstractArray{<:Number,D} = ones(eltype(data), size(data)),
-    selections::Vector{Vector{Vector{T}}} = Vector{Vector{Any}}[],
-    title::String = "",
-) where {D, T}
-    
-    for element in [data, f, r, filter]
-        for i in 1:D
-            if length(axes[i].x) != size(element, i)
-                throw(DimensionMismatch(
-                    """
-                    The axis $i ($(typeof(axes[i]))) has a length of \
-                    $(length(axes[i].x)), but the `data` array has length of \
-                    $(size(data, i)) at the corresponding dimension $i.
-                    """
-                ))
-            end
-        end
-    end
-
-    return InversionData{D, typeof(axes), typeof(data)}(
-        axes, data, f, r, SNR, alpha, filter, selections, title
-    )
 end
 
 
