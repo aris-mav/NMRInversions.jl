@@ -1,6 +1,12 @@
 export scale_to_one!
-function scale_to_one!(a::VecOrMat)
+"Scale data so that the max value is one."
+function scale_to_one!(a::AbstractArray)
     a .= a ./ a[argmax(real(a))]
+end
+
+"Defining this here so that it works on julia 1.10"
+function logrange(a,b,c)
+    exp10.(range(log10(a),log10(b),c))
 end
 
 """
@@ -60,34 +66,34 @@ function calc_snr(data::AbstractVector{<:Complex}) # For vector data
 end
 
 
-"""
-Return a vector of matrices, containing the F for each selection polygon.
-"""
-function selections(res::inv_out_2D)
-
-    dir = res.X_direct
-    indir = res.X_indirect
-    F = res.F
-
-    x = collect(1:length(indir))
-    y = collect(1:length(dir))
-
-    z = res.F' .* res.filter'
-
-    points = [[i, j] for i in x, j in y] #important, used by inpolygon later
-    mask = zeros(size(points))
-
-    polygons = res.selections 
-    selections = [zeros(size(F)) for _ in 1:length(polygons)]
-
-    for (i, polygon) in enumerate(polygons)
-        mask .= [PolygonOps.inpolygon(p, polygon; in=1, on=1, out=0) for p in points]
-        selections[i] .= mask .* z 
-    end
-
-    return selections
-
-end
+# """
+# Return a vector of matrices, containing the F for each selection polygon.
+# """
+# function selections(res::inv_out_2D)
+#
+#     dir = res.X_direct
+#     indir = res.X_indirect
+#     F = res.F
+#
+#     x = collect(1:length(indir))
+#     y = collect(1:length(dir))
+#
+#     z = res.F' .* res.filter'
+#
+#     points = [[i, j] for i in x, j in y] #important, used by inpolygon later
+#     mask = zeros(size(points))
+#
+#     polygons = res.selections 
+#     selections = [zeros(size(F)) for _ in 1:length(polygons)]
+#
+#     for (i, polygon) in enumerate(polygons)
+#         mask .= [PolygonOps.inpolygon(p, polygon; in=1, on=1, out=0) for p in points]
+#         selections[i] .= mask .* z 
+#     end
+#
+#     return selections
+#
+# end
 
 function angle_correction(y::AbstractVecOrMat)
     n = min(floor(Int, length(y) / 5) , 15)
@@ -95,264 +101,151 @@ function angle_correction(y::AbstractVecOrMat)
     return θ
 end
 
-function autophase(data::input1D; rotation::Real=0)
-
-    y_phased = data.y .* exp(-im * (angle_correction(data.y)+rotation) )
-
-    if rotation == 0
-
-        d = real.(y_phased[1] - y_phased[end])
-
-        if data.seq in (CPMG, PFG) && d < 0
-            return autophase(data, rotation = pi)
-        elseif data.seq in (IR, SR) && d > 0
-            return autophase(data, rotation = pi)
-        end
-    end
-
-    return input1D(data.seq, data.x, y_phased)
-end
-
-function autophase(data::input2D; rotation::Real=0)
-
-    y_phased = data.data .* exp(-im * (angle_correction(data.data)+rotation) )
-
-    if rotation == 0
-
-        d = real.(y_phased[1,1] - y_phased[1,end])
-
-        if data.seq in (PFGCPMG, CPMGCPMG) && d < 0
-            return autophase(data, rotation = pi)
-        elseif data.seq in (IRCPMG, SRCPMG) && d > 0
-            return autophase(data, rotation = pi)
-        end
-    end
-
-    return input2D(data.seq, data.x_direct, data.x_indirect, y_phased)
-end
-
-
-## Data compression (NOT WORKING YET)
-
-function compress_data(t_direct::AbstractVector, G::AbstractMatrix, bins::Int=64)
-    # Compress direct dimension to the length of bins
-
-    # Use logarithmically spaced windows for a window average
-    windows = zeros(bins)
-
-    x = 1
-    while windows[1] == 0
-        windows = (exp10.(range(log10(x), log10(10), bins))) # make log array
-        windows = (windows / sum(windows)) * size(G)[1] # normalize it so that elements add up to correct size
-        windows = floor.(Int, LowerTriangular(ones(Int, bins, bins)) * windows) # make valid indices
-        x += 1
-        #sanity check, this sum below should be almost equal to the uncompressed array size
-        #sum(windows[2:end]-windows[1:end-1]) 
-    end
-
-    W0 = Diagonal(inv(LowerTriangular(ones(Int, bins, bins))) * windows)
-
-    # Window average matrix, A
-    A = zeros(bins, size(G)[1])
-    for i in 1:bins
-        if i == 1
-            A[i, 1:windows[1]] .= 1 / diag(W0)[i]
-        else
-            A[i, (windows[i-1]+1):windows[i]] .= 1 / diag(W0)[i]
-        end
-    end
-
-    t_direct = A * t_direct # Replace old direct time array with compressed one
-    G = A * G # Replace old G with compressed one
-
-    # sanity check plot:
-    #=usv1 = svd(sqrt(W0) * K1) #paper (13)=#
-    # surface(G, camera=(110, 25), xscale=:log10)
-
-end
+# function autophase(data::input1D; rotation::Real=0)
+#
+#     y_phased = data.y .* exp(-im * (angle_correction(data.y)+rotation) )
+#
+#     if rotation == 0
+#
+#         d = real.(y_phased[1] - y_phased[end])
+#
+#         if data.seq in (CPMG, PFG) && d < 0
+#             return autophase(data, rotation = pi)
+#         elseif data.seq in (IR, SR) && d > 0
+#             return autophase(data, rotation = pi)
+#         end
+#     end
+#
+#     return input1D(data.seq, data.x, y_phased)
+# end
+#
+# function autophase(data::input2D; rotation::Real=0)
+#
+#     y_phased = data.data .* exp(-im * (angle_correction(data.data)+rotation) )
+#
+#     if rotation == 0
+#
+#         d = real.(y_phased[1,1] - y_phased[1,end])
+#
+#         if data.seq in (PFGCPMG, CPMGCPMG) && d < 0
+#             return autophase(data, rotation = pi)
+#         elseif data.seq in (IRCPMG, SRCPMG) && d > 0
+#             return autophase(data, rotation = pi)
+#         end
+#     end
+#
+#     return input2D(data.seq, data.x_direct, data.x_indirect, y_phased)
+# end
 
 
-export weighted_averages
-"""
-    weighted_averages(r::inv_out_1D)
-Return a vector with the weighted averages for 
-the selections in the input structure, and a 
-vector with the respective area fractions of 
-these selections.
-"""
-function weighted_averages(r::inv_out_1D ; silent::Bool = false)
-
-    distribution = r.f .* r.filter
-    wa = Vector(undef, length(r.selections))
-    areas = Vector(undef, length(r.selections))
-    total_area = sum(distribution)
-
-    for (i,s) in enumerate(r.selections)
-        area = sum(distribution[s[1]:s[2]-1])
-        wa[i] = distribution[s[1]:s[2]-1]' * r.X[s[1]:s[2]-1] / area
-        areas[i] = area / total_area
-
-        lbl = if r.seq in [IR, SR]
-            ["<T₁>","s"]
-        elseif r.seq == CPMG
-            ["<T₂>","s"]
-        elseif r.seq == PFG
-            ["<D>", "m²/s"]
-        end
-
-        if !silent
-            display("Selection $(collect('a':'z')[i]) :")
-            display(lbl[1] * " = $(round(wa[i], sigdigits=4)) "*lbl[2])
-            display("Area = $(round(areas[i], sigdigits=4) * 100) %")
-            display("")
-        end
-    end
-
-    return wa, areas
-end
-
-
-"""
-    weighted_averages(r::inv_out_2D)
-Return two vectors with the weighted averages 
-for the selections in the input structure, one for each dimension,
-as well as a vector with the volume fractions of these selections.
-"""
-function weighted_averages(r::inv_out_2D; silent::Bool = false)
-
-    wa_indir = Vector(undef, length(r.selections))
-    wa_dir = Vector(undef, length(r.selections))
-    volumes = Vector(undef, length(r.selections))
-
-    z = r.F' .* r.filter'
-    x = r.X_indirect
-    y = r.X_direct
-
-    points = [[i, j] for i in x, j in y]
-    mask = zeros(size(points))
-
-    for (i,s) in enumerate(r.selections)
-
-        mask .= [PolygonOps.inpolygon(p, s; in=1, on=1, out=0) for p in points]
-        spo = mask .* z
-
-        indir_dist = vec(sum(spo, dims=2))
-        dir_dist = vec(sum(spo, dims=1))
-
-        wa_indir[i] = indir_dist' *  r.X_indirect / sum(spo)
-        wa_dir[i] = dir_dist' *  r.X_direct / sum(spo)
-        volumes[i] = sum(spo)/sum(z)
-
-        dir_lbl = ["<T₂>","s"]
-        ind_lbl = if r.seq in (IRCPMG, SRCPMG)
-            ["<T₁>","s"]
-        elseif r.seq == PFGCPMG
-            ["<D>", "m²/s"]
-        end
-
-        if !silent
-            display("Selection $(collect('a':'z')[i]) :")
-            display(ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) "*ind_lbl[2])
-            display(dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) "*dir_lbl[2])
-            if r.seq in (IRCPMG, SRCPMG)
-                display("T₁/T₂ = $(round(wa_indir[i]/wa_dir[i], sigdigits=2)) ")
-            end
-            display("Volume = $(round(volumes[i], sigdigits=4) * 100) %")
-            println()
-        end
-    end
-
-    return wa_indir, wa_dir, volumes
-end
-
-
-export filter_range!
-"""
-    filter_range!(res::inv_res_1D , range)
-Apply selected range to the filter, scaling it to keep the integral of `f` constant.
-"""
-function filter_range!(res::inv_out_1D, range)
-
-    integral = sum(res.f)
-    res.filter[range[1]:range[2]] .= 0
-    new_integral = sum(res.f .* res.filter)
-    scale = new_integral != 0 ? integral / new_integral : 0
-    res.filter .= res.filter .* scale
-
-end
-
-"defining this here so that package works on julia 1.10"
-function logrange(a,b,c)
-    exp10.(range(log10(a),log10(b),c))
-end
-
-export trim
-"""
-    trim(::input1D, ::Int=0, ::Int=0)
-
-Return an `input1D` structure which excludes a selected 
-amount of points from the beginning and the end of the 
-`x` and `y` arrays. 
-
-For example, `trim(data,2,3)` will remove the first 2 and 
-the last 3 data points.
-"""
-function trim(data::input1D, first::Int=0, last::Int=0)
-    return input1D(
-        data.seq, 
-        data.x[1 + first : end - last],
-        data.y[1 + first : end - last],
-    )  
-end
+# export weighted_averages
+# """
+#     weighted_averages(r::inv_out_1D)
+# Return a vector with the weighted averages for 
+# the selections in the input structure, and a 
+# vector with the respective area fractions of 
+# these selections.
+# """
+# function weighted_averages(r::inv_out_1D ; silent::Bool = false)
+#
+#     distribution = r.f .* r.filter
+#     wa = Vector(undef, length(r.selections))
+#     areas = Vector(undef, length(r.selections))
+#     total_area = sum(distribution)
+#
+#     for (i,s) in enumerate(r.selections)
+#         area = sum(distribution[s[1]:s[2]-1])
+#         wa[i] = distribution[s[1]:s[2]-1]' * r.X[s[1]:s[2]-1] / area
+#         areas[i] = area / total_area
+#
+#         lbl = if r.seq in [IR, SR]
+#             ["<T₁>","s"]
+#         elseif r.seq == CPMG
+#             ["<T₂>","s"]
+#         elseif r.seq == PFG
+#             ["<D>", "m²/s"]
+#         end
+#
+#         if !silent
+#             display("Selection $(collect('a':'z')[i]) :")
+#             display(lbl[1] * " = $(round(wa[i], sigdigits=4)) "*lbl[2])
+#             display("Area = $(round(areas[i], sigdigits=4) * 100) %")
+#             display("")
+#         end
+#     end
+#
+#     return wa, areas
+# end
+#
+#
+# """
+#     weighted_averages(r::inv_out_2D)
+# Return two vectors with the weighted averages 
+# for the selections in the input structure, one for each dimension,
+# as well as a vector with the volume fractions of these selections.
+# """
+# function weighted_averages(r::inv_out_2D; silent::Bool = false)
+#
+#     wa_indir = Vector(undef, length(r.selections))
+#     wa_dir = Vector(undef, length(r.selections))
+#     volumes = Vector(undef, length(r.selections))
+#
+#     z = r.F' .* r.filter'
+#     x = r.X_indirect
+#     y = r.X_direct
+#
+#     points = [[i, j] for i in x, j in y]
+#     mask = zeros(size(points))
+#
+#     for (i,s) in enumerate(r.selections)
+#
+#         mask .= [PolygonOps.inpolygon(p, s; in=1, on=1, out=0) for p in points]
+#         spo = mask .* z
+#
+#         indir_dist = vec(sum(spo, dims=2))
+#         dir_dist = vec(sum(spo, dims=1))
+#
+#         wa_indir[i] = indir_dist' *  r.X_indirect / sum(spo)
+#         wa_dir[i] = dir_dist' *  r.X_direct / sum(spo)
+#         volumes[i] = sum(spo)/sum(z)
+#
+#         dir_lbl = ["<T₂>","s"]
+#         ind_lbl = if r.seq in (IRCPMG, SRCPMG)
+#             ["<T₁>","s"]
+#         elseif r.seq == PFGCPMG
+#             ["<D>", "m²/s"]
+#         end
+#
+#         if !silent
+#             display("Selection $(collect('a':'z')[i]) :")
+#             display(ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) "*ind_lbl[2])
+#             display(dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) "*dir_lbl[2])
+#             if r.seq in (IRCPMG, SRCPMG)
+#                 display("T₁/T₂ = $(round(wa_indir[i]/wa_dir[i], sigdigits=2)) ")
+#             end
+#             display("Volume = $(round(volumes[i], sigdigits=4) * 100) %")
+#             println()
+#         end
+#     end
+#
+#     return wa_indir, wa_dir, volumes
+# end
 
 
-"""
-    trim(::input2D; direct::Tuple{Int,Int}=(0,0), indirect::Tuple{Int,Int}=(0,0))
+# export filter_range!
+# """
+#     filter_range!(res::inv_res_1D , range)
+# Apply selected range to the filter, scaling it to keep the integral of `f` constant.
+# """
+# function filter_range!(res::inv_out_1D, range)
+#
+#     integral = sum(res.f)
+#     res.filter[range[1]:range[2]] .= 0
+#     new_integral = sum(res.f .* res.filter)
+#     scale = new_integral != 0 ? integral / new_integral : 0
+#     res.filter .= res.filter .* scale
+#
+# end
 
-Return an `input2D` structure which excludes a selected 
-amount of points from the beginning and the end of the 
-direct and indirect dimensions of the data matrix, respectively. 
 
-For example, `trim(data, direct=(2,3), indirect=(1,4))` will remove the first 2 
-and the 3 last columns of the data matrix, as well as the first 
-row and the last four rows.
 
-That means, for T1T2 data, you will remove the first 2 and last 3 echo points
-for T2 (direct dimension), and the first 1 and last 4 inversion recovery 
-points (indirect dimension).
-"""
-function trim(Data::input2D; direct::Tuple{Int,Int}=(0,0), indirect::Tuple{Int,Int}=(0,0))
-    return input2D(
-        Data.seq, 
-        Data.x_direct[1 + direct[1] : end - direct[2]],
-        Data.x_indirect[1 + indirect[1] : end - indirect[2]],
-        Data.data[1 + direct[1] : end - direct[2], 1 + indirect[1] : end - indirect[2]],
-    )  
-end
-
-# Implement indexing
-function Base.getindex(data::input1D, i)
-    return input1D(data.seq, data.x[i], data.y[i])
-end
-# Tell Julia the length is based on the data vectors
-Base.length(data::input1D) = length(data.x)
-# Tell Julia that 'end' refers to the last index of the x vector
-Base.lastindex(data::input1D) = lastindex(data.x)
-
-function Base.getindex(d::input2D, i, j)
-    return input2D(
-        d.seq,
-        d.x_direct[i],
-        d.x_indirect[j],
-        d.data[i, j]
-    )
-end
-
-# Basic size reporting
-Base.size(d::input2D) = size(d.data)
-Base.size(d::input2D, dim::Int) = size(d.data, dim)
-# Required for the 'end' keyword
-Base.lastindex(d::input2D) = lastindex(d.data)
-Base.lastindex(d::input2D, dim::Int) = size(d.data, dim)
-# Good practice for completeness
-Base.axes(d::input2D, dim::Int) = axes(d.data, dim)

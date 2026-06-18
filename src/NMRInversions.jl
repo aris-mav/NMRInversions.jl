@@ -13,12 +13,11 @@ include("coordinate_descent.jl")
 include("optim_least_squares.jl")
 include("pdhgm.jl")
 include("nnls.jl")
-include("import_data.jl")
+# include("import_data.jl")
 include("kernels.jl")
 include("finding_alpha.jl")
-include("inversion_functions.jl")
-include("exp_fits.jl")
+include("invert.jl")
+# include("exp_fits.jl")
 include("misc.jl")
-
 
 end
