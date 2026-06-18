@@ -42,29 +42,24 @@ where the real part is (mostly) signal and the imaginary part is (mostly) noise.
 The STD of the latter half of the imaginary signal is used for the calculation 
 (former half might contain signal residues as well). 
 """
-function calc_snr(data::AbstractMatrix{<:Complex}) # For matrix data
+function calc_snr(data::AbstractArray{<:Complex})
 
     real_data = real.(data)
     imag_data = imag.(data)
 
-    noise = imag_data[(floor(Int64, (size(imag_data, 1) / 2))):end, :]
-    σ_n = sqrt(sum((noise .- sum(noise) / length(noise)) .^ 2) / (length(noise) - 1))
+    half_index = floor(Int, size(imag_data, 1) / 2)
+    end_index = size(imag_data, 1)
+
+    noise = collect(selectdim(imag_data, 1, half_index:end_index))
+
+    σ_n = sqrt(
+        sum((noise .- sum(noise) / length(noise)) .^ 2) / (length(noise) - 1)
+    )
+
     SNR = maximum(abs.(real_data)) / σ_n
 
     return SNR
 end
-function calc_snr(data::AbstractVector{<:Complex}) # For vector data
-
-    real_data = real.(data)
-    imag_data = imag.(data)
-
-    noise = imag_data[(floor(Int64, (size(imag_data, 1) / 2))):end]
-    σ_n = sqrt(sum((noise .- sum(noise) / length(noise)) .^ 2) / (length(noise) - 1))
-    SNR = maximum(abs.(real_data)) / σ_n
-
-    return SNR
-end
-
 
 # """
 # Return a vector of matrices, containing the F for each selection polygon.
@@ -95,48 +90,50 @@ end
 #
 # end
 
-function angle_correction(y::AbstractVecOrMat)
-    n = min(floor(Int, length(y) / 5) , 15)
+"""
+Return the angle that would get the data to the correct phase, 
+so that most of the signal is on the real part 
+and most of the noise on the imaginary part.
+"""
+function angle_correction(y::AbstractArray{<:Complex})
+    # Get the first few (n) points
+    n = min(floor(Int, size(y, 1) / 5) , 15)
+    # Get correction angle
     θ = sum(angle.(y[1:n])) / n
     return θ
 end
 
-# function autophase(data::input1D; rotation::Real=0)
-#
-#     y_phased = data.y .* exp(-im * (angle_correction(data.y)+rotation) )
-#
-#     if rotation == 0
-#
-#         d = real.(y_phased[1] - y_phased[end])
-#
-#         if data.seq in (CPMG, PFG) && d < 0
-#             return autophase(data, rotation = pi)
-#         elseif data.seq in (IR, SR) && d > 0
-#             return autophase(data, rotation = pi)
-#         end
-#     end
-#
-#     return input1D(data.seq, data.x, y_phased)
-# end
-#
-# function autophase(data::input2D; rotation::Real=0)
-#
-#     y_phased = data.data .* exp(-im * (angle_correction(data.data)+rotation) )
-#
-#     if rotation == 0
-#
-#         d = real.(y_phased[1,1] - y_phased[1,end])
-#
-#         if data.seq in (PFGCPMG, CPMGCPMG) && d < 0
-#             return autophase(data, rotation = pi)
-#         elseif data.seq in (IRCPMG, SRCPMG) && d > 0
-#             return autophase(data, rotation = pi)
-#         end
-#     end
-#
-#     return input2D(data.seq, data.x_direct, data.x_indirect, y_phased)
-# end
 
+"""
+    autophase(data::ExperimentData; rotation::Real=0)
+
+Correct the phase on experimental data.
+
+The `rotation` optional argument should be an angle (rad),
+and will be added to the automatic angle correction.
+"""
+function autophase(data::ExperimentData; rotation::Real=0)
+
+    θ = angle_correction(data.data)+rotation
+    phased_data = data.data .* exp(-im * θ )
+
+    if rotation == 0
+
+        first_point = only(selectdim(phased_data, 1, first(axes(phased_data, 1))))
+        last_point = only(selectdim(phased_data, 1, last(axes(phased_data, 1))))
+        d = real.(first_point - last_point)
+        
+        if data.axes[1] isa Union{CPMG, PFG} && d < 0
+            # Should be a decay
+            return autophase(data, rotation = pi)
+        elseif data.axes[1] isa Union{IR, SR} && d > 0
+            # Should be a recovery
+            return autophase(data, rotation = pi)
+        end
+    end
+
+    return ExperimentData(data.axes, phased_data)
+end
 
 # export weighted_averages
 # """
@@ -246,6 +243,3 @@ end
 #     res.filter .= res.filter .* scale
 #
 # end
-
-
-

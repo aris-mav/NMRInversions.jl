@@ -61,3 +61,7 @@ function invert(
     )
 
 end
+
+function invert(data::ExperimentData; kwargs...)
+    return invert(data.axes, data.data; kwargs...)
+end

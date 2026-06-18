@@ -25,13 +25,14 @@ without any unit conversions.
 Ensure that your x-axis is in seconds for relaxation, 
 or in `seconds/metres² * 1e-9` for PFG experiments.
 """
-function import_csv(seq::Type{<:pulse_sequence1D}, file=pick_file(pwd()))
+function import_csv(t::Type{<:DataAxis}, file=pick_file(pwd()))
+
     x, y = import_csv(file)
 
     if isa(y, Vector{<:Complex})
-        return autophase(input1D(seq, x, y))
+        return autophase(ExperimentData(t(x),y))
     else
-        return input1D(seq, x, y)
+        return ExperimentData(t(x),y)
     end
 end
 
@@ -67,12 +68,12 @@ The function reads the file and returns an `input1D` structure.
 - `file` is the path to the dps file which contains the data (x, y) in two respective columns.
 
 """
-function import_dps(seq::Type{<:pulse_sequence1D}, file=pick_file(pwd()))
+function import_dps(t::Type{<:DataAxis}, file=pick_file(pwd()))
 
     data = readdlm(file, '\t')
     x = vec(data[:, 2]) .* 1e-3
     y = vec(data[:, 3])
-    return input1D(seq, x, y)
+    return ExperimentData(t(x), y)
 end
 
 function read_acqu(filename, parameter)
@@ -88,7 +89,7 @@ function read_acqu(filename, parameter)
             seekstart(io)
             readuntil(io, parameter * "= ")
             p = readline(io)
-            
+
         end
     end
 
@@ -124,7 +125,7 @@ Read the header of a .tnt file and return a dictionary
 with all the relevant information.
 """
 function read_tnt_header(filename::String)
-    
+
     open(filename) do io
         head_vec = Vector{Int32}(undef,22) # init vector
         read!(io, head_vec) # read header values
@@ -150,7 +151,7 @@ function read_tnt_header(filename::String)
 end
 
 function read_tnt_echo_times(filename::String, len::Int, echotime::String)
-    
+
     open(filename) do io
         readuntil(io, "DATA")
         read(io,Int32) # discard this (empty bytes)
@@ -224,36 +225,36 @@ defined in the pulse sequence. Default value is "Echo_Time".
 Calling this function without a filename argument, e.g.: `import_tnt(seq)`, 
 will open a file dialogue to select the .tnt file.
 """
-function import_tnt(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
-                       filename::String =pick_file(pwd()); 
-                       echotime="Echo_Time"
-                       )
-
-    header = read_tnt_header(filename)
-    data = read_tnt_data(filename)
-    y = vec(sum(reshape(data , header["acq_points"], :), dims = 1))
-
-    if seq == IR
-
-        # y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
-        x = read_tnt_de0_times(filename, length(y))
-        return autophase(input1D(seq, x, y))
-
-    elseif seq == CPMG
-
-        y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
-        x = read_tnt_echo_times(filename, length(y), echotime)
-        return autophase(input1D(seq, x, y))
-
-    elseif seq in (IRCPMG, CPMGCPMG, SRCPMG)
-
-        data_mat = reshape(y , :, header["actual_points_2d"]) 
-        x_dir = read_tnt_echo_times(filename, size(data_mat,1), echotime)
-        x_indir = read_tnt_de0_times(filename, size(data_mat,2))
-        return autophase(input2D(seq, x_dir, x_indir, data_mat))
-
-    end
-end
+# function import_tnt(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
+#                        filename::String =pick_file(pwd()); 
+#                        echotime="Echo_Time"
+#                        )
+#
+#     header = read_tnt_header(filename)
+#     data = read_tnt_data(filename)
+#     y = vec(sum(reshape(data , header["acq_points"], :), dims = 1))
+#
+#     if seq == IR
+#
+#         # y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
+#         x = read_tnt_de0_times(filename, length(y))
+#         return autophase(input1D(seq, x, y))
+#
+#     elseif seq == CPMG
+#
+#         y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
+#         x = read_tnt_echo_times(filename, length(y), echotime)
+#         return autophase(input1D(seq, x, y))
+#
+#     elseif seq in (IRCPMG, CPMGCPMG, SRCPMG)
+#
+#         data_mat = reshape(y , :, header["actual_points_2d"]) 
+#         x_dir = read_tnt_echo_times(filename, size(data_mat,1), echotime)
+#         x_indir = read_tnt_de0_times(filename, size(data_mat,2))
+#         return autophase(input2D(seq, x_dir, x_indir, data_mat))
+#
+#     end
+# end
 
 export import_spinsolve
 """
@@ -318,7 +319,7 @@ function import_spinsolve(files=pick_multi_file(pwd()))
 end
 
 function spinsolve_read_IRCPMG(acqufile, datafile)
-    
+
     n_echoes = parse(Int32 ,read_acqu(acqufile, "nrEchoes"))
     t_echo = parse(Float64, read_acqu(acqufile, "echoTime")) * 1e-6
     τ_steps = parse(Int32, read_acqu(acqufile, "tauSteps"))
@@ -350,7 +351,7 @@ function spinsolve_read_IRCPMG(acqufile, datafile)
 end
 
 function spinsolve_read_PFGCPMG(acqufile, datafile)
-    
+
     n_echoes = parse(Int32 ,read_acqu(acqufile, "nrEchoes"))
     t_echo = parse(Float64, read_acqu(acqufile, "echoTime")) * 1e-6
 
@@ -384,7 +385,7 @@ function spinsolve_read_PFGCPMG(acqufile, datafile)
 end
 
 function spinsolve_read_CPMGCPMG(acqufile, datafile)
-    
+
     n_echoes = parse(Int32 ,read_acqu(acqufile, "nrEchoes"))
     t_echo = parse(Float64, read_acqu(acqufile, "echoTime")) * 1e-6
     τ_steps = parse(Int32, read_acqu(acqufile, "nrEchoSteps"))
@@ -430,10 +431,7 @@ will open a file dialog to select the .txt file.
 """
 function import_geospec(filedir::String=pick_file(pwd()))
 
-    data = []
-    pulse_sequence_number::Int16 = 0
     dimensions = [0, 0]
-
     open(filedir) do io
 
         readuntil(io, "TestType=")
@@ -442,41 +440,42 @@ function import_geospec(filedir::String=pick_file(pwd()))
         dimensions .= parse.(Int16, split(readline(io), ','))
         readuntil(io, "[Data]")
         data = readdlm(io, '\t', Float64, skipstart=2)
-    end
 
-    y_re = data[:, 3]
-    y_im = data[:, 4]
+        y_re = data[:, 3]
+        y_im = data[:, 4]
 
-    typedict = Dict(
-        3 => CPMG,
-        7 => IR,
-        105 => PFG,
-        106 => IRCPMG,
-        108 => PFGCPMG
-    )
+        typedict = Dict(
+            3 => "CPMG",
+            7 => "IR",
+            105 => "PFG",
+            106 => "IRCPMG",
+            108 => "PFGCPMG",
+        )
 
-    seq = typedict[pulse_sequence_number]
+        seq = typedict[pulse_sequence_number]
 
-    if seq == IRCPMG
-
-        return autophase(input2D(IRCPMG, 
-                                 data[1:dimensions[1], 1] .* (1 / 1000), 
-                                 data[1:dimensions[1]:end, 2] .* (1 / 1000), 
-                                 reshape(complex.(y_re, y_im), dimensions[1], dimensions[2])))
-
-    elseif seq == PFGCPMG
-
-        return autophase(input2D(PFGCPMG, 
-                                 data[1:dimensions[1], 1], 
-                                 data[1:dimensions[1]:end, 2] .* (1 / 1000), 
-                                 reshape(complex.(y_re, y_im), dimensions[1], dimensions[2])))
-
-    elseif seq == PFG
-
-        return autophase(input1D(seq, data[:, 1], complex.(y_re, y_im)))
-
-    elseif seq in [IR, CPMG]
-
-        return autophase(input1D(seq, data[:, 1] .* (1 / 1000), complex.(y_re, y_im))) # Converts time to seconds
+        if seq == "IRCPMG"
+            return autophase(ExperimentData(
+                (
+                    CPMG(data[1:dimensions[1], 1] .* (1 / 1000) ),
+                    IR(data[1:dimensions[1]:end, 2] .* (1 / 1000) ),
+                ),
+                reshape(complex.(y_re, y_im), dimensions[1], dimensions[2])
+            ))
+        elseif seq == "PFGCPMG"
+            return autophase(ExperimentData(
+                (
+                    CPMG(data[1:dimensions[1], 1]),
+                    PFG(data[1:dimensions[1]:end, 2] .* (1 / 1000)),
+                ),
+                reshape(complex.(y_re, y_im), dimensions[1], dimensions[2])
+            ))
+        elseif seq == "PFG"
+            return autophase(ExperimentData(PFG(data[:, 1]), complex.(y_re, y_im)))
+        elseif seq == "IR"
+            return autophase(ExperimentData(IR(data[:, 1] .* (1 / 1000)), complex.(y_re, y_im)))
+        elseif seq == "CPMG"
+            return autophase(ExperimentData(CPMG(data[:, 1] .* (1 / 1000)), complex.(y_re, y_im)))
+        end
     end
 end
