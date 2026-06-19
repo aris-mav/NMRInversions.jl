@@ -143,8 +143,6 @@ function ExperimentData(axes::DataAxis, data::AbstractVector)
 end
 
 # Implement indexing
-#
-# Tell Julia the length is based on the data vectors
 Base.length(d::ExperimentData) = length(d.data)
 Base.size(d::ExperimentData) = size(d.data)
 Base.size(d::ExperimentData, dim::Int) = size(d.data, dim)

@@ -283,39 +283,27 @@ function import_spinsolve(files=pick_multi_file(pwd()))
 
     exp = read_acqu(acqufile, "experiment")
 
-    if exp == "T1IRT2"
-        seq = IRCPMG
-    elseif exp == "T1"
-        seq = IR
+    if exp == "T1"
+        return import_csv(IR, datafile)
+
     elseif exp == "T2"
-        seq = CPMG
+        return import_csv(CPMG, datafile)
+
     elseif exp in ["PGSTE", "PGSE"]
-        seq = PFG
+        return import_csv(PFG, datafile)
+
+    elseif exp == "T1IRT2"
+        return spinsolve_read_IRCPMG(acqufile, datafile)
+
     elseif exp == "DT2"
-        seq = PFGCPMG
+        return spinsolve_read_PFGCPMG(acqufile, datafile)
+
     elseif exp == "T2T2"
-        seq = CPMGCPMG
+        return spinsolve_read_CPMGCPMG(acqufile, datafile)
+
     else
         error("Unrecognised pulse sequence")
     end
-
-    if seq in [IR, CPMG, PFG]
-
-        return import_csv(seq, datafile)
-
-    elseif seq in [IRCPMG]
-
-        return spinsolve_read_IRCPMG(acqufile, datafile)
-
-    elseif seq in [PFGCPMG]
-
-        return spinsolve_read_PFGCPMG(acqufile, datafile)
-
-    elseif seq in [CPMGCPMG]
-
-        return spinsolve_read_CPMGCPMG(acqufile, datafile)
-    end
-
 end
 
 function spinsolve_read_IRCPMG(acqufile, datafile)
@@ -347,7 +335,7 @@ function spinsolve_read_IRCPMG(acqufile, datafile)
         t_indirect = collect(range(τ_min, τ_max, τ_steps))
     end
 
-    return input2D(IRCPMG, t_direct, t_indirect, Data)
+    return ExperimentData( (CPMG(t_direct), IR(t_indirect)), Data )
 end
 
 function spinsolve_read_PFGCPMG(acqufile, datafile)
@@ -416,8 +404,9 @@ function spinsolve_read_CPMGCPMG(acqufile, datafile)
     # make it so that it's multiples of echotime
     #=map!(x -> round(x / t_echo) * t_echo, t_indirect)=#
 
-    return input2D(CPMGCPMG, t_direct, t_indirect, Data)
+    return ExperimentData( (CPMG(t_direct), CPMG(t_indirect)), Data )
 end
+
 export import_geospec
 """
     import_geospec(dir)
