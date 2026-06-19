@@ -2,7 +2,7 @@ module gui_ext
 
 using NMRInversions, GLMakie, PolygonOps, LinearAlgebra, NativeFileDialog
 
-function x_label(ax::DataAxis)
+function lblx(ax::DataAxis)
     if ax isa Union{IR, SR, CPMG}
         return "time (s)"
     elseif ax isa PFG
@@ -10,7 +10,7 @@ function x_label(ax::DataAxis)
     end
 end
 
-function X_label(ax::DataAxis)
+function lblX(ax::DataAxis)
     if ax isa Union{IR, SR}
         return L"T_1 \, \textrm{(s)}"
     elseif ax isa CPMG
@@ -21,7 +21,7 @@ function X_label(ax::DataAxis)
 end
 
 include("./gui_data.jl")
-# include("./gui_1D.jl")
+include("./gui_1D.jl")
 # include("./gui_2D.jl")
 # include("./gui_expfits.jl")
 

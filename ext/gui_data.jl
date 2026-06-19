@@ -19,13 +19,14 @@ function Makie.plot(data::NMRInversions.ExperimentData{1})
 
         plot!(ax, x,real.(data.data),
               color = Cycled(1), label= "Real part")
-
-        axislegend(ax)
     else
-        plot!(ax,x, data.data)
+        plot!(ax, x, data.data)
     end
 
-    ax.xlabel = x_label(x)
+    fig[2, 1] = Legend(fig, ax, orientation = :horizontal,
+                       tellwidth = false, tellheight = true)
+
+    ax.xlabel = lblx(x)
     ax.ylabel = "Signal (a.u.)"
 
     return fig
@@ -94,11 +95,11 @@ function Makie.plot(data::NMRInversions.ExperimentData{2})
     ax_dir.limits = (nothing,nothing,y_low,y_high)
     ax_indir.limits = (nothing,nothing,y_low,y_high)
 
-    ax_indir.xlabel = x_label(xi)
-    ax_dir.xlabel = x_label(xd)
+    ax_indir.xlabel = lblx(xi)
+    ax_dir.xlabel = lblx(xd)
 
-    ax_full.xlabel = x_label(xd)
-    ax_full.ylabel = x_label(xi)
+    ax_full.xlabel = lblx(xd)
+    ax_full.ylabel = lblx(xi)
 
     return fig
 end

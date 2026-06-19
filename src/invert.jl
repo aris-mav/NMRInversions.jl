@@ -58,7 +58,7 @@ function invert(
         axes, data, X, 
         reshape(f, length.(X)), 
         r, SNR, α, 
-        ones(eltype(data), size(data)), [], ""
+        ones(eltype(f), size(f)), [], ""
     )
 
 end
