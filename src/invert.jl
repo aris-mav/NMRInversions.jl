@@ -19,16 +19,18 @@ function invert(
 
     X_mut = Union{Nothing, Vector{<:Real}}[X...]
 
+    n_points = div(128, 2^(length(axes)-1) )
+
     for i in eachindex(X_mut)
         if isnothing(X_mut[i])
             x = axes[i].x
             if x isa PFG
                 X_mut[i] = collect(NMRInversions.logrange(
-                    minimum(x)*7 , maximum(x)*10 , 128
+                    minimum(x)*7 , maximum(x)*10 , n_points
                 )) 
             else
                 X_mut[i] = collect(NMRInversions.logrange(
-                    minimum(x)/7 , maximum(x)*7 , 128
+                    minimum(x)/7 , maximum(x)*7 , n_points
                 ))
             end
         end
@@ -57,7 +59,10 @@ function invert(
     end
 
     return InversionData{D}(
-        axes, data, X, f, r, SNR, α, ones(eltype(data), size(data)), [], ""
+        axes, data, X, 
+        reshape(f, length.(X)), 
+        r, SNR, α, 
+        ones(eltype(data), size(data)), [], ""
     )
 
 end
