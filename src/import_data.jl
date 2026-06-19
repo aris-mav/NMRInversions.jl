@@ -380,7 +380,7 @@ function spinsolve_read_PFGCPMG(acqufile, datafile)
 
     Data = collect(transpose(complex.(Raw[:, 1:2:end], Raw[:, 2:2:end])))
 
-    return input2D(PFGCPMG, t_direct, bfactor, Data)
+    return ExperimentData((CPMG(t_direct), PFG(bfactor)), Data)
 
 end
 

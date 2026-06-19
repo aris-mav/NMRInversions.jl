@@ -152,20 +152,14 @@ Base.lastindex(d::ExperimentData) = lastindex(d.data)
 Base.lastindex(d::ExperimentData, dim::Int) = size(d.data, dim)
 Base.axes(d::ExperimentData, dim::Int) = axes(d.data, dim)
 
-function Base.getindex(
-    E::ExperimentData{D}, 
-    I::Vararg{Union{
-        Integer, 
-        AbstractRange{<:Integer},
-        AbstractVector{<:Integer},
-    }, D}
-) where {D}
+function Base.getindex(E::ExperimentData{D}, I...) where {D}
 
+    idx = Base.to_indices(E.data, I)
+    
     return ExperimentData(
-        ntuple(i -> E.axes[i][I[i]], D),
-        E.data[I...]
+        ntuple(i -> E.axes[i][idx[i]], D),
+        E.data[idx...]
     )
-
 end
 
 export InversionData

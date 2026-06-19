@@ -91,20 +91,6 @@ end
 # end
 
 """
-Return the angle that would get the data to the correct phase, 
-so that most of the signal is on the real part 
-and most of the noise on the imaginary part.
-"""
-function angle_correction(y::AbstractArray{<:Complex})
-    # Get the first few (n) points
-    n = min(floor(Int, size(y, 1) / 5) , 15)
-    # Get correction angle
-    θ = sum(angle.(y[1:n])) / n
-    return θ
-end
-
-
-"""
     autophase(data::ExperimentData; rotation::Real=0)
 
 Correct the phase on experimental data.
@@ -114,25 +100,49 @@ and will be added to the automatic angle correction.
 """
 function autophase(data::ExperimentData; rotation::Real=0)
 
-    θ = angle_correction(data.data)+rotation
-    phased_data = data.data .* exp(-im * θ )
+    y = data.data
 
-    if rotation == 0
+    # Declare which points should be the near maxima for each type 
+    rules = Dict(
+        IR   => last,
+        SR   => last,
+        CPMG => first,
+        PFG  => first,
+    )
 
-        first_point = only(selectdim(phased_data, 1, first(axes(phased_data, 1))))
-        last_point = only(selectdim(phased_data, 1, last(axes(phased_data, 1))))
-        d = real.(first_point - last_point)
-        
-        if data.axes[1] isa Union{CPMG, PFG} && d < 0
-            # Should be a decay
-            return autophase(data, rotation = pi)
-        elseif data.axes[1] isa Union{IR, SR} && d > 0
-            # Should be a recovery
-            return autophase(data, rotation = pi)
-        end
+    for (type, func) in rules
+
+        # find the 1st dimension of the chosen type
+        dim = findfirst(isa.(data.axes, type))
+        dim == nothing && continue
+
+        # index all elements (:) of the chosen dimension, 1 for other dimensions
+        idx = ntuple(
+            i -> i == dim ? (:) : 1, 
+            ndims(y)
+        )
+
+        # choose the slice corresponding to the current dimension
+        y_slice = y[idx...]
+
+        # isolate n data points (not too many)
+        n = min( length(y_slice) ÷ 5 , 15 )
+        y_slice = func(y_slice, n)
+
+        # look at the angles of these points
+        angles = angle.(y_slice)
+
+        # get correction angle as the average of the above
+        θ = sum(angles) / n
+
+        # rotate data
+        y .*= exp(-im * θ + rotation)
+
+        return ExperimentData(data.axes, y)
     end
 
-    return ExperimentData(data.axes, phased_data)
+    throw("Autophase not implemented for $(typeof.(data.axes)).")
+
 end
 
 # export weighted_averages
