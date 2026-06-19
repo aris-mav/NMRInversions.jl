@@ -40,22 +40,18 @@ function invert(
 
     ker_struct = create_kernel(axes, X, g)
 
-    α = 0.0 #placeholder, will be replaced below 
-    if alpha isa Real
-        α = alpha
-        f, r = solve_regularization(ker_struct.K, ker_struct.g, α, solver)
+    f, r, α = if alpha isa Real
+        f, r = solve_regularization(ker_struct.K, ker_struct.g, alpha, solver)
+        f, r, alpha
     else
-        f, r, α = find_alpha(ker_struct, solver, alpha ; silent = silent)
-    end
-
-    if axes isa PFG
-        X .= X ./ 1e9
+        find_alpha(ker_struct, solver, alpha; silent = silent)
     end
 
     for i in eachindex(X)
-        if axes[i].x isa PFG
+        if axes[i] isa PFG
+            # convert to SI units
             X[i] .= X[i] ./ 1e9
-        end
+       end
     end
 
     return InversionData{D}(

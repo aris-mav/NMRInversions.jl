@@ -5,7 +5,7 @@ export svd_kernel_struct
     svd_kernel_struct(K,g,U,S,V)
 A structure containing the following fields:
 - `K`, the kernel matrix.
-- `G`, the data vector.
+- `g`, the data vector.
 - `U`, the left singular values matrix.
 - `S`, the singular values vector.
 - `V`, the right singular values matrix.
@@ -29,8 +29,6 @@ Arguments:
 
 - `axis` is the `DataAxis` for the experiment.
 - `X` is the array for T1, T2, D etc..
-
-
 - `x0` is the offset in `x` (can be the first point `x[1]`).
 - `y` is the recorded data, used to normalise the kernel.
 - `n` should be `1` for exponential and `2` for gaussian decays.
@@ -122,7 +120,6 @@ function create_kernel(axis::DataAxis, X::Vector, g::Vector{<:Complex})
 end
 
 
-## Multidimensional cases
 
 "Passing the 1D tuple to the one of the 1D functions."
 function create_kernel(
@@ -138,7 +135,6 @@ end
 
 """
 # Generating a kernel for a 2D inversion
-    create_kernel(seq, x_direct, x_indirect, X_direct, X_indirect, Data)
 
 - `axis` is a tuple of the two `DataAxis` objects.
 - `X` is a tuple of the two vectors containing the output values (T1,T2,D etc..).
