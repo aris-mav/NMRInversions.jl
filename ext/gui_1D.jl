@@ -12,12 +12,13 @@ The keyword (optional) arguments are:
 - `stacked` : Whether to plot different curves as a stack, instead of superimposed. (default is `true`).
 
 """
-function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.InversionData{1}}; 
-                    selections::Bool = true,
-                    stacked::Bool = true, 
-                    yscale = identity, 
-                    xscale = identity,
-                    )
+function Makie.plot(
+    res_mat::AbstractVecOrMat{NMRInversions.InversionData{1}}; 
+    selections::Bool = true,
+    stacked::Bool = true, 
+    yscale = identity, 
+    xscale = identity,
+)
 
     fig = Figure(size=(700, 600))
 
@@ -29,7 +30,7 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.InversionData{1}};
 
     ax1 = Axis(
         position1, 
-        xlabel=lblx(res.axes[1]), ylabel="Signal (a.u.)", 
+        xlabel=lblx(res.input.axes[1]), ylabel="Signal (a.u.)", 
         yscale = yscale, xscale = xscale
     )
     ax2 = Axis(
@@ -37,7 +38,7 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.InversionData{1}};
         xlabel=lblX(res.axes[1]), xscale=log10
     )
     ax3 = Axis(
-        position3, xlabel= lblx(res.axes[1]), ylabel="Residuals (a.u.)", 
+        position3, xlabel= lblx(res.input.axes[1]), ylabel="Residuals (a.u.)", 
         xscale = xscale
     )
 
@@ -65,10 +66,10 @@ function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.InversionData{1}};
     end
 
     ax2.limits = (
-        minimum(minimum(vec) for r in res_mat for vec in r.X),
-        maximum(maximum(vec) for r in res_mat for vec in r.X),
-        stacked ? nothing : minimum(map(res -> -0.025 * maximum(res.f .* res.filter), res_mat)),
-        stacked ? nothing : maximum(map(res ->  1.025 * maximum(res.f .* res.filter), res_mat)),
+        minimum(minimum(vec) for r in res_mat for vec in r.axes),
+        maximum(maximum(vec) for r in res_mat for vec in r.axes),
+        stacked ? nothing : minimum(map(res -> -0.025 * maximum(res.data .* res.filter), res_mat)),
+        stacked ? nothing : maximum(map(res ->  1.025 * maximum(res.data .* res.filter), res_mat)),
     )
 
 
@@ -105,26 +106,26 @@ function Makie.plot(res::NMRInversions.InversionData{1})
 
     slider = IntervalSlider(
         fig[6,6:10], 
-        range = [1:length(res.X[1])...], 
-        startvalues = (1, length(res.X[1]))
+        range = [1:length(res.axes[1])...], 
+        startvalues = (1, length(res.axes[1]))
     )
 
     interval_low= lift(slider.interval) do i
-        return res.X[1][i[1]]
+        return res.axes[1][i[1]]
     end
 
     interval_high= lift(slider.interval) do i
-        return res.X[1][i[2]]
+        return res.axes[1][i[2]]
     end
 
     weighted_average = lift(slider.interval) do i
-        return res.f[i[1]:i[2]]' * res.X[1][i[1]:i[2]] / sum(res.f[i[1]:i[2]]) 
+        return res.data[i[1]:i[2]]' * res.axes[1][i[1]:i[2]] / sum(res.data[i[1]:i[2]]) 
     end
 
     labeltext = lift(slider.interval) do i
         return """
-        Selected range from $(round(res.X[1][i[1]], sigdigits=2)) \
-        to $(round(res.X[1][i[2]], sigdigits=2)).
+        Selected range from $(round(res.axes[1][i[1]], sigdigits=2)) \
+        to $(round(res.axes[1][i[2]], sigdigits=2)).
         Weighted average = $(round(weighted_average[], sigdigits=3))
         """   
     end
@@ -141,7 +142,7 @@ function Makie.plot(res::NMRInversions.InversionData{1})
 
     log_y = false
     log_x = false
-    if !any(real.(res.data) .<= 0)
+    if !any(real.(res.input.data) .<= 0)
         button_yscale = Button(fig[10,6:8], label = "Change y scale")
 
         on(button_yscale.clicks) do _
@@ -159,7 +160,10 @@ function Makie.plot(res::NMRInversions.InversionData{1})
 
         on(button_xscale.clicks) do _
             if log_x
-                fig.content[1].limits = (exp10(floor(log10(res.axes[1][1]))), nothing, nothing, nothing) #this prevents an error
+                fig.content[1].limits = (
+                    exp10(floor(log10(res.axes[1][1]))), 
+                    nothing, nothing, nothing
+                ) # looks weird but it prevents an error
                 fig.content[1].xscale = identity
                 fig.content[3].xscale = identity
                 fig.content[1].limits = (nothing, nothing, nothing, nothing) #undo the above
@@ -189,7 +193,7 @@ function Makie.plot(res::NMRInversions.InversionData{1})
     end
 
     on(button_reset_f.clicks) do _
-        res.filter = ones(length(res.axes[1]))
+        res.filter = ones(length(res.input.axes[1]))
         redraw(fig, res, interval_low, interval_high)
     end
 
@@ -213,22 +217,22 @@ end
 function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.InversionData{1}; 
                       selections = false, offset::Real = 0, n_plots::Int =1, i = 1)
 
-    f = res.f .* res.filter
-    x = res.axes[1]
+    f = res.data .* res.filter
+    x = res.input.axes[1]
 
     xfit = typeof(x)(
         exp10.(range(log10(x[1]), log10(x[end]), 512))
     )
 
-    X = (x isa PFG ? res.X[1] .* 1e9 : res.X[1])
+    X = (x isa PFG ? res.axes[1] .* 1e9 : res.axes[1])
 
-    yfit = create_kernel(xfit, X , y = res.data) * f
+    yfit = create_kernel(xfit, X , y = res.input.data) * f
 
-    r = create_kernel(x, X, y = res.data) * f - real.(res.data)
+    r = create_kernel(x, X, y = res.input.data) * f - real.(res.input.data)
 
     scatter!(
         ax1, x, 
-        offset == 0 ? real.(res.data) : (scale_to_one!(real.(res.data)) .+ offset), 
+        offset == 0 ? real.(res.input.data) : (scale_to_one!(real.(res.input.data)) .+ offset), 
         colormap=:tab10, colorrange=(1, 10), color=i
     )
     lines!(
@@ -237,7 +241,7 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
         colormap=:tab10, colorrange=(1, 10), color=i
     )
     lines!(
-        ax2, res.X[1],
+        ax2, res.axes[1],
         offset == 0 ? real.(f) : (scale_to_one!(real.(f)) .+ offset), 
         colormap=:tab10, colorrange=(1, 10), color=i, label = res.title
     )
@@ -311,5 +315,5 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
     #         )
     #     end
     # end
-    ax2.limits = (minimum(res.axes[1]), maximum(res.axes[1]),  -0.025 * maximum(f), 1.025 * maximum(f))
+    ax2.limits = (minimum(res.input.axes[1]), maximum(res.input.axes[1]),  -0.025 * maximum(f), 1.025 * maximum(f))
 end
