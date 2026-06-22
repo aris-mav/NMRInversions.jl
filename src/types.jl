@@ -166,8 +166,6 @@ export InversionData
 
 Output of the invert function for 1D pulse sequences.
 A structure containing the following fields:
-- `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
-- `f`, the inversion results.
 - `r`, the residuals.
 - `SNR`, the signal-to-noise ratio.
 - `α`, the regularization parameter.
@@ -177,13 +175,12 @@ A structure containing the following fields:
 
 """
 mutable struct InversionData{D}
+    input::ExperimentData{D}
     axes::NTuple{D, DataAxis}
     data::AbstractArray{<:Number, D}
-    X::NTuple{ D, Vector{Real} }
-    f::AbstractArray{<:Number, D}
-    r::AbstractArray
-    SNR::Real
+    residuals::AbstractArray
     alpha::Real
+    SNR::Real
     filter::AbstractArray{<:Number, D}
     selections::Vector{Vector{Vector}} 
     title::String

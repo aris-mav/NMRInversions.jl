@@ -67,8 +67,9 @@ The output is a matrix, `K`.
 
 """
 function create_kernel(
-    axis::DataAxis, X::Vector; 
-    y::Vector=ones(1), 
+    axis::DataAxis, 
+    X::AbstractVector{<:Real}; 
+    y::AbstractVector=ones(1), 
     gaussian::Bool = false, 
     x0::Real=0
 )
@@ -82,13 +83,15 @@ end
 
 
 """
-    create_kernel(seq, x, X, g)
+    create_kernel(axis::DataAxis, X::AbstractVector{<:Real}, g::AbstractVector{<:Real})
 If data vector of real values is provided, SVD is performed on the kernel, and the output is a "svd_kernel_struct" instead.
 
 If data vector is complex, the SNR is calculated and the SVD is automatically truncated accordingly,
 to remove the "noisy" singular values.
 """
-function create_kernel(axis::DataAxis, X::Vector, g::Vector{<:Real})
+function create_kernel(
+    axis::DataAxis, X::AbstractVector{<:Real}, g::AbstractVector{<:Real}
+)
 
     usv = svd(create_kernel(axis , X, y=g))
     K_new = Diagonal(usv.S) * usv.V'
@@ -99,7 +102,9 @@ function create_kernel(axis::DataAxis, X::Vector, g::Vector{<:Real})
 end
 
 
-function create_kernel(axis::DataAxis, X::Vector, g::Vector{<:Complex})
+function create_kernel(
+    axis::DataAxis, X::AbstractVector{<:Real}, g::AbstractVector{<:Complex}
+)
 
     usv = svd(create_kernel(axis , X, y=g))
 
@@ -118,7 +123,6 @@ function create_kernel(axis::DataAxis, X::Vector, g::Vector{<:Complex})
     return svd_kernel_struct(K_new, g_new, U, S, V)
 
 end
-
 
 
 "Passing the 1D tuple to the one of the 1D functions."
