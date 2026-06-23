@@ -178,7 +178,9 @@ function Makie.plot(res::NMRInversions.InversionData{1})
     end
 
     on(button_label.clicks) do _
-        push!(res.selections, slider.interval[])
+        low, high = slider.interval[]
+        selection = [[res.axes[1][low]],[res.axes[1][high]]]
+        push!(res.selections, selection)
         redraw(fig, res, interval_low, interval_high)
     end
 
@@ -193,7 +195,7 @@ function Makie.plot(res::NMRInversions.InversionData{1})
     end
 
     on(button_reset_f.clicks) do _
-        res.filter = ones(length(res.input.axes[1]))
+        res.filter = ones(size(res.data))
         redraw(fig, res, interval_low, interval_high)
     end
 
@@ -240,7 +242,7 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
         offset == 0 ? real.(yfit) : (scale_to_one!(real.(yfit)) .+ offset), 
         colormap=:tab10, colorrange=(1, 10), color=i
     )
-    lines!(
+    !selections && lines!(
         ax2, res.axes[1],
         offset == 0 ? real.(f) : (scale_to_one!(real.(f)) .+ offset), 
         colormap=:tab10, colorrange=(1, 10), color=i, label = res.title
@@ -256,64 +258,70 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
         colormap=:tab10, colorrange=(1, 10), color=i
     )
 
-    # if selections
-    #
-    #     if res.seq in [NMRInversions.IR]
-    #         Xlabel = ["<T₁> = ", " s, Area= "," %"]
-    #     elseif res.seq in [NMRInversions.CPMG]
-    #         Xlabel = ["<T₂> = ", " s, Area= "," %"]
-    #     elseif res.seq in [NMRInversions.PFG]
-    #         Xlabel = ["<D> = ", " m²/s, Area= "," %"]
-    #     end
-    #
-    #     wa, areas = weighted_averages(res, silent = true)
-    #
-    #     for (i,s) in enumerate(res.selections)
-    #         b_low = zeros(length(res.f[s[1]:s[2]])) .+ offset
-    #         b_high = if (offset == 0)
-    #             f_prime[s[1]:s[2]]
-    #         else
-    #             scale_to_one!(f_prime)[s[1]:s[2]] .+ offset
-    #         end
-    #
-    #         band!(
-    #             ax2, res.axes[1][s[1]:s[2]], b_low, b_high,
-    #             colormap=:tab10, colorrange=(1, 10), color=i,alpha = 0.35,
-    #         )
-    #     end
-    #
-    #     lines!(ax2, res.axes[1], 
-    #            offset == 0 ? real.(f_prime) : (scale_to_one!(real.(f_prime)) .+ offset), 
-    #                       colormap=:tab10, colorrange=(1, 10), color= i, label = res.title)
-    #
-    #     for (i,s) in enumerate(res.selections)
-    #
-    #         height = (1 - (i-1) * (0.1 + 0.07*log(n_plots))) * maximum(f_prime) + offset 
-    #
-    #         sel = collect('a':'z')[i]
-    #         h = f_prime[argmin(abs.(res.axes[1] .- wa[i]))]/2 + offset
-    #
-    #         scatter!(ax2, 
-    #                  wa[i], 
-    #                  h,
-    #                  markersize=15,
-    #                  marker=sel,
-    #                  colormap=:tab10, colorrange=(1, 10),
-    #                  color=i,
-    #                  glowcolor=:white, glowwidth=4)
-    #
-    #         lbl = 
-    #             " " * sel *" : "* Xlabel[1]* "$(round(wa[i], sigdigits = 2))"* 
-    #             Xlabel[2]* "$(round(areas[i]*100, sigdigits = 2))"*Xlabel[3]
-    #
-    #         text!(
-    #             ax2, res.axes[1][2], height, 
-    #             text = lbl, 
-    #             align = (:left, :top), 
-    #             colormap=:tab10, colorrange=(1, 10), color=i,
-    #             glowcolor=:white, glowwidth=2
-    #         )
-    #     end
-    # end
-    ax2.limits = (minimum(res.input.axes[1]), maximum(res.input.axes[1]),  -0.025 * maximum(f), 1.025 * maximum(f))
+    if selections
+
+        if res.input.axes[1] isa Union{IR, SR}
+            text_labels = ["<T₁> = ", " s, Area= "," %"]
+        elseif res.input.axes[1] isa CPMG
+            text_labels = ["<T₂> = ", " s, Area= "," %"]
+        elseif res.input.axes[1] isa PFG
+            text_labels = ["<D> = ", " m²/s, Area= "," %"]
+        end
+
+        wa, areas = NMRInversions.weighted_averages(res, silent = true)
+
+        for (i,idx) in enumerate(NMRInversions._selection_indices(res))
+
+            b_low = zeros(length(res.data[idx])) .+ offset
+            b_high = if (offset == 0)
+                f[idx]
+            else
+                scale_to_one!(f)[idx] .+ offset
+            end
+
+            band!(
+                ax2, res.axes[1][idx], b_low, b_high,
+                colormap=:tab10, colorrange=(1, 10), color=i,alpha = 0.35,
+            )
+        end
+
+        lines!(ax2, res.axes[1], 
+               offset == 0 ? real.(f) : (scale_to_one!(real.(f)) .+ offset), 
+                          colormap=:tab10, colorrange=(1, 10), color= i, label = res.title)
+
+        for (i,s) in enumerate(res.selections)
+
+            height = (1 - (i-1) * (0.1 + 0.07*log(n_plots))) * maximum(f) + offset 
+
+            sel = collect('a':'z')[i]
+            h = f[argmin(abs.(res.axes[1] .- wa[i]))]/2 + offset
+
+            scatter!(ax2, 
+                     wa[i], 
+                     h,
+                     markersize=15,
+                     marker=sel,
+                     colormap=:tab10, colorrange=(1, 10),
+                     color=i,
+                     glowcolor=:white, glowwidth=4)
+
+            txt = 
+                " " * sel *" : "* text_labels[1]* "$(round(wa[i], sigdigits = 2))"* 
+                text_labels[2]* "$(round(areas[i]*100, sigdigits = 2))"*text_labels[3]
+
+            text!(
+                ax2, res.axes[1][2], height, 
+                text = txt, 
+                align = (:left, :top), 
+                colormap =:tab10, colorrange=(1, 10), color=i,
+                glowcolor =:white, glowwidth=2
+            )
+        end
+    end
+    # ax2.limits = (
+    #     minimum(res.input.axes[1]), 
+    #     maximum(res.input.axes[1]),  
+    #     -0.025 * maximum(f), 
+    #     1.025 * maximum(f),
+    # )
 end

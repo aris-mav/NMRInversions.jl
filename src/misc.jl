@@ -145,45 +145,64 @@ function autophase(data::ExperimentData; rotation::Real=0)
 
 end
 
-# export weighted_averages
-# """
-#     weighted_averages(r::inv_out_1D)
-# Return a vector with the weighted averages for 
-# the selections in the input structure, and a 
-# vector with the respective area fractions of 
-# these selections.
-# """
-# function weighted_averages(r::inv_out_1D ; silent::Bool = false)
-#
-#     distribution = r.f .* r.filter
-#     wa = Vector(undef, length(r.selections))
-#     areas = Vector(undef, length(r.selections))
-#     total_area = sum(distribution)
-#
-#     for (i,s) in enumerate(r.selections)
-#         area = sum(distribution[s[1]:s[2]-1])
-#         wa[i] = distribution[s[1]:s[2]-1]' * r.X[s[1]:s[2]-1] / area
-#         areas[i] = area / total_area
-#
-#         lbl = if r.seq in [IR, SR]
-#             ["<T₁>","s"]
-#         elseif r.seq == CPMG
-#             ["<T₂>","s"]
-#         elseif r.seq == PFG
-#             ["<D>", "m²/s"]
-#         end
-#
-#         if !silent
-#             display("Selection $(collect('a':'z')[i]) :")
-#             display(lbl[1] * " = $(round(wa[i], sigdigits=4)) "*lbl[2])
-#             display("Area = $(round(areas[i], sigdigits=4) * 100) %")
-#             display("")
-#         end
-#     end
-#
-#     return wa, areas
-# end
-#
+"""
+    _selection_indices(r::InversionData{1})
+
+Returns a vector of ranges which correspond to selections.
+
+Can be used as: `r.data[NMRInversions._selection_indices(r)[1]]`
+"""
+function _selection_indices(r::InversionData{1})
+    [
+        begin
+            _, low = findmin(x -> abs(x - s[1][1]), r.axes[1])
+            _, high = findmin(x -> abs(x - s[2][1]), r.axes[1])
+            low:(high - 1)
+        end 
+        for s in r.selections
+    ]
+end
+
+export weighted_averages
+"""
+    weighted_averages(r::InversionData{1} ; silent::Bool = false)
+Return a vector with the weighted averages for 
+the selections in the input structure, and a 
+vector with the respective area fractions of 
+these selections.
+"""
+function weighted_averages(r::InversionData{1} ; silent::Bool = false)
+
+    distribution = r.data .* r.filter
+    wa = Vector(undef, length(r.selections))
+    areas = Vector(undef, length(r.selections))
+    total_area = sum(distribution)
+
+    for (i,idx) in enumerate(_selection_indices(r))
+
+        area = sum(distribution[idx])
+        wa[i] = distribution[idx]' * r.axes[1][idx] / area
+        areas[i] = area / total_area
+
+        lbl = if r.axes[1] isa Union{IR,SR}
+            ["<T₁>","s"]
+        elseif r.axes[1] isa CPMG
+            ["<T₂>","s"]
+        elseif r.axes[1] isa PFG
+            ["<D>", "m²/s"]
+        end
+
+        if !silent
+            display("Selection $(collect('a':'z')[i]) :")
+            display(lbl[1] * " = $(round(wa[i], sigdigits=4)) "*lbl[2])
+            display("Area = $(round(areas[i], sigdigits=4) * 100) %")
+            display("")
+        end
+    end
+
+    return wa, areas
+end
+
 #
 # """
 #     weighted_averages(r::inv_out_2D)

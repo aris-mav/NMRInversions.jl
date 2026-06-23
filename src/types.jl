@@ -205,11 +205,10 @@ mutable struct ExpfitData{
     X <: NTuple{D, DataAxis},
     Y <: AbstractArray{<:Number, D}
 }
-    axes::X
-    data::Y
+    input::ExperimentData{D}
     u::Vector
     u0::Vector
-    r::Vector
+    residuals::Vector
     eq::String
     eqn::String
     title::String

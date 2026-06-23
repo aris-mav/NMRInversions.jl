@@ -23,12 +23,12 @@ struct svd_kernel_struct
 end
 
 """
-    _kernel_eq
+    _kernel_eq(axis<:DataAxis, X; x0, y, n)
 
 Arguments:
 
 - `axis` is the `DataAxis` for the experiment.
-- `X` is the array for T1, T2, D etc..
+- `X` is the array for T1, T2, D etc.. (can also be a DataAxis)
 - `x0` is the offset in `x` (can be the first point `x[1]`).
 - `y` is the recorded data, used to normalise the kernel.
 - `n` should be `1` for exponential and `2` for gaussian decays.
