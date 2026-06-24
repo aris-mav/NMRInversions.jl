@@ -1,7 +1,21 @@
 export scale_to_one!
-"Scale data so that the max value is one."
+"""
+    scale_to_one!(a::AbstractArray)
+
+Scale data so that the max value is one.
+"""
 function scale_to_one!(a::AbstractArray)
-    a .= a ./ a[argmax(real(a))]
+    a .= a ./ maximum(abs, a)
+end
+
+export scale_to_one
+"""
+    scale_to_one(a::AbstractArray)
+
+Scale data so that the max value is one.
+"""
+function scale_to_one(a::AbstractArray)
+    return a ./ maximum(abs, a)
 end
 
 "Defining this here so that it works on julia 1.10"
