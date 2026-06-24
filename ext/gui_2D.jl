@@ -1,16 +1,16 @@
 ## Plots for 2D inversions
-
-using GLMakie: coordinates
+using NMRInversions
+using GLMakie
 
 """
-    plot(results::AbstractVecOrMat{inv_out_2D}; kwargs...)
+    plot(results::AbstractVecOrMat{InversionData{2}}; kwargs...)
 
-Plot the results contained in a matrix of `inv_out_2D` structures.
+Plot the results contained in a matrix of `InversionData{2}` structures.
 The arrangement is determined by the shape of the matrix.
 
 The arguments are:
 
-- `results` : The `inv_out_2D` matrix or vector containing the fit results.
+- `results` : The `InversionData{2}` matrix or vector containing the fit results.
 
 Keyword (optional) arguments:
 - `dims` : Dimensions of each plot (default: `(400, 400)`).
@@ -29,7 +29,7 @@ Keyword (optional) arguments:
 - `bandplots` : Whether to use band plots to highlight the selections in the top and right distributions (default: `true`)
 """
 function Makie.plot(
-    res_mat::AbstractVecOrMat{NMRInversions.inv_out_2D}; dims = (400,400),
+    res_mat::AbstractVecOrMat{NMRInversions.InversionData{2}}; dims = (400,400),
     kwargs...)
 
     if !isa(res_mat, AbstractMatrix)
@@ -43,19 +43,18 @@ function Makie.plot(
     end
 
     return f
-
 end
 
 
 """
-    plot!(fig, res::NMRInversions.inv_out_2D; kwargs...)
+    plot!(fig, res::NMRInversions.InversionData{2}; kwargs...)
 
-Plot the results contained in a `inv_out_2D` structure on a figure or a grid position object.
+Plot the results contained in a `InversionData{2}` structure on a figure or a grid position object.
 
 The arguments are:
 
 - `fig` : The figure or grid position object.
-- `res` : The `inv_out_2D` structure containing the fit results.
+- `res` : The `InversionData{2}` structure containing the fit results.
 
 Keyword (optional) arguments:
 - `title` : Title of the plot (default: `""`).
@@ -72,35 +71,45 @@ Keyword (optional) arguments:
 - `legendposition` : Where to put the legend (default: `:lt` )
 - `bandplots` : Whether to use band plots to highlight the selections in the top and right distributions (default: `true`)
 """
-function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::NMRInversions.inv_out_2D;
-                     title=res.title, colormap=:viridis, contf=false, levels = 40, 
-                     labelsizes = (23, 23), ticksizes = (15, 15), titlesize = 17, titlefont = :bold ,
-                     legendlabelsize = 12, gap = 0, extend_grid = false, legendposition = :lt,
-                     bandplots = true,
-                     )
+function Makie.plot!(
+    fig::Union{Makie.Figure,Makie.GridPosition}, 
+    res::NMRInversions.InversionData{2};
+    title=res.title, colormap=:viridis, contf=false, levels = 40, 
+    labelsizes = (23, 23), ticksizes = (15, 15), titlesize = 17, titlefont = :bold ,
+    legendlabelsize = 12, gap = 0, extend_grid = false, legendposition = :lt,
+    bandplots = true,
+)
 
-    seq = res.seq
-    x = res.X_indirect
-    y = res.X_direct
+    x = res.axes[2].x
+    y = res.axes[1].x
 
-    xlbl = if seq in (IRCPMG, SRCPMG)
-        L"T_1 \, \textrm{(s)}"
-    elseif seq == PFGCPMG
-        L"D \, \textrm{(m^2/s)}"
-    elseif seq == CPMGCPMG
-        L"T_{2A} \,\textrm{(s)}"
+    labels = Dict(
+        :IR   => L"T_1 \, \textrm{(s)}",
+        :SR   => L"T_1 \, \textrm{(s)}",
+        :CPMG => L"T_2 \,\textrm{(s)}",
+        :PFG  => L"D \, \textrm{(m^2/s)}"
+    )
+    xlbl = labels[nameof(typeof(res.axes[2]))]
+    ylbl = labels[nameof(typeof(res.axes[1]))]
+
+    # if both are the same (e.g. T2T2)
+    if ==(typeof.(res.axes)...)
+        xlbl *= " (direct)"
+        ylbl *= " (indirect)"
     end
 
-    ylbl = if seq in (IRCPMG, SRCPMG, PFGCPMG)
-        L"T_2 \,\textrm{(s)}"
-    elseif seq == CPMGCPMG
-        L"T_{2B} \,\textrm{(s)}"
-    end
+    if any(x -> x isa PFG, res.axes)
+        x_low =  exp10(floor(log10(x[1])))
+        x_high =  exp10(ceil(log10(x[end])))
+        y_low =  exp10(floor(log10(y[1])))
+        y_high =  exp10(ceil(log10(y[end])))
 
-    x_low = seq in (IRCPMG, SRCPMG, CPMGCPMG) ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(x[1])))
-    x_high = seq in (IRCPMG, SRCPMG, CPMGCPMG) ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(x[end])))
-    y_low = seq in (IRCPMG, SRCPMG, CPMGCPMG) ? exp10(floor(log10(min(x[1],y[1])))) : exp10(floor(log10(y[1])))
-    y_high = seq in (IRCPMG, SRCPMG, CPMGCPMG) ? exp10(ceil(log10(max(x[end],y[end])))) : exp10(ceil(log10(y[end])))
+    else # diagonal should be in the middle
+        x_low =  exp10(floor(log10(min(x[1],y[1])))) 
+        x_high =  exp10(ceil(log10(max(x[end],y[end])))) 
+        y_low =  exp10(floor(log10(min(x[1],y[1])))) 
+        y_high =  exp10(ceil(log10(max(x[end],y[end])))) 
+    end
 
     gr = fig[1:10, 1:10] = GridLayout()
 
@@ -174,9 +183,9 @@ function draw_on_axes(
     empty!(axtop)
     empty!(axright)
 
-    z = res.F' .* res.filter'
-    x = res.X_indirect
-    y = res.X_direct
+    z = res.data' .* res.filter'
+    x = res.axes[2]
+    y = res.axes[1]
 
     # Plots
     if contf == true
@@ -207,7 +216,7 @@ function draw_on_axes(
     markers = collect('a':'z')
     colors = cgrad(:tab10)
 
-    if res.seq in (IRCPMG, SRCPMG, CPMGCPMG)
+    if !any(x -> x isa PFG, res.axes)
         plot_diagonal(axmain,x,y)
     end
 
@@ -224,12 +233,13 @@ function draw_on_axes(
         xc = xdist ⋅ x / sum(spo)
         yc = ydist ⋅ y / sum(spo)
 
-        lbl = if res.seq in (IRCPMG, SRCPMG)
+
+        lbl = if res.axes[2] isa Union{IR,SR} && res.axes[1] isa CPMG
             "T₁/T₂ = $(round(wa_indir[i]/wa_dir[i] , digits=1)) \nVolume = $(round(volumes[i] *100 ,digits = 1))%"
-        elseif res.seq == PFGCPMG
+        elseif res.axes[2] isa PFG
             "D = $(round(wa_indir[i], sigdigits=3)), T₂ = $(round(wa_dir[i], sigdigits=3))\nVolume = $(round(volumes[i] *100 ,digits = 1))%"
 
-        elseif res.seq == CPMGCPMG
+        elseif res.axes[2] isa CPMG
             "T₂ₐ = $(round(wa_indir[i], sigdigits=3)), T₂ᵦ = $(round(wa_dir[i], sigdigits=3))\nVolume = $(round(volumes[i] *100 ,digits = 1))%"
 
         end
@@ -296,10 +306,10 @@ end
 
 
 """
-    Makie.plot(res::inv_out_2D)
+    Makie.plot(res::InversionData{2})
 Run the GUI to plot the results and select peaks you want to label.
 """
-function Makie.plot(res::NMRInversions.inv_out_2D)
+function Makie.plot(res::NMRInversions.InversionData{2})
 
     GLMakie.activate!(; title= "2D inversion GUI")
 
@@ -349,18 +359,19 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
     coord_label = Observable("")
     coord_label[] = "Hover mouse over plot to view coordinates."
 
-    xlbl = if res.seq in (IRCPMG, SRCPMG)
-        "T₁"
-    elseif res.seq == PFGCPMG
-        "D"
-    elseif res.seq == CPMGCPMG
-        "T₂ₐ"
-    end
+    labels = Dict(
+        :IR => "T₁",
+        :SR => "T₁",
+        :CPMG => "T₂",
+        :PFG => "D",
+    )
+    ylbl = labels[nameof(typeof(res.axes[1]))]
+    xlbl = labels[nameof(typeof(res.axes[2]))]
 
-    ylbl = if res.seq in (IRCPMG, SRCPMG, PFGCPMG)
-        "T₂"
-    elseif res.seq == CPMGCPMG
-        "T₂ᵦ"
+    # if both are the same (e.g. T2T2)
+    if ==(typeof.(res.axes)...)
+        xlbl *= "x"
+        ylbl *= "y"
     end
 
     on(events(gui).mouseposition) do _
@@ -385,9 +396,9 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
 
     Label(gui[10,10:19], coord_label)
 
-    z = res.F' .* res.filter'
-    x = res.X_indirect
-    y = res.X_direct
+    z = res.data' .* res.filter'
+    x = res.axes[2]
+    y = res.axes[1]
 
     #Create a matrix for all the discrete points in the space
     points = [[i, j] for i in x, j in y] #important, used by inpolygon later
@@ -508,7 +519,7 @@ function Makie.plot(res::NMRInversions.inv_out_2D)
         end
 
         on(reset_filter_b.clicks) do _
-            res.filter .= ones(size(res.F))
+            res.filter .= ones(size(res.data))
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(axmain, axtop, axright, res, colormenu.selection[], fillcheck.checked[], levels[],12,:lt, bandcheck.checked[])
