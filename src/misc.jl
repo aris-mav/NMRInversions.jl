@@ -212,59 +212,61 @@ function weighted_averages(r::InversionData{1} ; silent::Bool = false)
     return wa, areas
 end
 
-#
-# """
-#     weighted_averages(r::inv_out_2D)
-# Return two vectors with the weighted averages 
-# for the selections in the input structure, one for each dimension,
-# as well as a vector with the volume fractions of these selections.
-# """
-# function weighted_averages(r::inv_out_2D; silent::Bool = false)
-#
-#     wa_indir = Vector(undef, length(r.selections))
-#     wa_dir = Vector(undef, length(r.selections))
-#     volumes = Vector(undef, length(r.selections))
-#
-#     z = r.F' .* r.filter'
-#     x = r.X_indirect
-#     y = r.X_direct
-#
-#     points = [[i, j] for i in x, j in y]
-#     mask = zeros(size(points))
-#
-#     for (i,s) in enumerate(r.selections)
-#
-#         mask .= [PolygonOps.inpolygon(p, s; in=1, on=1, out=0) for p in points]
-#         spo = mask .* z
-#
-#         indir_dist = vec(sum(spo, dims=2))
-#         dir_dist = vec(sum(spo, dims=1))
-#
-#         wa_indir[i] = indir_dist' *  r.X_indirect / sum(spo)
-#         wa_dir[i] = dir_dist' *  r.X_direct / sum(spo)
-#         volumes[i] = sum(spo)/sum(z)
-#
-#         dir_lbl = ["<T₂>","s"]
-#         ind_lbl = if r.seq in (IRCPMG, SRCPMG)
-#             ["<T₁>","s"]
-#         elseif r.seq == PFGCPMG
-#             ["<D>", "m²/s"]
-#         end
-#
-#         if !silent
-#             display("Selection $(collect('a':'z')[i]) :")
-#             display(ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) "*ind_lbl[2])
-#             display(dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) "*dir_lbl[2])
-#             if r.seq in (IRCPMG, SRCPMG)
-#                 display("T₁/T₂ = $(round(wa_indir[i]/wa_dir[i], sigdigits=2)) ")
-#             end
-#             display("Volume = $(round(volumes[i], sigdigits=4) * 100) %")
-#             println()
-#         end
-#     end
-#
-#     return wa_indir, wa_dir, volumes
-# end
+
+"""
+    weighted_averages(r::inv_out_2D)
+Return two vectors with the weighted averages 
+for the selections in the input structure, one for each dimension,
+as well as a vector with the volume fractions of these selections.
+"""
+function weighted_averages(r::InversionData{2}; silent::Bool = false)
+
+    wa_indir = Vector(undef, length(r.selections))
+    wa_dir = Vector(undef, length(r.selections))
+    volumes = Vector(undef, length(r.selections))
+
+    z = r.data' .* r.filter'
+    x = r.axes[2]
+    y = r.axes[1]
+
+    points = [[i, j] for i in x, j in y]
+    mask = zeros(size(points))
+
+    for (i,s) in enumerate(r.selections)
+
+        mask .= [PolygonOps.inpolygon(p, s; in=1, on=1, out=0) for p in points]
+        spo = mask .* z
+
+        indir_dist = vec(sum(spo, dims=2))
+        dir_dist = vec(sum(spo, dims=1))
+
+        wa_indir[i] = indir_dist' *  y / sum(spo)
+        wa_dir[i] = dir_dist' *  y / sum(spo)
+        volumes[i] = sum(spo)/sum(z)
+
+        labels = Dict(
+            :IR => ["<T₁>","s"],
+            :SR => ["<T₁>","s"],
+            :CPMG => ["<T₂>","s"],
+            :PFG => ["<D>", "m²/s"],
+        )
+        dir_lbl = labels[nameof(typeof(r.axes[1]))]
+        ind_lbl = labels[nameof(typeof(r.axes[2]))]
+
+        if !silent
+            display("Selection $(collect('a':'z')[i]) :")
+            display(ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) "*ind_lbl[2])
+            display(dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) "*dir_lbl[2])
+            if r.axes[2] isa Union{IR,SR} && r.axes[1] isa CPMG
+                display("T₁/T₂ = $(round(wa_indir[i]/wa_dir[i], sigdigits=2)) ")
+            end
+            display("Volume = $(round(volumes[i], sigdigits=4) * 100) %")
+            println()
+        end
+    end
+
+    return wa_indir, wa_dir, volumes
+end
 
 
 export scale_filter!
