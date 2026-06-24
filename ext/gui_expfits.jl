@@ -11,7 +11,7 @@ and they plot all of the results on the same plot.
 
 Keyword (optional) arguments:
 - `markersize` : The size of the markers (default is 7).
-- `normeq` : Whether to plot the normalised form of the equation or not (default is `true`).
+- `normeq` : Whether to plot the normalised form of the equation or not (default is `false`).
 - `yscale` : The scale of the y-axis (default is `identity`).
 
 """
@@ -54,7 +54,7 @@ If you want to use a vector of `expfit_struct` structures, make sure to
 splat it by using `...` in the function call (e.g. `plot!(fig, [data1, data2, data3]...)`).
 """
 function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitData...;
-     markersize=7, normeq=true, yscale = identity)
+     markersize=7, normeq=false, yscale = identity)
 
     xlbl = if res[1].input.axes[1] isa PFG
         "b factor (s/m² e-9)"
@@ -80,7 +80,7 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitDat
             scatter!(ax, x, y, markersize=markersize, label= r.title )
         end
 
-        xfit = exp10.(range(log10(1e-8), log10(1.1 * maximum(x)), 512))
+        xfit = NMRInversions.logrange( x[1], x[end], 2^10)
         yfit = NMRInversions.mexp(r.u, xfit)
 
         lines!(ax, xfit, yfit, label=getfield(r, normeq == true ? :eqn : :eq))
