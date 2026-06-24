@@ -17,7 +17,7 @@ include("import_data.jl")
 include("kernels.jl")
 include("finding_alpha.jl")
 include("invert.jl")
-# include("exp_fits.jl")
+include("exp_fits.jl")
 include("misc.jl")
 
 end
