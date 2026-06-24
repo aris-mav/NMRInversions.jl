@@ -157,7 +157,7 @@ function _selection_indices(r::InversionData{1})
         begin
             _, low = findmin(x -> abs(x - s[1][1]), r.axes[1])
             _, high = findmin(x -> abs(x - s[2][1]), r.axes[1])
-            low:(high - 1)
+            low:high
         end 
         for s in r.selections
     ]
@@ -179,6 +179,9 @@ function weighted_averages(r::InversionData{1} ; silent::Bool = false)
     total_area = sum(distribution)
 
     for (i,idx) in enumerate(_selection_indices(r))
+
+        # prevents total area above 100 if selections are touching
+        idx = first(idx)+1:last(idx)
 
         area = sum(distribution[idx])
         wa[i] = distribution[idx]' * r.axes[1][idx] / area
@@ -258,17 +261,14 @@ end
 # end
 
 
-# export filter_range!
-# """
-#     filter_range!(res::inv_res_1D , range)
-# Apply selected range to the filter, scaling it to keep the integral of `f` constant.
-# """
-# function filter_range!(res::inv_out_1D, range)
-#
-#     integral = sum(res.f)
-#     res.filter[range[1]:range[2]] .= 0
-#     new_integral = sum(res.f .* res.filter)
-#     scale = new_integral != 0 ? integral / new_integral : 0
-#     res.filter .= res.filter .* scale
-#
-# end
+export scale_filter!
+"""
+    scale_filter!(res::InversionData{1}, range)
+Add selected range to the filter, scaling it to keep the integral of `f` constant.
+"""
+function scale_filter!(res::InversionData)
+    integral = sum(res.data)
+    new_integral = sum(res.data .* res.filter)
+    scale = new_integral != 0 ? integral / new_integral : 0
+    res.filter .= res.filter .* scale
+end
