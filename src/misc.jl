@@ -102,13 +102,13 @@ function autophase(data::ExperimentData; rotation::Real=0)
 
     y = data.data
 
-    # Declare which points should be the near maxima for each type 
-    rules = Dict(
+    # Declare which points should be the (near) maxima for each type 
+    rules = [
         IR   => last,
         SR   => last,
         CPMG => first,
         PFG  => first,
-    )
+    ]
 
     for (type, func) in rules
 
@@ -126,7 +126,7 @@ function autophase(data::ExperimentData; rotation::Real=0)
         y_slice = y[idx...]
 
         # isolate n data points (not too many)
-        n = min( length(y_slice) ÷ 5 , 15 )
+        n = min(length(y_slice) ÷ 5 , 10)
         y_slice = func(y_slice, n)
 
         # look at the angles of these points
@@ -137,6 +137,12 @@ function autophase(data::ExperimentData; rotation::Real=0)
 
         # rotate data
         y .*= exp(-im * θ + rotation)
+
+        # check if first or last point is the correct way around
+        # (redundant but doesn't hurt)
+        if real(func(y[idx...])) < 0
+            y .= -y
+        end
 
         return ExperimentData(data.axes, y)
     end
