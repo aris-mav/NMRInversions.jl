@@ -1,4 +1,5 @@
 ## Plots for expfits
+using GLMakie, NMRInversions
 """
     plot(res::expfit_struct...; kwargs...)
 Plot the results of an `expfit` call. \n
@@ -14,7 +15,7 @@ Keyword (optional) arguments:
 - `yscale` : The scale of the y-axis (default is `identity`).
 
 """
-function Makie.plot(res::expfit_struct...; kwargs...)
+function Makie.plot(res::ExpfitData...; kwargs...)
 
     f = Figure(size=(800, 400))
     plot!(f, res...; kwargs...)
@@ -23,7 +24,7 @@ function Makie.plot(res::expfit_struct...; kwargs...)
 
 end
 
-function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.expfit_struct}; kwargs...)
+function Makie.plot(res_mat::AbstractVecOrMat{NMRInversions.ExpfitData}; kwargs...)
 
     f = Figure(size=(800, 400))
     plot!(f, res_mat...; kwargs...)
@@ -52,29 +53,38 @@ like: plot!(fig, data1, data2, data3).
 If you want to use a vector of `expfit_struct` structures, make sure to 
 splat it by using `...` in the function call (e.g. `plot!(fig, [data1, data2, data3]...)`).
 """
-function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::expfit_struct...;
+function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitData...;
      markersize=7, normeq=true, yscale = identity)
 
-    # Make axes
-    if res[1].seq in [NMRInversions.IR]
-        ax = Axis(fig[1, 1], xlabel="time (s)", ylabel="Signal (a.u.)",yscale=yscale)
-
-    elseif res[1].seq in [NMRInversions.CPMG]
-        ax = Axis(fig[1, 1], xlabel="time (s)", ylabel="Signal (a.u.)",yscale=yscale)
-
-    elseif res[1].seq in [NMRInversions.PFG]
-        ax = Axis(fig[1, 1], xlabel="b factor (s/m² e-9)", ylabel="Signal (a.u.)",yscale=yscale)
+    xlbl = if res[1].input.axes[1] isa PFG
+        "b factor (s/m² e-9)"
+    else
+        "time (s)"
     end
+
+    ax = Axis(
+        fig[1, 1], 
+        xlabel=xlbl, 
+        ylabel="Signal (a.u.)",
+        yscale=yscale,
+    )
 
     for r in res
+
+        x = r.input.axes[1]
+        y = r.input.data
+
         if isempty(r.title)
-            scatter!(ax, r.x, r.y, markersize=markersize)
+            scatter!(ax, x, y, markersize=markersize)
         else
-            scatter!(ax, r.x, r.y, markersize=markersize, label= r.title )
+            scatter!(ax, x, y, markersize=markersize, label= r.title )
         end
-        lines!(ax, r.xfit, r.yfit, label=getfield(r, normeq == true ? :eqn : :eq))
+
+        xfit = exp10.(range(log10(1e-8), log10(1.1 * maximum(x)), 512))
+        yfit = NMRInversions.mexp(r.u, xfit)
+
+        lines!(ax, xfit, yfit, label=getfield(r, normeq == true ? :eqn : :eq))
     end
 
-    axislegend(ax, position=(res[1].seq == IR ? :rb : :rt), nbanks=2)
-
+    axislegend(ax, position=(res[1].input.axes[1] isa IR ? :rb : :rt), nbanks=2)
 end

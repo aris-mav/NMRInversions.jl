@@ -94,8 +94,8 @@ The `x` field contains the corresponding B0 data.
 struct FC{T<:Real} <: DataAxis{T} x::Vector{T} end; export FC
 
 
-# Define experiment data containing both Axis (x) and data (y)
-
+# Define experiment data containing both Axes and data 
+export ExperimentData
 """
     ExperimentData(axes, data)
 Struct containing NMR data.
@@ -200,12 +200,8 @@ The fields are as follows:
 - `eqn` : Same as above, normalised.
 - `title` : A title describing the data.
 """
-mutable struct ExpfitData{
-    D,
-    X <: NTuple{D, DataAxis},
-    Y <: AbstractArray{<:Number, D}
-}
-    input::ExperimentData{D}
+struct ExpfitData
+    input::ExperimentData{1}
     u::Vector
     u0::Vector
     residuals::Vector

@@ -14,21 +14,27 @@ mexp(CPMG, [a,b,c,d,e,f] , x) = a * exp.( (1/b) * x) + c * exp.((1/d) * x) + e *
 . . .
 
 """
-function mexp(seq, u, x)
+function mexp(u::Vector{<:Number}, ax::DataAxis{1})
 
-    if seq == IR
+    if length(u) % 2 != 0
+        throw(
+            ErrorException("The length of `u` must be a multiple of 2.")
+        )
+    end
+
+    if ax isa IR
         un = sum([u[i] for i in 1:2:length(u)])
-        return un .- 2 .* mexp(u,x)
+        return un .- 2 .* mexp(u, values(ax))
 
-    elseif seq == SR
+    elseif ax isa SR
         un = sum([u[i] for i in 1:2:length(u)])
-        return un .-  mexp(u,x)
+        return un .-  mexp(u, values(ax))
 
-    elseif seq == CPMG
-        return mexp(u, x)
+    elseif ax isa CPMG
+        return mexp(u, values(ax))
 
-    elseif seq == PFG
-        return mexpd(u, x)
+    elseif ax isa PFG
+        return mexpd(u, values(ax))
     end
 
 end
@@ -36,34 +42,38 @@ mexp(u, x) = sum([u[i] * exp.(-(1 / u[i+1]) * x) for i in 1:2:length(u)])
 mexpd(u, x) = sum([u[i] * exp.(-(1 * u[i+1]) * x) for i in 1:2:length(u)])
 
 
-"Loss function for multi-exponential fit, returns the sum of squared differences between the data and the model."
+"""
+Loss function for multi-exponential fit.
+Returns the sum of squared differences between the data and the model.
+"""
 function mexp_loss(u, p)
     x = p[1]
     y = p[2]
-    seq = p[3]
-    return norm((mexp(seq, u, x) .- y) , p[4])
+    return norm((mexp(u, x) .- y) , p[3])
 end
-
 
 export expfit
 """
-    expfit(n, seq, x, y; kwargs...)
+    expfit(
+    input::ExperimentData{1},
+    n::Union{Int, Vector{<:Real}}=1;
+    solver= IPNewton(),
+    normalize::Bool=true,
+    L::Int = 2
+)
 
-Fit an n-exponential function to the data `x` and `y`. \n
-The outut is an `expfit_struct` structure.
+Fit an n-exponential function to the data in the input struct.
+
+The outut is an `ExpfitData` structure.
 
 Arguments:
 
+- `input` : 1D `ExperimentData`.
 - `n` : Integer specifying the number of exponential terms.
-- `seq` : pulse sequence.
-- `x` : acquisition x parameter (time for relaxation or b-factor for diffusion).
-- `y` : acquisition y parameter (magnetization).
 
 Optional arguments:
 - `solver` : Optim solver, default choice is IPNewton().
-- `normalize` : Normalize the data before fitting? (default is true).
 - `L` : An integer specifying which norm of the residuals you want to minimize (default is 2).
-
 
 The `n` argument can also be a vector of initial parameter guesses, 
 in which case it also determines the number of exponential terms used.
@@ -72,43 +82,45 @@ where a's are the amplitudes and b's are the parameters inside the exponentials.
 
 The length of the vector in this case must be an even number.
 
-The following examples might help to clarify: \n
-`expfit([a,b] , CPMG, x, y)` -> mono-exponential fit with initial guess: a * exp.( (1/b) * x) \n
+The following examples might help to clarify: 
 
-`expfit([a,b,c,d] , CPMG, x, y)` -> bi-exponential fit with initial guess: a * exp.( (1/b) * x) + c * exp.((1/d) * x) \n
+`expfit(input, [a,b])` -> mono-exponential fit with initial guess: a * exp.( (1/b) * x) 
 
-`expfit([a,b,c,d,e,f] , CPMG, x, y)` -> tri-exponential fit with initial guess: a * exp.( (1/b) * x) + c * exp.((1/d) * x) + e * exp.((1/f) * x) \n
+
+`expfit(input, [a,b,c,d])` -> bi-exponential fit with initial guess: a * exp.( (1/b) * x) + c * exp.((1/d) * x) 
+
+
+`expfit(input, [a,b,c,d,e,f])` -> tri-exponential fit with initial guess: a * exp.( (1/b) * x) + c * exp.((1/d) * x) + e * exp.((1/f) * x) 
 
 (where a,b,c,d,e,f are numbers of your choice)
 
-
 Numbers of parameters beyond tri-exponential can also be used, but it is not recommended.
-
 """
 function expfit(
-    n::Union{Int, Vector{<:Real}}, 
-    seq::Type{<:NMRInversions.pulse_sequence1D}, 
-    x::Vector, 
-    y::Vector;
+    input::ExperimentData{1},
+    n::Union{Int, Vector{<:Real}}=1;
     solver= IPNewton(),
-    normalize::Bool=true,
     L::Int = 2
 )
 
-    y = real.(y)
-
-    if normalize
-        scale_to_one!(y)
-    end
-
+    x = input.axes[1]
+    y = real.(input.data)
 
     if isa(n,Int) 
 
         # Make an educated guess of the initial parameters
-        if seq == PFG
-            u0 = [v for l in 1:n for v in ( abs(y[1])/(3*l -2) ,maximum(x)/100 * 10.0^(-(l/2 -0.5)) ) ]
+        if x isa PFG
+            u0 = [
+                v for l in 1:n for v in ( 
+                    abs(y[1])/(3*l -2) ,maximum(x)/100 * 10.0^(-(l/2 -0.5)) 
+                ) 
+            ]
         else 
-            u0 = [v for l in 1:n for v in ( abs(y[1])/(3*l -2) ,maximum(x)/5 * 10.0^(-(l/2)) ) ]
+            u0 = [
+                v for l in 1:n for v in (
+                    abs(y[1])/(3*l -2) ,maximum(x)/5 * 10.0^(-(l/2))
+                )
+            ]
         end
 
     elseif isa(n,Vector)
@@ -118,62 +130,59 @@ function expfit(
     end
 
     u = optimize(
-        u -> mexp_loss(u, (x, y, seq, L)), 
+        u -> mexp_loss(u, (x, y, L)), 
         zeros(length(u0)), Inf .* ones(length(u0)), u0, 
         solver
     ).minimizer
 
     # Determine what's the x-axis of the seq (time or bfactor)
-    seq == NMRInversions.PFG ? x_ax = "b" : x_ax = "t"
+    x isa PFG ? x_ax = "b" : x_ax = "t"
 
     # Determine whether there should be a multiplication or a division in the exp() formula 
-    seq == NMRInversions.PFG ?  op = "*" : op = "/"
+    x isa PFG ?  op = "*" : op = "/"
 
     un = sum([u[i] for i in 1:2:length(u)]) 
 
     # Get the fit's equation as a string
-    eq = join( [(i == 1 ? "" : " + ") * string(round(u[i], sigdigits=2)) * " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) * ")" for i in 1:2:length(u)])
+    eq = join(
+        [
+            (i == 1 ? "" : " + ") * 
+            string(round(u[i], sigdigits=2)) * 
+            " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) * 
+            ")" 
+            for i in 1:2:length(u)
+        ]
+    )
 
     # Normalised version of the fit equation
-    eqn = string(round(un, sigdigits=2)) * " * (" * join([(i == 1 ? "" : " + ") * string(round(u[i] / un, sigdigits=2)) * " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) * ")" for i in 1:2:length(u)]) * ")"
+    eqn = string( round(un, sigdigits=2)) * " * (" * 
+        join(
+            [
+                (i == 1 ? "" : " + ") * 
+                string(round(u[i] / un, sigdigits=2)) * 
+                " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) * ")" 
+                for i in 1:2:length(u)
+            ]
+        ) * ")"
 
-    if seq == IR
+    if x isa IR
         unstr = string(round(un,sigdigits = 2))
         eq = unstr * " - 2 * (" * eq * ")" 
         eqn = unstr * " - 2 * " *  eqn   
 
-    elseif seq == SR
+    elseif x isa SR
         unstr = string(round(un,sigdigits = 2))
         eq = unstr * " -" * "(" * eq * ")" 
         eqn = unstr * " -" *  eqn   
     end
 
-    # Calculate the residuals
-    r = mexp(seq, u, x) - y
-
-    xfit = exp10.(range(log10(1e-8), log10(1.1 * maximum(x)), 512))
-    yfit = mexp(seq, u, xfit)
-
-    if length(u0) == 2
-        return expfit_struct(seq, x, y, xfit, yfit, u, u0, r, eq, eq, "")
-    else
-        return expfit_struct(seq, x, y, xfit, yfit, u, u0, r, eq, eqn, "")
-    end
-
+    return ExpfitData(
+        input,
+        u,
+        u0,
+        mexp(u, x) - y,
+        eq,
+        length(u0) == 2 ? eq : eqn,
+        ""
+    )
 end
-
-
-"""
-    expfit(n, data; kwargs...)
-Similar to the `invert` function, `expfit` can be called using an `input1D` structure.
-
-Arguments:
-
-- `n` : Integer specifying the number of exponential terms.
-- `data` : `input1D` structure containing the data to be fitted.
-
-"""
-function expfit(n::Union{Int, Vector{<:Real}}, data::NMRInversions.input1D; kwargs...)
-    return expfit(n, data.seq, data.x, data.y; kwargs...)
-end
-

@@ -23,6 +23,6 @@ end
 include("./gui_data.jl")
 include("./gui_1D.jl")
 include("./gui_2D.jl")
-# include("./gui_expfits.jl")
+include("./gui_expfits.jl")
 
 end
