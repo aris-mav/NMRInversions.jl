@@ -81,7 +81,7 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitDat
         end
 
         xfit = NMRInversions.logrange( x[1], x[end], 2^10)
-        yfit = NMRInversions.mexp(r.u, xfit)
+        yfit = NMRInversions.mexp(r.u, typeof(r.input.axes[1])(xfit))
 
         lines!(ax, xfit, yfit, label=getfield(r, normeq == true ? :eqn : :eq))
     end

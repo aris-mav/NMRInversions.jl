@@ -14,7 +14,7 @@ mexp(CPMG, [a,b,c,d,e,f] , x) = a * exp.( (1/b) * x) + c * exp.((1/d) * x) + e *
 . . .
 
 """
-function mexp(u::Vector{<:Number}, ax::DataAxis{1})
+function mexp(u::Vector{<:Number}, ax::T) where {T <: DataAxis}
 
     if length(u) % 2 != 0
         throw(
@@ -22,24 +22,17 @@ function mexp(u::Vector{<:Number}, ax::DataAxis{1})
         )
     end
 
-    if ax isa IR
-        un = sum([u[i] for i in 1:2:length(u)])
-        return un .- 2 .* mexp(u, values(ax))
-
-    elseif ax isa SR
-        un = sum([u[i] for i in 1:2:length(u)])
-        return un .-  mexp(u, values(ax))
-
-    elseif ax isa CPMG
-        return mexp(u, values(ax))
-
-    elseif ax isa PFG
-        return mexpd(u, values(ax))
+    if ax isa Union{IR, SR}
+        return sum(@view u[1:2:end]) .- (ax isa IR ? 2 : 1) .* _mexp(u, ax)
+    else
+        return _mexp(u, ax)
     end
-
 end
-mexp(u, x) = sum([u[i] * exp.(-(1 / u[i+1]) * x) for i in 1:2:length(u)])
-mexpd(u, x) = sum([u[i] * exp.(-(1 * u[i+1]) * x) for i in 1:2:length(u)])
+
+function _mexp(u, x)
+    op = x isa PFG ? (*) : (/)
+    sum([u[i] * exp.(-(op(1, u[i+1])) * x) for i in 1:2:length(u)])
+end
 
 
 """
@@ -148,7 +141,7 @@ function expfit(
     # Determine whether there should be a multiplication or a division in the exp() formula 
     x isa PFG ?  op = "*" : op = "/"
 
-    un = sum([u[i] for i in 1:2:length(u)]) 
+    max_value = sum([u[i] for i in 1:2:length(u)]) 
 
     # Get the fit's equation as a string
     eq = join(
@@ -162,23 +155,23 @@ function expfit(
     )
 
     # Normalised version of the fit equation
-    eqn = string( round(un, sigdigits=2)) * " * (" * 
+    eqn = string( round(max_value, sigdigits=2)) * " * (" * 
         join(
             [
                 (i == 1 ? "" : " + ") * 
-                string(round(u[i] / un, sigdigits=2)) * 
+                string(round(u[i] / max_value, sigdigits=2)) * 
                 " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) * ")" 
                 for i in 1:2:length(u)
             ]
         ) * ")"
 
     if x isa IR
-        unstr = string(round(un,sigdigits = 2))
+        unstr = string(round(max_value,sigdigits = 2))
         eq = unstr * " - 2 * (" * eq * ")" 
         eqn = unstr * " - 2 * " *  eqn   
 
     elseif x isa SR
-        unstr = string(round(un,sigdigits = 2))
+        unstr = string(round(max_value,sigdigits = 2))
         eq = unstr * " -" * "(" * eq * ")" 
         eqn = unstr * " -" *  eqn   
     end
