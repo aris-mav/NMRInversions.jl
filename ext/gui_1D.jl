@@ -185,8 +185,9 @@ function Makie.plot(res::NMRInversions.InversionData{1})
     end
 
     on(button_filter.clicks) do _
-        # filter_range!(res, slider.interval[])
-        # redraw(fig, res, interval_low, interval_high)
+        res.filter[ slider.interval[][1]+1:slider.interval[][2] ] .= 0
+        scale_filter!(res)
+        redraw(fig, res, interval_low, interval_high)
     end
 
     on(button_reset_s.clicks) do _
@@ -318,10 +319,12 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
             )
         end
     end
-    # ax2.limits = (
-    #     minimum(res.input.axes[1]), 
-    #     maximum(res.input.axes[1]),  
-    #     -0.025 * maximum(f), 
-    #     1.025 * maximum(f),
-    # )
+
+    ax2.limits = (
+        minimum(minimum(vec) for vec in res.axes),
+        maximum(maximum(vec) for vec in res.axes),
+        -0.025 * maximum(f), 
+        1.025 * maximum(f),
+    )
+
 end
