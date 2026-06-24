@@ -200,7 +200,7 @@ The fields are as follows:
 - `eqn` : Same as above, normalised.
 - `title` : A title describing the data.
 """
-struct ExpfitData
+mutable struct ExpfitData
     input::ExperimentData{1}
     u::Vector
     u0::Vector

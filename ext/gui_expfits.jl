@@ -86,5 +86,8 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitDat
         lines!(ax, xfit, yfit, label=getfield(r, normeq == true ? :eqn : :eq))
     end
 
-    axislegend(ax, position=(res[1].input.axes[1] isa IR ? :rb : :rt), nbanks=2)
+    fig[2, 1] = Legend(fig, ax, orientation = :vertical,
+                       tellwidth = false, tellheight = true,
+                       nbanks=(res[1].title == "" ? 1 : 2)
+                       )
 end
