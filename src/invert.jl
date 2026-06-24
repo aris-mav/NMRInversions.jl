@@ -8,12 +8,7 @@ function invert(
     scale::Bool = true,
 ) where {D}
 
-    g = input.data
-
-    if scale
-        scale_to_one!(g)
-    end
-
+    g = scale ? scale_to_one(input.data) : input.data
 
     axes_mut = Union{Nothing, AbstractVector{<:Real}}[axes...]
 
