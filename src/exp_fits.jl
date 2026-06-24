@@ -100,9 +100,15 @@ function expfit(
     input::ExperimentData{1},
     n::Union{Int, Vector{<:Real}}=1;
     solver= IPNewton(),
-    L::Int = 2
+    scale::Bool = true,
+    L::Int = 2,
 )
 
+    if scale 
+        # copy so that original data is not mutated
+        input = deepcopy(input)
+        scale_to_one!(input.data)
+    end
     x = input.axes[1]
     y = real.(input.data)
 

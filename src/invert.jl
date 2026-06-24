@@ -8,7 +8,13 @@ function invert(
     scale::Bool = true,
 ) where {D}
 
-    g = scale ? scale_to_one(input.data) : input.data
+    if scale 
+        # copy so that original data is not mutated
+        input = deepcopy(input)
+        scale_to_one!(input.data)
+    end
+
+    g = input.data
 
     axes_mut = Union{Nothing, AbstractVector{<:Real}}[axes...]
 
