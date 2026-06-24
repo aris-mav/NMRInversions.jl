@@ -51,10 +51,12 @@ function invert(
        end
     end
 
+    f = reshape(f, length.(axes))
+
     return InversionData{D}(
         input, 
         axes, 
-        reshape(f, length.(axes)), 
+        f,
         r, 
         α, 
         isreal(input.data) ? NaN : calc_snr(input.data),
