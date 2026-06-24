@@ -20,7 +20,7 @@ function Makie.plot(data::NMRInversions.ExperimentData{1})
         plot!(ax, x,real.(data.data),
               color = Cycled(1), label= "Real part")
     else
-        plot!(ax, x, data.data)
+        plot!(ax, x, data.data, label= "Data points")
     end
 
     fig[2, 1] = Legend(fig, ax, orientation = :horizontal,
