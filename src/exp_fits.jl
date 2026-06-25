@@ -112,16 +112,18 @@ function expfit(
         if x isa PFG
             u0 = [
                 v for l in 1:n for v in ( 
-                    abs(y[1])/(3*l -2) ,maximum(x)/100 * 10.0^(-(l/2 -0.5)) 
+                    maximum(y)/n ,maximum(x)/100 * 10.0^(-(l/2 -0.5)) 
                 ) 
             ]
         else 
             u0 = [
                 v for l in 1:n for v in (
-                    abs(y[1])/(3*l -2) ,maximum(x)/5 * 10.0^(-(l/2))
+                    maximum(y)/n ,maximum(x)/5 * 10.0^(-(l/2))
                 )
             ]
         end
+
+    println(u0)
 
     elseif isa(n,Vector)
 
@@ -131,7 +133,7 @@ function expfit(
 
     u = optimize(
         u -> mexp_loss(u, (x, y, L)), 
-        zeros(length(u0)), Inf .* ones(length(u0)), u0, 
+        (x[1]/10) .* ones(length(u0)), Inf .* ones(length(u0)), u0, 
         solver
     ).minimizer
 
