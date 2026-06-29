@@ -1,16 +1,17 @@
 export mexp
 """
-    mexp(seq, u, x)
+    mexp(u, x)
 Construct a multi-exponential function from parameters u, and evaluate it at the values x. \n
 The `u` vector should be of the form [a1, b1, a2, b2, ...], 
 where a's are the amplitudes and b's are the reciprocals of the decay constants.
 The length of `u` must be an even number.
 
-Examples: \n
-mexp(CPMG, [a,b] , x) = a * exp.( (1/b) * x) \n
-mexp(CPMG, [a,b,c,d] , x) = a * exp.( (1/b) * x) + c * exp.((1/d) * x) \n
-mexp(CPMG, [a,b,c,d,e,f] , x) = a * exp.( (1/b) * x) + c * exp.((1/d) * x) + e * exp.((1/f) * x) \n
-(where a,b,c,d,e,f are all numbers)
+Examples, if `x` is a `CPMG` `DataAxis`: \n
+mexp([a,b] , x) = a * exp.( (1/b) * x) \n
+mexp([a,b,c,d] , x) = a * exp.( (1/b) * x) + c * exp.((1/d) * x) \n
+mexp([a,b,c,d,e,f] , x) = a * exp.( (1/b) * x) + c * exp.((1/d) * x) + e * exp.((1/f) * x) \n
+
+(where `a`,`b`,`c`,`d`,`e`,`f` are all numbers)
 . . .
 
 """
@@ -47,13 +48,7 @@ end
 
 export expfit
 """
-    expfit(
-    input::ExperimentData{1},
-    n::Union{Int, Vector{<:Real}}=1;
-    solver= IPNewton(),
-    normalize::Bool=true,
-    L::Int = 2
-)
+    expfit(input, n=1)
 
 Fit an n-exponential function to the data in the input struct.
 

@@ -75,34 +75,34 @@ function calc_snr(data::AbstractArray{<:Complex})
     return SNR
 end
 
-# """
-# Return a vector of matrices, containing the F for each selection polygon.
-# """
-# function selections(res::inv_out_2D)
-#
-#     dir = res.X_direct
-#     indir = res.X_indirect
-#     F = res.F
-#
-#     x = collect(1:length(indir))
-#     y = collect(1:length(dir))
-#
-#     z = res.F' .* res.filter'
-#
-#     points = [[i, j] for i in x, j in y] #important, used by inpolygon later
-#     mask = zeros(size(points))
-#
-#     polygons = res.selections 
-#     selections = [zeros(size(F)) for _ in 1:length(polygons)]
-#
-#     for (i, polygon) in enumerate(polygons)
-#         mask .= [PolygonOps.inpolygon(p, polygon; in=1, on=1, out=0) for p in points]
-#         selections[i] .= mask .* z 
-#     end
-#
-#     return selections
-#
-# end
+"""
+Return a vector of matrices, containing the F for each selection polygon.
+"""
+function selections(res::InversionData{2})
+
+    dir = res.axes[1]
+    indir = res.axes[2]
+    F = res.data
+
+    x = collect(1:length(indir))
+    y = collect(1:length(dir))
+
+    z = res.data' .* res.filter'
+
+    points = [[i, j] for i in x, j in y] #important, used by inpolygon later
+    mask = zeros(size(points))
+
+    polygons = res.selections 
+    selections = [zeros(size(F)) for _ in 1:length(polygons)]
+
+    for (i, polygon) in enumerate(polygons)
+        mask .= [PolygonOps.inpolygon(p, polygon; in=1, on=1, out=0) for p in points]
+        selections[i] .= mask .* z 
+    end
+
+    return selections
+
+end
 
 """
     autophase(data::ExperimentData; rotation::Real=0)
@@ -185,7 +185,7 @@ end
 
 export weighted_averages
 """
-    weighted_averages(r::InversionData{1} ; silent::Bool = false)
+    weighted_averages(r::InversionData{1})
 Return a vector with the weighted averages for 
 the selections in the input structure, and a 
 vector with the respective area fractions of 
@@ -228,7 +228,7 @@ end
 
 
 """
-    weighted_averages(r::inv_out_2D)
+    weighted_averages(InversionData{2})
 Return two vectors with the weighted averages 
 for the selections in the input structure, one for each dimension,
 as well as a vector with the volume fractions of these selections.

@@ -164,15 +164,17 @@ export InversionData
 """
     InversionData()
 
-Output of the invert function for 1D pulse sequences.
-A structure containing the following fields:
-- `r`, the residuals.
-- `SNR`, the signal-to-noise ratio.
-- `α`, the regularization parameter.
-- `filter`, a vector representing the mask used to filter/scale the data.
-- `selections` look like: `selections[sel_a[[x1,y1,..],[x2,y2,..],..], sel_b..]`
-- `title`, a title describing the data.
+Output of the `invert` function, containing all the relevant information:
 
+- `input` : `ExperimentData` structure that was used as input to the inversion function.
+- `axes` : "x-axes" of the output (i.e., relaxation times, diffusion coefficients).
+- `data` : the results of the inversion.
+- `residuals` : an array containing the residuals of the fit.
+- `alpha` : the smooting term used to produce the `data` array.
+- `SNR` : the signal-to-noise ratio of the input data (only if complex data are provided).
+- `filter` : an array working as a mask to the `data` array (mostly for visualisation).
+- `selections` : polygon selections for the `data` array (mostly for visualisation).
+- `title` : a title descibing this object (mostly for visualisation).
 """
 mutable struct InversionData{D}
     input::ExperimentData{D}
@@ -189,14 +191,14 @@ end
 
 export ExpfitData
 """
-Output of the expfit function.
+Output of the `expfit` function.
 Structure containing information about multiexponential fits.
 
 The fields are as follows:
 - `u` : The fitted parameters for the `mexp` function.
 - `u0` : The initial parameters for the `mexp` function.
-- `r` : The residuals.
-- `eq` : The equation of the fitted function.
+- `residuals` : The residuals of the fit.
+- `eq` : The equation of the fitted function, printed as a string.
 - `eqn` : Same as above, normalised.
 - `title` : A title describing the data.
 """

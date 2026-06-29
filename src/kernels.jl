@@ -25,6 +25,8 @@ end
 """
     _kernel_eq(axis<:DataAxis, X; x0, y, n)
 
+Internal functions passed to the one defined below.
+
 Arguments:
 
 - `axis` is the `DataAxis` for the experiment.
@@ -47,11 +49,10 @@ _kernel_eq(axis::PFG, X; x0, y, n) =
 
 
 """
-# Create a kernel for the inversion of 1D data.
-    create_kernel(axis, X)
+    create_kernel(x, X)
 
 Arguments:
-- `axis` is the `DataAxis` for the experiment.
+- `x` is the `DataAxis` (x-axis) for the experiment (time, b-factor etc.)
 - `X` is the vector for the output's x-axis (T1, T2, D etc.)
 
 Keyword (optional) arguments:
@@ -67,17 +68,17 @@ The output is a matrix, `K`.
 
 """
 function create_kernel(
-    axis::DataAxis, 
+    x::DataAxis, 
     X::AbstractVector{<:Real}; 
     y::AbstractVector=ones(1), 
     gaussian::Bool = false, 
     x0::Real=0
 )
     return _kernel_eq(
-        axis, X'; 
+        x, X'; 
         y= real.(y), 
         n= gaussian ? 2 : 1,
-        x0= (isa(axis, CPMG) ? x0 : axis.x[1]), 
+        x0= (isa(x, CPMG) ? x0 : x.x[1]), 
     )
 end
 
@@ -125,7 +126,7 @@ function create_kernel(
 end
 
 
-"Passing the 1D tuple to the one of the 1D functions."
+"Just passing the 1D tuple to the one of the 1D functions."
 function create_kernel(
     axes::NTuple{1, DataAxis},
     X::NTuple{1, AbstractVector},
@@ -137,15 +138,7 @@ function create_kernel(
 end
 
 
-"""
-# Generating a kernel for a 2D inversion
-
-- `axis` is a tuple of the two `DataAxis` objects.
-- `X` is a tuple of the two vectors containing the output values (T1,T2,D etc..).
-- `Data` is the 2D data matrix of complex data.
-The output is an `svd_kernel_struct`
-
-"""
+"Special case of 2D kernel, following Mitchell 2012 paper."
 function create_kernel(
     axes::NTuple{2, DataAxis},
     X::NTuple{2, AbstractVector},
