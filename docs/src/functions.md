@@ -55,7 +55,7 @@ and one for your y-axis (signal intensity).
 
 
 ```@docs
-import_csv(::Type{<:pulse_sequence1D},::String)
+import_csv
 ```
 
 If you're using a spinsolve instrument, you can use the `import_spinsolve` function.
@@ -64,14 +64,14 @@ The `aqcu.par` is automatically exported by SpinsolveExpert,
 but you might have to export your data file manually in a csv format.
 
 ```@docs
-import_spinsolve(::String)
+import_spinsolve(files)
 ```
 
 For geospec instruments, you can export your raw data as a text file.
 That text file can be read by the `import_geospec` function.
 
 ```@docs
-import_geospec(::String)
+import_geospec
 ```
 
 For.tnt files from Tecmag consoles, `import_tnt`
@@ -85,9 +85,9 @@ that sounds confusing, please submit an issue and
 we'll work on it!
 
 ```@docs
-import_tnt(::Type{<:Union{pulse_sequence1D, pulse_sequence2D}}, ::String; kwargs...)
-read_tnt_data(::String)
-read_tnt_header(::String)
+import_tnt
+read_tnt_data
+read_tnt_header
 ```
 
 ## Inversion 
@@ -95,30 +95,21 @@ The most important function is `invert()`, which is the main function of the pac
 It works as follows:
 
 ```@docs
-invert(::Type{<:pulse_sequence1D}, ::AbstractArray, ::Vector)
-invert(::input1D)
+invert
 ```
 
-Due to Julia's multiple dispatch, 
-it is possible to define a function with the same name
-but different arguments, to achieve different results.
-
-
-Because of that, the inversion function also works for 2D inversions,
-if the following arguments are used instead:
-
-```@docs
-invert(::Type{<:pulse_sequence2D}, ::AbstractVector, ::AbstractVector, ::AbstractMatrix)
-invert(::input2D)
-```
+Can be used in exactly the same way, whether the
+data is 1D or 2D.
 
 ## Finding alpha
-Here we provide two options for finding the optimal value for alpha, 
-namely Generalized Cross Validation (GCV) or L-curve. 
-Generally gcv seems slightly more reliable in NMR, but it's far from 
-perfect, so it's good to have alternatives and cross-check.
-The following methods can be used as inputs for the `alpha` argument in the
-`invert` function:
+Here we provide two options for finding the
+optimal value for alpha, namely Generalized Cross
+Validation (GCV) or L-curve. Generally gcv seems
+slightly more reliable in NMR, but it's far from
+perfect, so it's good to have alternatives and
+cross-check. The following methods can be used as
+inputs for the `alpha` argument in the `invert`
+function:
 
 ```@docs
 gcv()
@@ -129,37 +120,42 @@ lcurve(::Real; kwargs...)
 lcurve(::Real, ::Real ; kwargs...)
 ```
 
-The `gcv()` method [Mitchell2012](@cite) usually involves the least amount of 
-function calls and it is thus much faster, thus used as the default option.
-If you want more precision, the univariate or box methods should be used instead.
-Note that `gcv()` will NOT work for `pdhgm()` solver, so you'll have to choose 
-an alternative explicitly when using that solver.
+The `gcv()` method [Mitchell2012](@cite) usually
+involves the least amount of function calls and it
+is thus much faster, thus used as the default
+option. If you want more precision, the univariate
+or box methods should be used instead. Note that
+`gcv()` will NOT work for `pdhgm()` solver, so
+you'll have to choose an alternative explicitly
+when using that solver.
 
 ## Exponential fits 
 
-For 1D data, we can use the `expfit` function to perform multiexponential fits.
-We can use the function by specifying either the number of exponential components,
-or a vector which defines the starting points for the regression.
-See below:
+For 1D data, we can use the `expfit` function to
+perform multi-exponential fits. We can use the
+function by specifying either the number of
+exponential components, or a vector which defines
+the starting points for the regression. See below:
 
 ```@docs
-expfit(::Union{Int, Vector{<:Real}}, ::Type{<:NMRInversions.pulse_sequence1D}, ::Vector, ::Vector)
-expfit(::Union{Int, Vector{<:Real}}, ::NMRInversions.input1D)
+expfit
 ```  
   
-If you have some rough clue about what results you expect, 
-it's best to define some starting points close to these.
-(especially important if you're using double or tri-exponential fits.)
-
+If you have some rough clue about what results you
+expect, it's best to define some starting points
+close to these. (especially important if you're
+using double or tri-exponential fits.)
 
 
 ## Plotting 
 
-This package offers plotting capabilities, using its GLMakie extension.
-Simply use `using GLMakie` before or after `using NMRInversions`
-to load the package, and these functions become available.
+This package offers plotting capabilities, using
+its GLMakie extension. Simply use `using GLMakie`
+before or after `using NMRInversions` to load the
+package, and these functions become available.
 
-We basically take the `plot()` function offered by GLMakie and extend it to types from the package.
+We basically take the `plot()` function offered by
+GLMakie and extend it to types from the package.
 
 
 You can use `plot()` for `input1D` or `input2D`
@@ -176,36 +172,35 @@ results = invert(data)
 plot(results)
 ```
 
-Using a matrix or vector of `inv_out_1D` or
-`inv_out_2D` structures (e.g. `plot([results1,
-results2, results3]`) will plot all of them on the
-same figure, for a quick comparison.
+Using a matrix or vector of `InversionData`
+structures (e.g. `plot([results1, results2,
+results3]`) will plot all of them on the same
+figure, for a quick comparison.
 
 ### Data plots
 ```@docs
-plot(data::input1D)
-plot(data::input2D)
+plot(data::ExperimentData{1})
+plot(data::ExperimentData{2})
 ```
 
 ### 1D inversion plots
 
 ```@docs
-plot(res::inv_out_1D)
-plot(res_mat::VecOrMat{inv_out_1D};kwargs...)
+plot(res::InversionData{1})
+plot(res_mat::VecOrMat{InversionData{1}};kwargs...)
 ```
 
 ### 2D inversion plots
 
 ```@docs
-plot(::NMRInversions.inv_out_2D)
-plot(results::AbstractVecOrMat{inv_out_2D}; kwargs...)
+plot(::NMRInversions.InversionData{2})
+plot(results::AbstractVecOrMat{InversionData{2}}; kwargs...)
 ```
 
 ### Expfit plots
 
 ```@docs
-plot(::NMRInversions.expfit_struct)
-plot!(::Union{Makie.Figure,Makie.GridPosition}, ::NMRInversions.expfit_struct )
+plot(::ExpfitData)
 ```
 
 ## Miscellaneous 
@@ -217,8 +212,7 @@ to get the underlying relaxation times or diffusion coefficients.
 The following functions do the job:
 
 ```@docs
-weighted_averages(r::inv_out_1D)
-weighted_averages(r::inv_out_2D)
+weighted_averages
 ```
 
 For example:
@@ -228,5 +222,3 @@ plot(results)
 "Select regions interactively through the GUI"
 weighted_averages(results)
 ```
-
-

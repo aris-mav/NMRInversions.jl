@@ -1,4 +1,23 @@
 export invert
+"""
+    invert(input::ExperimentData{D}; kwargs...)
+
+Receives `ExperimentData`, returns `InversionData`.
+
+The keyword arguments are:
+
+- `axes` : a D-dimensional tuple where each element is an array containing the 
+range of the output (e.g. relaxation times or diffusion coefficients) in 
+every corresponding dimension. `nothing` can be passed instead of an array in 
+any of the tuple elements, in which case a sensible array will be generated 
+automatically (that is also the default option).
+- `alpha` : can either be a single scalar value (e.g. 0.65) or an `alpha_optimizer`.
+- `solver` : is the `regularization_solver` used to solve the optimization problem.
+- `silent` : whether the function should be printing information while it runs 
+(defaults to `false`).
+- `scale` : whether the input data should be scaled to a maximum value of 1 
+(you may also call that "normalizing" the data).
+"""
 function invert(
     input::ExperimentData{D};
     axes::NTuple{D, Any} = ntuple(i -> nothing, Val(D)),
@@ -52,18 +71,17 @@ function invert(
        end
     end
 
-    f = reshape(f, length.(axes))
+    data = reshape(f, length.(axes))
 
     return InversionData{D}(
         input, 
         axes, 
-        f,
+        data,
         r, 
         α, 
         isreal(input.data) ? NaN : calc_snr(input.data),
-        ones(eltype(f), size(f)), 
+        ones(eltype(data), size(data)), 
         [], 
         "",
     )
-
 end
