@@ -101,53 +101,215 @@ function read_acqu(filename, parameter)
 end
 
 export import_tnt, read_tnt_data, read_tnt_header
+const TNT_MAGIC = r"^TNT1\.\d{3}$"
+
+"""
+Parse all TLV sections from a .tnt file.
+Returns a Dict of tag => (offset, length, bool_flag, data).
+"""
+function parse_tnt_sections(filename::String)
+    sections = Dict{String, NamedTuple}()
+    open(filename, "r") do io
+        # Validate magic number (8 bytes: e.g. "TNT1.000")
+        magic = String(read(io, 8))
+        occursin(TNT_MAGIC, strip(magic, '\0')) || error("Not a valid TNMR file: $magic")
+
+        while !eof(io)
+            # Need at least 12 bytes for a TLV header (tag=4, bool=4, len=4)
+            pos_before = position(io)
+            remaining = filesize(io) - pos_before
+            remaining < 12 && break
+
+            tag   = String(read(io, 4))
+            bflag = read(io, UInt32)
+            dlen  = read(io, UInt32)
+            offset = position(io)
+
+            if tag == "PSEQ"
+                # PSEQ: the 4-byte dlen is NOT a length field — PSEQ has no length prefix.
+                # The bytes we read as dlen are the start of the variable-length content.
+                # Seek back 4 bytes and read everything to EOF.
+                seek(io, offset - 4)
+                data = read(io)
+                sections[tag] = (offset = offset - 4, length = length(data),
+                                 bool = Bool(bflag), data = data)
+                break  # PSEQ is always last
+            else
+                data = read(io, dlen)
+                sections[tag] = (offset = offset, length = Int(dlen),
+                                 bool = Bool(bflag), data = data)
+            end
+        end
+    end
+    return sections
+end
+
 """
     read_tnt_data(filename::String)
-Read raw data from  a tecmag .tnt file and return a 
-complex vector containing all the values.
+
+Read raw NMR data from a Tecmag .tnt file.
+Returns a ComplexF32 array. Shape is determined by npts (all 4 dims),
+which controls how much data was written, regardless of actual_npts.
 """
-function read_tnt_data(filename::String = pick_file(pwd()) )
+function read_tnt_data(filename::String)
+    sections = parse_tnt_sections(filename)
+    haskey(sections, "DATA") || error("No DATA section found")
+    haskey(sections, "TMAG") || error("No TMAG section found")
 
-    data = open(filename) do io
-        readuntil(io, "DATA")
-        read(io,Int32) # discard this (empty bytes)
-        data_length = read(io,Int32) # how much data (in bytes)
-        data = Vector{ComplexF32}(undef,data_length ÷ 8) # create data array
-        read!(io,data) # fill the array
-        return data
+    tmag = sections["TMAG"].data
+    npts        = [reinterpret(Int32, tmag[4i-3 : 4i])[1]        for i in 1:4]
+    actual_npts = [reinterpret(Int32, tmag[16 + 4i-3 : 16 + 4i])[1] for i in 1:4]
+
+    data_bytes = sections["DATA"].data
+    n_bytes    = length(data_bytes)
+    n_complex  = n_bytes ÷ 8  # each ComplexF32 = 2 × Float32 = 8 bytes
+
+    # Sanity check: data size must be exact
+    n_bytes == n_complex * 8 || error("DATA size not a multiple of 8 bytes")
+
+    # Build shape from actual_npts, treating 0/1 unused dims as 1
+    # then drop trailing size-1 dims
+    shape_full = Tuple(max(1, Int(n)) for n in actual_npts)
+    prod(shape_full) == n_complex ||
+        @warn "actual_npts product $(prod(shape_full)) ≠ data points $n_complex; reshaping to flat vector"
+
+    data = copy(reinterpret(ComplexF32, data_bytes))
+
+    if prod(shape_full) == n_complex
+        # Drop trailing size-1 dimensions (e.g. (40000,1,1,1) → (40000,))
+        active = findlast(n -> n > 1, collect(shape_full))
+        shape  = isnothing(active) ? (n_complex,) : shape_full[1:active]
+        return reshape(data, shape), actual_npts
+    else
+        # Fall back: return flat, let caller figure out shape
+        return data, actual_npts
     end
-
 end
 
 """
     read_tnt_header(filename::String)
-Read the header of a .tnt file and return a dictionary 
-with all the relevant information.
+
+Read TMAG parameters from a .tnt file and return them as a Dict.
+Covers the full 1024-byte TECMAG structure per spec.
 """
 function read_tnt_header(filename::String)
+    sections = parse_tnt_sections(filename)
+    haskey(sections, "TMAG") || error("No TMAG section found")
+    tmag = sections["TMAG"].data
+    length(tmag) >= 1024 || error("TMAG section too short: $(length(tmag)) bytes")
 
-    open(filename) do io
-        head_vec = Vector{Int32}(undef,22) # init vector
-        read!(io, head_vec) # read header values
+    io = IOBuffer(tmag)
+    h  = Dict{String,Any}()
 
-        keys_list = [
-            "acq_points", 
-            "points_2d", 
-            "points_3d", 
-            "points_4d", 
-            "points_1d",
-            "actual_points_2d", 
-            "actual_points_3d", 
-            "actual_points_4d", 
-            "actual_scans_1d", 
-            "scan_start_1d", 
-            "points_start_2d",
-            "points_start_3d",
-            "points_start_4d",
-        ]
+    # --- Points and scans (76 bytes) ---
+    h["npts"]          = [read(io, Int32) for _ in 1:4]   # 16 bytes
+    h["actual_npts"]   = [read(io, Int32) for _ in 1:4]   # 16 bytes
+    h["acq_points"]    = read(io, Int32)                   #  4 bytes
+    h["npts_start"]    = [read(io, Int32) for _ in 1:4]   # 16 bytes
+    h["scans"]         = read(io, Int32)                   #  4 bytes
+    h["actual_scans"]  = read(io, Int32)                   #  4 bytes
+    h["dummy_scans"]   = read(io, Int32)                   #  4 bytes
+    h["repeat_times"]  = read(io, Int32)                   #  4 bytes
+    h["sadimension"]   = read(io, Int32)                   #  4 bytes
+    h["samode"]        = read(io, Int32)                   #  4 bytes
+    # space1[0] — zero bytes, nothing to skip
+    # Running offset: 76
 
-        return Dict(zip(keys_list, head_vec[6:18]))
-    end
+    # --- Field and frequencies (164 bytes cumulative, so 88 bytes here) ---
+    h["magnet_field"]  = read(io, Float64)                 #  8
+    h["ob_freq"]       = [read(io, Float64) for _ in 1:4]  # 32
+    h["base_freq"]     = [read(io, Float64) for _ in 1:4]  # 32
+    h["offset_freq"]   = [read(io, Float64) for _ in 1:4]  # 32
+    h["ref_freq"]      = read(io, Float64)                 #  8
+    h["NMR_frequency"] = read(io, Float64)                 #  8
+    h["obs_channel"]   = read(io, Int16)                   #  2
+    skip(io, 42)  # space2[42]
+    # 8+32+32+32+8+8+2+42 = 164. ✓
+
+    # --- Spectral width, dwell, filter (128 bytes) ---
+    h["sw"]                 = [read(io, Float64) for _ in 1:4]  # 32
+    h["dwell"]              = [read(io, Float64) for _ in 1:4]  # 32
+    h["filter"]             = read(io, Float64)                  #  8
+    h["experiment_time"]    = read(io, Float64)                  #  8
+    h["acq_time"]           = read(io, Float64)                  #  8
+    h["last_delay"]         = read(io, Float64)                  #  8
+    h["spectrum_direction"] = read(io, Int16)                    #  2
+    h["hardware_sideband"]  = read(io, Int16)                    #  2
+    h["Taps"]               = read(io, Int16)                    #  2
+    h["Type"]               = read(io, Int16)                    #  2
+    h["bDigRec"]            = read(io, Int32)                    #  4  (BOOL)
+    h["nDigitalCenter"]     = read(io, Int32)                    #  4
+    skip(io, 16)  # space3[16]
+    # 32+32+8+8+8+8+2+2+2+2+4+4+16 = 128 ✓
+
+    # --- Hardware settings (20 bytes) ---
+    h["transmitter_gain"]    = read(io, Int16)                   #  2
+    h["receiver_gain"]       = read(io, Int16)                   #  2
+    h["NumberOfReceivers"]   = read(io, Int16)                   #  2
+    h["RG2"]                 = read(io, Int16)                   #  2
+    h["receiver_phase"]      = read(io, Float64)                 #  8
+    skip(io, 4)  # space4[4]
+    # 2+2+2+2+8+4 = 20 ✓
+
+    # --- Spinning (4 bytes) ---
+    h["set_spin_rate"]       = read(io, UInt16)
+    h["actual_spin_rate"]    = read(io, UInt16)
+
+    # --- Lock (48 bytes) ---
+    h["lock_field"]     = read(io, Int16)
+    h["lock_power"]     = read(io, Int16)
+    h["lock_gain"]      = read(io, Int16)
+    h["lock_phase"]     = read(io, Int16)
+    h["lock_freq_mhz"]  = read(io, Float64)
+    h["lock_ppm"]       = read(io, Float64)
+    h["H2O_freq_ref"]   = read(io, Float64)
+    skip(io, 16)  # space5[16]
+    # 2+2+2+2+8+8+8+16 = 48 ✓
+
+    # --- VT (16 bytes) ---
+    h["set_temperature"]    = read(io, Float64)
+    h["actual_temperature"] = read(io, Float64)
+
+    # --- Shim (88 bytes) ---
+    h["shim_units"]  = read(io, Float64)
+    h["shims"]       = [read(io, Int16) for _ in 1:36]
+    h["shim_FWHM"]   = read(io, Float64)
+    # 8 + 72 + 8 = 88 ✓
+
+    # --- Bruker-specific (20 bytes) ---
+    h["HH_dcpl_attn"]    = read(io, Int16)
+    h["DF_DN"]           = read(io, Int16)
+    h["F1_tran_mode"]    = [read(io, Int16) for _ in 1:7]
+    h["dec_BW"]          = read(io, Int16)
+    # 2+2+14+2 = 20 ✓
+
+    # --- Gradient / misc (284 bytes) ---
+    h["grd_orientation"] = String(read(io, 4))
+    h["LatchLP"]         = read(io, Int32)
+    h["grd_Theta"]       = read(io, Float64)
+    h["grd_Phi"]         = read(io, Float64)
+    skip(io, 264)  # space6[264]
+    # 4+4+8+8+264 = 288  ← spec says 300 for this section including time vars below
+
+    # --- Time variables (12 bytes, CTime/CTimeSpan = 4 bytes each) ---
+    h["start_time"]   = read(io, UInt32)
+    h["finish_time"]  = read(io, UInt32)
+    h["elapsed_time"] = read(io, UInt32)
+    # 4+4+8+8+264+4+4+4 = 300 ✓
+
+    # --- Text variables (160 bytes) ---
+    h["date"]         = rstrip(String(read(io, 32)), '\0')
+    h["nucleus"]      = rstrip(String(read(io, 16)), '\0')
+    h["nucleus_2D"]   = rstrip(String(read(io, 16)), '\0')
+    h["nucleus_3D"]   = rstrip(String(read(io, 16)), '\0')
+    h["nucleus_4D"]   = rstrip(String(read(io, 16)), '\0')
+    h["sequence"]     = rstrip(String(read(io, 32)), '\0')
+    h["lock_solvent"] = rstrip(String(read(io, 16)), '\0')
+    h["lock_nucleus"] = rstrip(String(read(io, 16)), '\0')
+    # 32+16+16+16+16+32+16+16 = 160 ✓
+    # Total TECMAG = 76+164+128+20+4+48+16+88+20+300+160 = 1024 ✓
+
+    return h
 end
 
 function read_tnt_echo_times(filename::String, len::Int, echotime::String)
@@ -215,7 +377,7 @@ custom pulse sequences, it might not cover some cases.
 If it does not work for you, please submit an issue.
 
  Necessary (positional) arguments:
-- `seq` is the pulse sequence (e.g. IR, CPMG, PFG)
+ - `seq` is the pulse sequence, i.e. `IR`, `SR`, `CPMG`, `(CPMG,IR)`, `(CPMG,SR)`.
 - `filename` is the path of the file containing the data.
 
  Optional (keyword) arguments:
@@ -225,36 +387,46 @@ defined in the pulse sequence. Default value is "Echo_Time".
 Calling this function without a filename argument, e.g.: `import_tnt(seq)`, 
 will open a file dialogue to select the .tnt file.
 """
-# function import_tnt(seq::Type{<:Union{pulse_sequence1D, pulse_sequence2D}},
-#                        filename::String =pick_file(pwd()); 
-#                        echotime="Echo_Time"
-#                        )
-#
-#     header = read_tnt_header(filename)
-#     data = read_tnt_data(filename)
-#     y = vec(sum(reshape(data , header["acq_points"], :), dims = 1))
-#
-#     if seq == IR
-#
-#         # y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
-#         x = read_tnt_de0_times(filename, length(y))
-#         return autophase(input1D(seq, x, y))
-#
-#     elseif seq == CPMG
-#
-#         y = vec(sum(reshape(y , :, header["actual_points_2d"]), dims = 2))
-#         x = read_tnt_echo_times(filename, length(y), echotime)
-#         return autophase(input1D(seq, x, y))
-#
-#     elseif seq in (IRCPMG, CPMGCPMG, SRCPMG)
-#
-#         data_mat = reshape(y , :, header["actual_points_2d"]) 
-#         x_dir = read_tnt_echo_times(filename, size(data_mat,1), echotime)
-#         x_indir = read_tnt_de0_times(filename, size(data_mat,2))
-#         return autophase(input2D(seq, x_dir, x_indir, data_mat))
-#
-#     end
-# end
+function import_tnt(
+    seq::Union{Type, Tuple{Vararg{Type}}},
+    filename::String =pick_file(pwd()); 
+    echotime="Echo_Time"
+    )
+
+    header = read_tnt_header(filename)
+    data, _ = read_tnt_data(filename)
+    data = vec(sum(reshape(data , header["npts"][1], :), dims = 1))
+
+    if seq isa Tuple 
+
+        data = reshape(data , :, header["actual_npts"][2])
+
+        options = ((CPMG,IR), (CPMG,SR))
+
+        if seq in options
+
+            x_dir = read_tnt_echo_times(filename, size(data,1), echotime)
+            x_indir = read_tnt_de0_times(filename, size(data,2))
+
+            return autophase(ExperimentData((seq[1](x_dir), seq[2](x_indir)), data))
+        else
+            error("Currently only $(options) are implemented here.")
+        end
+
+    else
+        x = if seq in [IR,SR]
+            read_tnt_de0_times(filename, length(data))
+        elseif seq == CPMG
+            read_tnt_echo_times(filename, length(data), echotime)
+
+        else
+            error("Currently only IR, SR and CPMG are impemented here.")
+        end
+
+        return autophase(ExperimentData(seq(x), data))
+    end
+end
+
 
 export import_spinsolve
 """
