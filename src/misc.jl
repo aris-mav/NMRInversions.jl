@@ -58,19 +58,16 @@ The STD of the latter half of the imaginary signal is used for the calculation
 """
 function calc_snr(data::AbstractArray{<:Complex})
 
-    real_data = real.(data)
-    imag_data = imag.(data)
-
-    half_index = floor(Int, size(imag_data, 1) / 2)
-    end_index = size(imag_data, 1)
-
-    noise = collect(selectdim(imag_data, 1, half_index:end_index))
-
-    σ_n = std(noise)
-
-    SNR = maximum(abs.(real_data)) / σ_n
+    half_index = floor(Int, size(data, 1) / 2)
+    end_index = size(data, 1)
+    noise = collect(selectdim(imag.(data), 1, half_index:end_index))
+    SNR = maximum(abs.(real.(data))) / std(noise)
 
     return SNR
+end
+"Overload for real data"
+function calc_snr(::AbstractArray{<:Real})
+    return NaN
 end
 
 """
