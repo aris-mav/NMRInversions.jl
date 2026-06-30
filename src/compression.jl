@@ -37,12 +37,10 @@ function window_average(
         idx_edges[i] = max(idx_edges[i], idx_edges[i-1])
     end
 
-    new_axis_values = similar(x.x, target_length)
+    new_size = Base.setindex(size(data), target_length, dims)
 
-    new_size = collect(size(data))
-    new_size[dims] = target_length
-
-    new_data = Array{eltype(data)}(undef, Tuple(new_size))
+    new_axis = typeof(x)(similar(x.x, target_length))
+    new_data = similar(input.data, new_size)
 
     for b in 1:target_length
         lo = idx_edges[b]
@@ -54,7 +52,7 @@ function window_average(
 
         inds = lo:hi
 
-        new_axis_values[b] = mean(view(x.x, inds))
+        new_axis[b] = mean(view(x.x, inds))
 
         select = ntuple(d ->
             d == dims ? inds : Colon(),
@@ -71,8 +69,6 @@ function window_average(
         dims=dims,
         )
     end
-    new_axis = typeof(x)(new_axis_values)
-    new_axes = Base.setindex(input.axes, new_axis, dims)
 
-    return ExperimentData(new_axes, new_data)
+    return ExperimentData(Base.setindex(input.axes, new_axis, dims), new_data)
 end
