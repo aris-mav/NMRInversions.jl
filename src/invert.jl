@@ -56,7 +56,7 @@ function invert(
         end
     end
 
-    ker_struct = create_kernel(input.axes, axes, g)
+    ker_struct = create_kernel(input, axes)
 
     f, r, α = if alpha isa Real
         f, r = solve_regularization(ker_struct.K, ker_struct.g, alpha, solver)
