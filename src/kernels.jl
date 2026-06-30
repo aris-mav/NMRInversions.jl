@@ -119,7 +119,6 @@ function create_kernel(
 
     axes = input.axes
     data = input.data
-    SNR = input.SNR
 
     G = real.(data)
 
