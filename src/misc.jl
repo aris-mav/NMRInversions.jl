@@ -66,9 +66,7 @@ function calc_snr(data::AbstractArray{<:Complex})
 
     noise = collect(selectdim(imag_data, 1, half_index:end_index))
 
-    σ_n = sqrt(
-        sum((noise .- sum(noise) / length(noise)) .^ 2) / (length(noise) - 1)
-    )
+    σ_n = std(noise)
 
     SNR = maximum(abs.(real_data)) / σ_n
 
@@ -147,7 +145,7 @@ function autophase(data::ExperimentData; rotation::Real=0)
         angles = angle.(y_slice)
 
         # get correction angle as the average of the above
-        θ = sum(angles) / n
+        θ = mean(angles)
 
         # rotate data
         y .*= exp(-im * θ + rotation)
