@@ -11,12 +11,12 @@ can be used as input to our functions.
     `foo.a` and the value of `b` using `foo.b`.
 
 
-## Pulse sequences
+## Pulse sequences - Data Axes
 
 The following types are used so that the `invert`
 function can create the appropriate kernel for the
 inversion. Anywhere you see the `seq` keyword, one
-of the following must be used.
+of the following types must be used. 
 
 ```@docs
 IR
@@ -28,13 +28,22 @@ FID
 FC
 ```
 
+The types above represent just a special type of
+vector. Associating the x-axis of the data with a
+pulse sequence seems to be a fairly elegant way to
+make the package scale to n-dimensions, thus this
+convention is used from version 2.0 onwards.
+
+
 ## Inversion solvers
+
 These are used to let the invert function know
-which solver to use. They can be used as input to
-the `invert` function as the 'solver' argument.
-(e.g., `invert(data, solver=brd())`
-[Song2002](@cite) or `invert(data,
-solver=pdhgm(10,0.1) )`) [Reci2017](@cite).
+which solver to use. 
+
+They can be used as input to the `invert` function
+as the 'solver' argument. (e.g., `invert(data,
+solver=brd())` [Song2002](@cite) or `invert(data,
+solver=pdhgm(10,0.1))` [Reci2017](@cite)).
 
 ```@docs
 brd
@@ -52,6 +61,7 @@ jump_nnls
 ```
 
 ## Finding optimal alpha
+
 These are methods for finding the optimal
 regularization parameter. They can be used as
 input to the `invert` function as the 'alpha'
@@ -88,7 +98,6 @@ structure.
 InversionData
 ExpfitData
 ```
-
 
 ## Kernel structure
 
