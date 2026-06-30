@@ -84,73 +84,48 @@ end
 
 
 """
-    create_kernel(axis::DataAxis, X::AbstractVector{<:Real}, g::AbstractVector{<:Real})
-If data vector of real values is provided, SVD is performed on the kernel, and the output is a "svd_kernel_struct" instead.
-
-If data vector is complex, the SNR is calculated and the SVD is automatically truncated accordingly,
-to remove the "noisy" singular values.
+1D kernel with SVD compression.
 """
 function create_kernel(
-    axis::DataAxis, X::AbstractVector{<:Real}, g::AbstractVector{<:Real}
+    input::ExperimentData{1},
+    X::NTuple{1, AbstractVector},
 )
 
-    usv = svd(create_kernel(axis , X, y=g))
-    K_new = Diagonal(usv.S) * usv.V'
-    g_new = usv.U' * g
+    axis = input.axes[1]
+    g = input.data
 
-    return svd_kernel_struct(K_new, g_new, usv.U, usv.S, usv.V)
+    usv = svd(create_kernel(axis , X[1], y=g))
 
-end
+    idx = isnan(input.SNR) ? (:) : findall(i -> i .> (1 / input.SNR), usv.S) 
 
-
-function create_kernel(
-    axis::DataAxis, X::AbstractVector{<:Real}, g::AbstractVector{<:Complex}
-)
-
-    usv = svd(create_kernel(axis , X, y=g))
-
-    SNR = calc_snr(g)
-    indices = findall(i -> i .> (1 / SNR), usv.S) # find elements in S12 above the noise threshold
-
-    #=display("SVD truncated to $(length(indices)) singular values out of $(length(usv.S))")=#
-
-    U = usv.U[:, indices]
-    S = usv.S[indices]
-    V = usv.V[:, indices]
+    U = usv.U[:, idx]
+    S = usv.S[idx]
+    V = usv.V[:, idx]
 
     K_new = Diagonal(S) * V'
     g_new = U' * real.(g)
 
     return svd_kernel_struct(K_new, g_new, U, S, V)
-
 end
 
 
-"Just passing the 1D tuple to the one of the 1D functions."
+"""
+2D kernel with SVD compression (following Mitchell 2012 paper).
+"""
 function create_kernel(
-    axes::NTuple{1, DataAxis},
-    X::NTuple{1, AbstractVector},
-    Data::AbstractVector{<:Number};
-    kwargs...
-)
-    create_kernel(axes[1], X[1], Data; kwargs...)
-
-end
-
-
-"Special case of 2D kernel, following Mitchell 2012 paper."
-function create_kernel(
-    axes::NTuple{2, DataAxis},
+    input::ExperimentData{2},
     X::NTuple{2, AbstractVector},
-    Data::AbstractMatrix{<:Complex}
 )
 
-    G = real.(Data)
-    SNR = calc_snr(Data)
+    axes = input.axes
+    data = input.data
+    SNR = input.SNR
+
+    G = real.(data)
 
     # Generate Kernels
-    K_dir = create_kernel(axes[1], X[1], y = vec(Data[:,end]))
-    K_indir = create_kernel(axes[2], X[2], y = vec(Data[1,:]))
+    K_dir = create_kernel(axes[1], X[1], y = vec(data[:,end]))
+    K_indir = create_kernel(axes[2], X[2], y = vec(data[1,:]))
 
     ## Perform SVD truncation
     usv_dir = svd(K_dir) #paper (13)
@@ -158,12 +133,13 @@ function create_kernel(
 
     # finding which singular components are contributed from K1 and K2
     S21 = usv_indir.S * usv_dir.S' #Using outer product instead of Kronecker, to make indices more obvious
-    indices = findall(i -> i .> (1 / SNR), S21) # find elements in S12 above the noise threshold
-    s̃ = S21[indices]
+    idx = isnan(input.SNR) ? (:) : findall(i -> i .> (1 / input.SNR), S21) 
+
+    s̃ = S21[idx]
     ñ = length(s̃)
 
-    si = (first.(Tuple.(indices)))  # direct dimension singular vector indices
-    sj = (last.(Tuple.(indices)))   # indirect dimension singular vector indices
+    si = (first.(Tuple.(idx)))  # direct dimension singular vector indices
+    sj = (last.(Tuple.(idx)))   # indirect dimension singular vector indices
 
     g̃ = diag(usv_indir.U[:, si]' * G' * usv_dir.U[:, sj])
     Ũ₀ = Array{Float64}(undef, 0, 0) # no such thing as U in this case, it is absorbed by g 
