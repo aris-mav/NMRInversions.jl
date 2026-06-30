@@ -43,7 +43,7 @@ end
 `DataAxis` type for inversion recovery measurements.
 The `x` field contains the corresponding time data.
 """
-struct IR{T<:Real} <: DataAxis{T} x::Vector{T} end; export IR
+struct IR{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export IR
 
 """
     SR{T<:Real} <: DataAxis{T}
@@ -51,7 +51,7 @@ struct IR{T<:Real} <: DataAxis{T} x::Vector{T} end; export IR
 `DataAxis` type for saturation recovery measurements.
 The `x` field contains the corresponding time data.
 """
-struct SR{T<:Real} <: DataAxis{T} x::Vector{T} end; export SR
+struct SR{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export SR
 
 """
     CPMG{T<:Real} <: DataAxis{T}
@@ -59,7 +59,7 @@ struct SR{T<:Real} <: DataAxis{T} x::Vector{T} end; export SR
 `DataAxis` type for CPMG measurements.
 The `x` field contains the corresponding time data.
 """
-struct CPMG{T<:Real} <: DataAxis{T} x::Vector{T} end; export CPMG
+struct CPMG{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export CPMG
 
 """
     PFG{T<:Real} <: DataAxis{T}
@@ -67,7 +67,7 @@ struct CPMG{T<:Real} <: DataAxis{T} x::Vector{T} end; export CPMG
 `DataAxis` type for pulsed field gradient measurements.
 The `x` field contains the corresponding b-factor data.
 """
-struct PFG{T<:Real} <: DataAxis{T} x::Vector{T} end; export PFG
+struct PFG{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export PFG
 
 """
     Spectrum{T<:Real} <: DataAxis{T}
@@ -75,7 +75,7 @@ struct PFG{T<:Real} <: DataAxis{T} x::Vector{T} end; export PFG
 `DataAxis` type for NMR spectra.
 The `x` field contains the corresponding ppm data.
 """
-struct Spectrum{T<:Real} <: DataAxis{T} x::Vector{T} end; export Spectrum
+struct Spectrum{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export Spectrum
 
 """
     FID{T<:Real} <: DataAxis{T}
@@ -83,7 +83,7 @@ struct Spectrum{T<:Real} <: DataAxis{T} x::Vector{T} end; export Spectrum
 `DataAxis` type for free induction decay measurements.
 The `x` field contains the corresponding time data.
 """
-struct FID{T<:Real} <: DataAxis{T} x::Vector{T} end; export FID
+struct FID{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export FID
 
 """
     FC{T<:Real} <: DataAxis{T}
@@ -91,7 +91,7 @@ struct FID{T<:Real} <: DataAxis{T} x::Vector{T} end; export FID
 `DataAxis` type for field cycling (or "dispersion") measurements.
 The `x` field contains the corresponding B0 data.
 """
-struct FC{T<:Real} <: DataAxis{T} x::Vector{T} end; export FC
+struct FC{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export FC
 
 
 # Define experiment data containing both Axes and data 
@@ -204,9 +204,9 @@ The fields are as follows:
 """
 mutable struct ExpfitData
     input::ExperimentData{1}
-    u::Vector
-    u0::Vector
-    residuals::Vector
+    u::AbstractVector
+    u0::AbstractVector
+    residuals::AbstractVector
     eq::String
     eqn::String
     title::String
