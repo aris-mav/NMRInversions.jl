@@ -80,7 +80,7 @@ function invert(
         data,
         r, 
         α, 
-        isreal(input.data) ? NaN : calc_snr(input.data),
+        calc_snr(input.data),
         ones(eltype(data), size(data)), 
         [], 
         "",
