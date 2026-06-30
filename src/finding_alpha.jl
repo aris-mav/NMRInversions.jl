@@ -49,8 +49,10 @@ Default is `1e-3`.
 - `rel_tol` determines what's the smallest relative change in the gcv score the algorithm should care about.
 Default is `1e-1`.
 """
-gcv(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3, rel_tol=1e-1) = 
-    find_alpha_univariate(:gcv, Float64(lower), Float64(upper), algorithm, abs_tol, rel_tol)
+gcv(lower::Real, upper::Real; algorithm=Brent(), abs_tol=1e-3, rel_tol=1e-1) =
+    find_alpha_univariate(
+        :gcv, Float64(lower), Float64(upper), algorithm, abs_tol, rel_tol
+    )
 
 """
     lcurve(lower, upper ; kwargs...)
@@ -69,8 +71,10 @@ Default is `1e-3`.
 - `rel_tol` determines what's the smallest relative change in the lcurve score the algorithm should care about.
 Default is `1e-1`.
 """
-lcurve(lower::Real, upper::Real; algorithm = Brent(), abs_tol=1e-3, rel_tol=1e-1) = 
-    find_alpha_univariate(:lcurve, Float64(lower), Float64(upper), algorithm, abs_tol, rel_tol)
+lcurve(lower::Real, upper::Real; algorithm=Brent(), abs_tol=1e-3, rel_tol=1e-1) =
+    find_alpha_univariate(
+        :lcurve, Float64(lower), Float64(upper), algorithm, abs_tol, rel_tol
+    )
 
 
 ## Fminbox methods
@@ -101,7 +105,7 @@ Default is LBFGS(). Only first order optimizers can be chosen here.
 For more details, refer to Optim.jl documentation.
 - `opts` an Optim.Options() structure which can provide some preferences to the solver.
 """
-gcv(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_abstol=1e-3)) = 
+gcv(start::Real; algorithm=LBFGS(), opts=Optim.Options(x_abstol=1e-3)) =
     find_alpha_box(:gcv, Float64(start), algorithm, opts)
 
 """
@@ -120,7 +124,7 @@ For more details, refer to Optim.jl documentation.
 - `opts` an Optim.Options() structure which can provide some preferences to the solver.
 Please have a look [here](https://julianlsolvers.github.io/Optim.jl/v1.10/user/config/).
 """
-lcurve(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_abstol = 1e-3)) = 
+lcurve(start::Real; algorithm=LBFGS(), opts=Optim.Options(x_abstol=1e-3)) =
     find_alpha_box(:lcurve, Float64(start), algorithm, opts)
 
 
@@ -128,7 +132,7 @@ lcurve(start::Real; algorithm = LBFGS(), opts = Optim.Options(x_abstol = 1e-3)) 
 
 # Full lcurve method
 
-struct lcurve_range <: alpha_optimizer 
+struct lcurve_range <: alpha_optimizer
     lowest_value::Real
     highest_value::Real
     number_of_steps::Int
@@ -144,7 +148,7 @@ picking the optimal.
 
 This is a very crude and rather slow method, mostly for demonstration purposes.
 """
-lcurve(lowest_value::Real, highest_value::Real, number_of_steps::Int,) = 
+lcurve(lowest_value::Real, highest_value::Real, number_of_steps::Int,) =
     lcurve_range(lowest_value::Real, highest_value::Real, number_of_steps::Int)
 
 
@@ -184,12 +188,12 @@ function gcv_score(α, r, s, x; next_alpha=true)
     end
 end
 
-function gcv_cost(α::Real, 
-                  svds::svd_kernel_struct, 
-                  solver::regularization_solver)
+function gcv_cost(α::Real,
+    svds::svd_kernel_struct,
+    solver::regularization_solver)
 
     f, r = solve_regularization(svds.K, svds.g, α, solver)
-    return gcv_score(α, r, svds.S, (svds.V' * f), next_alpha = false) 
+    return gcv_score(α, r, svds.S, (svds.V' * f), next_alpha=false)
 end
 
 """
@@ -221,7 +225,7 @@ function l_cost(K, g, α, solver)
 
     f, r = NMRInversions.solve_regularization(K, g, α, solver)
 
-    A = sparse([K; √(α) * LinearAlgebra.I ])
+    A = sparse([K; √(α) * LinearAlgebra.I])
     b = [r; zeros(size(A, 1) - size(r, 1))]
 
     return l_curvature(f, r, α, A, b)
@@ -233,9 +237,9 @@ end
 Solve repeatedly until the GCV score stops decreasing, following Mitchell 2012 paper.
 Select the solution with minimum gcv score and return it, along with the residuals.
 """
-function find_alpha(svds::svd_kernel_struct, 
-                   solver::regularization_solver,
-                   mode::gcv_mitchell ; silent = false)
+function find_alpha(svds::svd_kernel_struct,
+    solver::regularization_solver,
+    mode::gcv_mitchell; silent=false)
 
     s̃ = svds.S
     ñ = length(s̃)
@@ -243,7 +247,7 @@ function find_alpha(svds::svd_kernel_struct,
     #Initial guess (overestimate)
     α = sum(s̃ .^ 2) / ñ
 
-    if any(isa.( (solver,), (
+    if any(isa.((solver,), (
         cdL1,
         pdhgm,
     )))
@@ -258,7 +262,7 @@ function find_alpha(svds::svd_kernel_struct,
 
     conditions = [true for _ in 1:3]
 
-    while all(conditions) 
+    while all(conditions)
 
         silent ? nothing : display("Testing α = $(round(α,sigdigits=3))")
 
@@ -275,7 +279,7 @@ function find_alpha(svds::svd_kernel_struct,
         ]
 
         # If the gcv score dropped, save the solution
-        if conditions[1] 
+        if conditions[1]
             f_star = copy(f)
         end
 
@@ -294,9 +298,9 @@ end
 Find alpha via univariate optimization.
 """
 function find_alpha(svds::svd_kernel_struct,
-                   solver::regularization_solver,
-                   mode::find_alpha_univariate; silent = true
-                   )
+    solver::regularization_solver,
+    mode::find_alpha_univariate; silent=true
+)
 
     local f
     if mode.search_method == :gcv
@@ -311,9 +315,9 @@ function find_alpha(svds::svd_kernel_struct,
         f,
         mode.lower, mode.upper,
         mode.algorithm,
-        abs_tol = mode.abs_tol,
-        rel_tol = mode.rel_tol,
-        show_trace = !silent
+        abs_tol=mode.abs_tol,
+        rel_tol=mode.rel_tol,
+        show_trace=!silent
     )
 
     α = sol.minimizer
@@ -330,9 +334,9 @@ end
 Find alpha using Fminbox optimization.
 """
 function find_alpha(svds::svd_kernel_struct,
-                    solver::regularization_solver,
-                    mode::find_alpha_box ; silent = true
-                    )
+    solver::regularization_solver,
+    mode::find_alpha_box; silent=true
+)
 
     local f
     if mode.search_method == :gcv
@@ -347,7 +351,7 @@ function find_alpha(svds::svd_kernel_struct,
         f,
         [0], [Inf], [mode.start],
         Fminbox(mode.algorithm),
-        change_field(mode.opts, show_trace = !silent)
+        change_field(mode.opts, show_trace=!silent)
     )
 
     α = sol.minimizer[1]
@@ -365,13 +369,13 @@ Test `n` alpha values between `lower` and `upper` and select the one
 which is at the heel of the L curve, accoding to Hansen 2010.
 """
 function find_alpha(svds::svd_kernel_struct,
-                   solver::regularization_solver,
-                   mode::lcurve_range; silent = false
-                   )
+    solver::regularization_solver,
+    mode::lcurve_range; silent=false
+)
 
-    alphas = exp10.(range(log10(mode.lowest_value), 
-                          log10(mode.highest_value), 
-                          mode.number_of_steps))
+    alphas = exp10.(range(log10(mode.lowest_value),
+        log10(mode.highest_value),
+        mode.number_of_steps))
 
     curvatures = zeros(length(alphas))
 

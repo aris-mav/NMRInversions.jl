@@ -19,8 +19,8 @@ function scale_to_one(a::AbstractArray)
 end
 
 "Defining this here so that it works on julia 1.10"
-function logrange(a,b,c)
-    exp10.(range(log10(a),log10(b),c))
+function logrange(a, b, c)
+    exp10.(range(log10(a), log10(b), c))
 end
 
 """
@@ -31,7 +31,7 @@ function change_field(x::T; kwargs...) where {T}
     kw = Dict(kwargs)
 
     # Get the fields in the correct positional order
-    vals = [ get(kw, f, getfield(x, f)) for f in fieldnames(T) ]
+    vals = [get(kw, f, getfield(x, f)) for f in fieldnames(T)]
 
     # Call the canonical positional constructor
     return T(vals...)
@@ -87,12 +87,14 @@ function selections(res::InversionData{2})
     points = [[i, j] for i in x, j in y] #important, used by inpolygon later
     mask = zeros(size(points))
 
-    polygons = res.selections 
+    polygons = res.selections
     selections = [zeros(size(F)) for _ in 1:length(polygons)]
 
     for (i, polygon) in enumerate(polygons)
-        mask .= [PolygonOps.inpolygon(p, polygon; in=1, on=1, out=0) for p in points]
-        selections[i] .= mask .* z 
+        mask .= [
+            PolygonOps.inpolygon(p, polygon; in=1, on=1, out=0) for p in points
+        ]
+        selections[i] .= mask .* z
     end
 
     return selections
@@ -113,10 +115,10 @@ function autophase(data::ExperimentData; rotation::Real=0)
 
     # Declare which points should be the (near) maxima for each type 
     rules = [
-        IR   => last,
-        SR   => last,
+        IR => last,
+        SR => last,
         CPMG => first,
-        PFG  => first,
+        PFG => first,
     ]
 
     for (type, func) in rules
@@ -127,7 +129,7 @@ function autophase(data::ExperimentData; rotation::Real=0)
 
         # index all elements (:) of the chosen dimension, 1 for other dimensions
         idx = ntuple(
-            i -> i == dim ? (:) : 1, 
+            i -> i == dim ? (:) : 1,
             ndims(y)
         )
 
@@ -135,7 +137,7 @@ function autophase(data::ExperimentData; rotation::Real=0)
         y_slice = y[idx...]
 
         # isolate n data points (not too many)
-        n = min(length(y_slice) ÷ 5 , 10)
+        n = min(length(y_slice) ÷ 5, 10)
         y_slice = func(y_slice, n)
 
         # look at the angles of these points
@@ -173,7 +175,7 @@ function _selection_indices(r::InversionData{1})
             _, low = findmin(x -> abs(x - s[1][1]), r.axes[1])
             _, high = findmin(x -> abs(x - s[2][1]), r.axes[1])
             low:high
-        end 
+        end
         for s in r.selections
     ]
 end
@@ -186,14 +188,14 @@ the selections in the input structure, and a
 vector with the respective area fractions of 
 these selections.
 """
-function weighted_averages(r::InversionData{1} ; silent::Bool = false)
+function weighted_averages(r::InversionData{1}; silent::Bool=false)
 
     distribution = r.data .* r.filter
     wa = Vector(undef, length(r.selections))
     areas = Vector(undef, length(r.selections))
     total_area = sum(distribution)
 
-    for (i,idx) in enumerate(_selection_indices(r))
+    for (i, idx) in enumerate(_selection_indices(r))
 
         # prevents total area above 100 if selections are touching
         idx = first(idx)+1:last(idx)
@@ -203,16 +205,16 @@ function weighted_averages(r::InversionData{1} ; silent::Bool = false)
         areas[i] = area / total_area
 
         lbl = if r.axes[1] isa Union{IR,SR}
-            ["<T₁>","s"]
+            ["<T₁>", "s"]
         elseif r.axes[1] isa CPMG
-            ["<T₂>","s"]
+            ["<T₂>", "s"]
         elseif r.axes[1] isa PFG
             ["<D>", "m²/s"]
         end
 
         if !silent
             display("Selection $(collect('a':'z')[i]) :")
-            display(lbl[1] * " = $(round(wa[i], sigdigits=4)) "*lbl[2])
+            display(lbl[1] * " = $(round(wa[i], sigdigits=4)) " * lbl[2])
             display("Area = $(round(areas[i], sigdigits=4) * 100) %")
             display("")
         end
@@ -228,7 +230,7 @@ Return two vectors with the weighted averages
 for the selections in the input structure, one for each dimension,
 as well as a vector with the volume fractions of these selections.
 """
-function weighted_averages(r::InversionData{2}; silent::Bool = false)
+function weighted_averages(r::InversionData{2}; silent::Bool=false)
 
     wa_indir = Vector(undef, length(r.selections))
     wa_dir = Vector(undef, length(r.selections))
@@ -241,7 +243,7 @@ function weighted_averages(r::InversionData{2}; silent::Bool = false)
     points = [[i, j] for i in x, j in y]
     mask = zeros(size(points))
 
-    for (i,s) in enumerate(r.selections)
+    for (i, s) in enumerate(r.selections)
 
         mask .= [PolygonOps.inpolygon(p, s; in=1, on=1, out=0) for p in points]
         spo = mask .* z
@@ -249,25 +251,33 @@ function weighted_averages(r::InversionData{2}; silent::Bool = false)
         indir_dist = vec(sum(spo, dims=2))
         dir_dist = vec(sum(spo, dims=1))
 
-        wa_indir[i] = indir_dist' *  y / sum(spo)
-        wa_dir[i] = dir_dist' *  y / sum(spo)
-        volumes[i] = sum(spo)/sum(z)
+        wa_indir[i] = indir_dist' * y / sum(spo)
+        wa_dir[i] = dir_dist' * y / sum(spo)
+        volumes[i] = sum(spo) / sum(z)
 
         labels = Dict(
-            :IR => ["<T₁>","s"],
-            :SR => ["<T₁>","s"],
-            :CPMG => ["<T₂>","s"],
+            :IR => ["<T₁>", "s"],
+            :SR => ["<T₁>", "s"],
+            :CPMG => ["<T₂>", "s"],
             :PFG => ["<D>", "m²/s"],
         )
         dir_lbl = labels[nameof(typeof(r.axes[1]))]
         ind_lbl = labels[nameof(typeof(r.axes[2]))]
 
         if !silent
-            display("Selection $(collect('a':'z')[i]) :")
-            display(ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) "*ind_lbl[2])
-            display(dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) "*dir_lbl[2])
+            display(
+                "Selection $(collect('a':'z')[i]) :"
+            )
+            display(
+                ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) " * ind_lbl[2]
+            )
+            display(
+                dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) " * dir_lbl[2]
+            )
             if r.axes[2] isa Union{IR,SR} && r.axes[1] isa CPMG
-                display("T₁/T₂ = $(round(wa_indir[i]/wa_dir[i], sigdigits=2)) ")
+                display(
+                    "T₁/T₂ = $(round(wa_indir[i]/wa_dir[i], sigdigits=2)) "
+                )
             end
             display("Volume = $(round(volumes[i], sigdigits=4) * 100) %")
             println()

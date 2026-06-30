@@ -22,55 +22,57 @@ struct cdL1 <: regularization_solver
     iterations::Int
     tol::Real
 end
-cdL1(;iterations::Int=10000, tol::Real=1e-5) = cdL1(iterations, tol)
+cdL1(; iterations::Int=10000, tol::Real=1e-5) = cdL1(iterations, tol)
 
-function solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, solver::cdL1)
+function solve_regularization(
+    K::AbstractMatrix, g::AbstractVector, α::Real, solver::cdL1
+)
     return solve_ls_l1_cd(K, g, α, solver.iterations, solver.tol)
 end
 
 # has been split into two functions, to make iter and tol type-stable
 function solve_ls_l1_cd(
-    K::AbstractMatrix{T}, 
-    g::AbstractVector{T}, 
-    α::Real, 
-    iter::Int, 
+    K::AbstractMatrix{T},
+    g::AbstractVector{T},
+    α::Real,
+    iter::Int,
     tol::Real
 ) where T
 
     n = size(K, 2)
-    
+
     # Pre-calculate squared column norms and their reciprocals
     col_norms_sq = vec(sum(abs2, K, dims=1))
     inv_col_norms = 1 ./ col_norms_sq
-    
+
     f = zeros(T, n)
-    r = K*f - g
+    r = K * f - g
 
     # mX = zeros(T, n, iter)
 
     for i in 2:iter
-        δ_max = zero(T) 
-        
+        δ_max = zero(T)
+
         for j in 1:n
             vK = view(K, :, j)
             old_fj = f[j]
-            
+
             β = col_norms_sq[j] * old_fj - dot(vK, r)
-            
+
             # Soft-thresholding
             new_fj = sign(β) * max(abs(β) - α, zero(T)) * inv_col_norms[j]
 
             δ = abs(new_fj - old_fj)
             if δ > δ_max
                 δ_max = δ
-            end           
+            end
 
             # Update residual: r_new = r_old + Kj * (new_fj - old_fj)
             diff = new_fj - old_fj
             if abs(diff) > 1e-15 # Optimization: only update if change is meaningful
-                axpy!(diff, vK, r) 
+                axpy!(diff, vK, r)
             end
-            
+
             f[j] = new_fj
         end
 

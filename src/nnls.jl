@@ -17,21 +17,23 @@ Defaults to `0`, where `L` becomes the Identity matrix.
     * `:fnnls`
     * `:pivot`
 """
-struct nnls <: regularization_solver 
-    L::Union{Int, AbstractMatrix}
+struct nnls <: regularization_solver
+    L::Union{Int,AbstractMatrix}
     algorithm::Symbol
 end
 
-nnls(;L=0, algorithm=:nnls) = nnls(L, algorithm)
+nnls(; L=0, algorithm=:nnls) = nnls(L, algorithm)
 
 
-function NMRInversions.solve_regularization(K::AbstractMatrix, g::AbstractVector, α::Real, solver::nnls)
+function NMRInversions.solve_regularization(
+    K::AbstractMatrix, g::AbstractVector, α::Real, solver::nnls
+)
 
-    L = if isa(solver.L,Int)
+    L = if isa(solver.L, Int)
         NMRInversions.Γ(size(K, 2), solver.L)
     else
-        if size(solver.L, 2) == size(K, 2) 
-            solver.L 
+        if size(solver.L, 2) == size(K, 2)
+            solver.L
         else
             throw("Size mismatch between `solver.L` and the Kernel.")
         end
@@ -40,7 +42,7 @@ function NMRInversions.solve_regularization(K::AbstractMatrix, g::AbstractVector
     A = [K; √(α) .* L]
     b = [g; zeros(size(A, 1) - size(g, 1))]
 
-    f = vec(nonneg_lsq(A, b ; alg=solver.algorithm))
+    f = vec(nonneg_lsq(A, b; alg=solver.algorithm))
 
     r = K * f - g
 

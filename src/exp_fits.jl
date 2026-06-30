@@ -15,7 +15,7 @@ mexp([a,b,c,d,e,f] , x) = a * exp.( (1/b) * x) + c * exp.((1/d) * x) + e * exp.(
 . . .
 
 """
-function mexp(u::Vector{<:Number}, ax::T) where {T <: DataAxis}
+function mexp(u::Vector{<:Number}, ax::T) where {T<:DataAxis}
 
     if length(u) % 2 != 0
         throw(
@@ -23,7 +23,7 @@ function mexp(u::Vector{<:Number}, ax::T) where {T <: DataAxis}
         )
     end
 
-    if ax isa Union{IR, SR}
+    if ax isa Union{IR,SR}
         return sum(@view u[1:2:end]) .- (ax isa IR ? 2 : 1) .* _mexp(u, ax)
     else
         return _mexp(u, ax)
@@ -43,7 +43,7 @@ Returns the sum of squared differences between the data and the model.
 function mexp_loss(u, p)
     x = p[1]
     y = p[2]
-    return norm((mexp(u, x) .- y) , p[3])
+    return norm((mexp(u, x) .- y), p[3])
 end
 
 export expfit
@@ -86,13 +86,13 @@ Numbers of parameters beyond tri-exponential can also be used, but it is not rec
 """
 function expfit(
     input::ExperimentData{1},
-    n::Union{Int, Vector{<:Real}}=1;
-    solver= IPNewton(),
-    scale::Bool = false,
-    L::Int = 2,
+    n::Union{Int,Vector{<:Real}}=1;
+    solver=IPNewton(),
+    scale::Bool=false,
+    L::Int=2,
 )
 
-    if scale 
+    if scale
         # copy so that original data is not mutated
         input = deepcopy(input)
         scale_to_one!(input.data)
@@ -101,34 +101,34 @@ function expfit(
     x = input.axes[1]
     y = real.(input.data)
 
-    if isa(n,Int) 
+    if isa(n, Int)
 
         # Make an educated guess of the initial parameters
         if x isa PFG
             u0 = [
-                v for l in 1:n for v in ( 
-                    maximum(y)/n ,maximum(x)/100 * 10.0^(-(l/2 -0.5)) 
-                ) 
+                v for l in 1:n for v in (
+                    maximum(y) / n, maximum(x) / 100 * 10.0^(-(l / 2 - 0.5))
+                )
             ]
-        else 
+        else
             u0 = [
                 v for l in 1:n for v in (
-                    maximum(y)/n ,maximum(x)/5 * 10.0^(-(l/2))
+                    maximum(y) / n, maximum(x) / 5 * 10.0^(-(l / 2))
                 )
             ]
         end
 
-    println(u0)
+        println(u0)
 
-    elseif isa(n,Vector)
+    elseif isa(n, Vector)
 
         u0 = Float64.(n)
 
     end
 
     u = optimize(
-        u -> mexp_loss(u, (x, y, L)), 
-        (x[1]/10) .* ones(length(u0)), Inf .* ones(length(u0)), u0, 
+        u -> mexp_loss(u, (x, y, L)),
+        (x[1] / 10) .* ones(length(u0)), Inf .* ones(length(u0)), u0,
         solver
     ).minimizer
 
@@ -136,41 +136,41 @@ function expfit(
     x isa PFG ? x_ax = "b" : x_ax = "t"
 
     # Determine whether there should be a multiplication or a division in the exp() formula 
-    x isa PFG ?  op = "*" : op = "/"
+    x isa PFG ? op = "*" : op = "/"
 
-    max_value = sum([u[i] for i in 1:2:length(u)]) 
+    max_value = sum([u[i] for i in 1:2:length(u)])
 
     # Get the fit's equation as a string
     eq = join(
         [
-            (i == 1 ? "" : " + ") * 
-            string(round(u[i], sigdigits=2)) * 
-            " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) * 
-            ")" 
-            for i in 1:2:length(u)
-        ]
+        (i == 1 ? "" : " + ") *
+        string(round(u[i], sigdigits=2)) *
+        " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) *
+        ")"
+        for i in 1:2:length(u)
+    ]
     )
 
     # Normalised version of the fit equation
-    eqn = string( round(max_value, sigdigits=2)) * " * (" * 
-        join(
-            [
-                (i == 1 ? "" : " + ") * 
-                string(round(u[i] / max_value, sigdigits=2)) * 
-                " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) * ")" 
-                for i in 1:2:length(u)
-            ]
-        ) * ")"
+    eqn = string(round(max_value, sigdigits=2)) * " * (" *
+          join(
+              [
+              (i == 1 ? "" : " + ") *
+              string(round(u[i] / max_value, sigdigits=2)) *
+              " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) * ")"
+              for i in 1:2:length(u)
+          ]
+          ) * ")"
 
     if x isa IR
-        unstr = string(round(max_value,sigdigits = 2))
-        eq = unstr * " - 2 * (" * eq * ")" 
-        eqn = unstr * " - 2 * " *  eqn   
+        unstr = string(round(max_value, sigdigits=2))
+        eq = unstr * " - 2 * (" * eq * ")"
+        eqn = unstr * " - 2 * " * eqn
 
     elseif x isa SR
-        unstr = string(round(max_value,sigdigits = 2))
-        eq = unstr * " -" * "(" * eq * ")" 
-        eqn = unstr * " -" *  eqn   
+        unstr = string(round(max_value, sigdigits=2))
+        eq = unstr * " -" * "(" * eq * ")"
+        eqn = unstr * " -" * eqn
     end
 
     return ExpfitData(
