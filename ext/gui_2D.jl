@@ -376,7 +376,7 @@ function Makie.plot(res::NMRInversions.InversionData{2})
 
     Label(
         gui[9,10:19],
-        "α = $(round(res.alpha, sigdigits=3)), SNR = $(round(res.SNR, digits=1))"
+        "α = $(round(res.alpha, sigdigits=3)), SNR = $(round(res.input.SNR, digits=1))"
     )
 
     xcoord = Observable(0.0)

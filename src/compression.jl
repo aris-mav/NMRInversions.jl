@@ -1,10 +1,3 @@
-# abstract type DataAxis{T} <: AbstractVector{T} end;
-
-# struct ExperimentData{D}
-#     axes::NTuple{D, DataAxis}
-#     data::AbstractArray{<:Number, D}
-# end
-
 """
     window_average(G::Matrix{T}, target_rows::Int) where T
 
@@ -14,8 +7,9 @@ precision matrix (inverse of the covariance matrix).
 """
 function window_average(
     input::ExperimentData,
-    target_length::Int,
-    dims::Int = 1,
+    target_length::Int=128,
+    dims::Int=1;
+    log::Bool=true,
 )
     x = input.axes[dims]
     data = input.data
@@ -23,12 +17,17 @@ function window_average(
     original_length = length(x)
 
     if original_length <= target_length
-        error("Target length must be smaller than the current length.")
+        @info("Target length must be smaller than the current length.")
+        return input
     end
 
     # Construct evenly spaced bin edges in axis coordinate space
     # These define how we partition the axis range into compression windows
-    edges = range(first(x), last(x), length = target_length + 1)
+    if log
+        edges = NMRInversions.logrange(first(x), last(x), target_length + 1)
+    else
+        edges = range(first(x), last(x), length=target_length + 1)
+    end
 
     # Convert those axis-space edges into index-space boundaries
     # Each edge is mapped to the first index where x >= edge
@@ -43,27 +42,29 @@ function window_average(
         idx_edges[i] = max(idx_edges[i], idx_edges[i-1])
     end
 
-    # Compute the shape of the output array:
-    # same as input, but with compressed length along `dims`
+    bin_counts = [idx_edges[b+1] - idx_edges[b] for b in 1:target_length]
+    W = Diagonal(bin_counts)
+
     new_size = Base.setindex(size(data), target_length, dims)
-
-    # Create new axis container of same type as original axis
-    # but with compressed length
     new_axis = typeof(x)(similar(x.x, target_length))
-
-    # Preallocate output data array with correct shape
     new_data = similar(input.data, new_size)
 
-    # Loop over each compression bin
     for b in 1:target_length
 
         # Define index range for this bin in original data
         lo = idx_edges[b]
-        hi = idx_edges[b + 1] - 1
+        hi = idx_edges[b+1] - 1
 
         # Safety check: ensure bin is not empty
         if lo > hi
-            error("Encountered an empty bin. Try using fewer bins.")
+            @warn(
+            """
+            Encountered an empty bin. 
+            Try using fewer bins. 
+            Returning original input.
+            """
+            )
+            return input
         end
 
         # Convert boundaries into a Julia range for slicing
@@ -75,14 +76,14 @@ function window_average(
         # Build a multidimensional index that selects this bin along `dims`
         # and selects all elements along other dimensions
         select = ntuple(d ->
-            d == dims ? inds : Colon(),
+                d == dims ? inds : Colon(),
             ndims(data)
         )
 
         # Map the current bin's target position into a multi-dimensional 
         # index slice, keeping the target dimension intact for uniform array shapes.
         out_select = ntuple(d ->
-            d == dims ? (b:b) : Colon(),
+                d == dims ? (b:b) : Colon(),
             ndims(data)
         )
 
@@ -91,9 +92,10 @@ function window_average(
         new_data[out_select...] .= mean(view(data, select...), dims=dims)
     end
 
-    # replace only the compressed axis, keep other axes unchanged
     return ExperimentData(
         Base.setindex(input.axes, new_axis, dims),
-        new_data
+        new_data,
+        calc_snr(new_data),
+        Base.setindex(input.W, W, dims),
     )
 end
