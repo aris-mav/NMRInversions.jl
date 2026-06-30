@@ -101,16 +101,33 @@ export ExperimentData
 Struct containing NMR data.
 - `axes` should be a tuple of `DataAxis`s with the `x` data in each of them.
 - `data` should be an aray of n-dimensions with the recorded data.
+- `SNR` is the signal-to-noise ratio (calculated automatically for complex data)
+- `W` is a tuple containing the precision matrix (inverse of the covariance 
+matrix) in each of the dimensions. Relevant for compressed data, identity by 
+default.
 """
 struct ExperimentData{D}
     axes::NTuple{D, DataAxis}
     data::AbstractArray{<:Number, D}
+    SNR::Real
+    W::NTuple{D, Union{AbstractMatrix, UniformScaling}}
 end
 
 # Flexible outer constructor to catch dimension size mismatches
+"""
+    ExperimentData(
+    axes::Tuple{Vararg{DataAxis}}, 
+    data::AbstractArray{<:Number,D};
+    compress = false
+) where {D}
+
+Constructor for `ExperimentalData`, calculating SNR and compressing the data if 
+needed.
+"""
 function ExperimentData(
     axes::Tuple{Vararg{DataAxis}}, 
-    data::AbstractArray{<:Number,D}
+    data::AbstractArray{<:Number,D};
+    compress = false
 ) where {D}
 
     if length(axes) != D
@@ -134,7 +151,15 @@ function ExperimentData(
         end
     end
 
-    return ExperimentData{D}(axes, data)
+    original_data = ExperimentData{D}(
+        axes, data, calc_snr(data), ntuple(i -> LinearAlgebra.I, D)
+    )
+
+    if compress
+        return window_average(original_data)
+    else
+        return original_data
+    end
 end
 
 # Outer constructor for 1-dimensional case
@@ -171,7 +196,6 @@ Output of the `invert` function, containing all the relevant information:
 - `data` : the results of the inversion.
 - `residuals` : an array containing the residuals of the fit.
 - `alpha` : the smooting term used to produce the `data` array.
-- `SNR` : the signal-to-noise ratio of the input data (only if complex data are provided).
 - `filter` : an array working as a mask to the `data` array (mostly for visualisation).
 - `selections` : polygon selections for the `data` array (mostly for visualisation).
 - `title` : a title descibing this object (mostly for visualisation).
@@ -182,7 +206,6 @@ mutable struct InversionData{D}
     data::AbstractArray{<:Number, D}
     residuals::AbstractArray
     alpha::Real
-    SNR::Real
     filter::AbstractArray{<:Number, D}
     selections::Vector{Vector{Vector}} 
     title::String

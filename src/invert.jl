@@ -80,7 +80,6 @@ function invert(
         data,
         r, 
         α, 
-        calc_snr(input.data),
         ones(eltype(data), size(data)), 
         [], 
         "",
