@@ -31,7 +31,7 @@ data = [x[6:end] for x in data]
 
 # use broadcasting to invert the whole array of data, 
 # returning an array of results
-results = invert.(data, lims=(-4, 1, 256))
+results = invert.(data)
 
 # remove the .tnt extension from the filename and use it as a title
 titles = chopsuffix.(files, ".tnt")
@@ -51,20 +51,20 @@ ax = Axis(
     xscale=log10,
     yticklabelsvisible = false,
     limits = (
-        minimum(results[1].X), maximum(results[1].X), -0.1, length(results)
+        minimum(results[1].axes[1]), maximum(results[1].axes[1]), -0.1, length(results)
     ),
     yticks= 0:length(results),
 )
 
 # find the largest value in the distributions (used below to set them apart)
-max_value = maximum(val for r in results for val in r.f)
+max_value = maximum(val for r in results for val in r.data)
 
 # plot the results, one stacked on top of the other
 for (i, r) in enumerate(results)
     lines!(
         ax, 
-        r.X, 
-        r.f ./ max_value .+ (i-1), 
+        r.axes[1], 
+        r.data ./ max_value .+ (i-1), 
         colormap=:tab10, colorrange=(1, 10), color=i,
     )
     text!(
