@@ -9,7 +9,7 @@ function window_average(
     input::ExperimentData,
     target_length::Int=128,
     dims::Int=1;
-    log::Bool=true,
+    log::Bool=false,
 )
     x = input.axes[dims]
     data = input.data
@@ -36,10 +36,20 @@ function window_average(
     # Ensure the final boundary includes the full array
     idx_edges[end] = original_length + 1
 
-    # Fix potential issues where repeated indices create empty bins
-    # (can happen if x is non-uniform or has duplicates)
     for i in 2:length(idx_edges)
-        idx_edges[i] = max(idx_edges[i], idx_edges[i-1])
+        idx_edges[i] = max(idx_edges[i], idx_edges[i-1] + 1)
+    end
+
+    if idx_edges[end] > original_length + 1
+        @warn """
+        Data size ($original_length) is too small for a log-spaced 
+            target_length of $target_length. Capping boundaries."
+        """
+        for i in 1:length(idx_edges)
+            if idx_edges[i] > original_length + 1
+                idx_edges[i] = original_length + 1
+            end
+        end
     end
 
     bin_counts = [idx_edges[b+1] - idx_edges[b] for b in 1:target_length]
@@ -57,26 +67,20 @@ function window_average(
 
         # Safety check: ensure bin is not empty
         if lo > hi
-            @warn(
-            """
-            Encountered an empty bin. 
-            Try using fewer bins. 
-            Returning original input.
-            """
-            )
+            @warn("Encountered an empty bin. Returning original input.")
             return input
         end
 
         # Convert boundaries into a Julia range for slicing
-        inds = lo:hi
+        idx = lo:hi
 
         # Compute new axis value as the mean coordinate of the original axis
-        new_axis[b] = mean(view(x.x, inds))
+        new_axis[b] = mean(view(x.x, idx))
 
         # Build a multidimensional index that selects this bin along `dims`
         # and selects all elements along other dimensions
         select = ntuple(d ->
-                d == dims ? inds : Colon(),
+                d == dims ? idx : Colon(),
             ndims(data)
         )
 
