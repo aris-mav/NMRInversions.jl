@@ -1,9 +1,11 @@
 "Superset of supported solvers for regularization."
-abstract type regularization_solver end ; export regularization_solver
+abstract type regularization_solver end;
+export regularization_solver
 
 "Superset of supported methods to determine the α parameter in tikhonov
 regularization."
-abstract type alpha_optimizer end; export alpha_optimizer
+abstract type alpha_optimizer end;
+export alpha_optimizer
 
 """
     DataAxis{T} <: AbstractVector{T}
@@ -18,7 +20,8 @@ Subtypes are:
 - `FID` (Free induction decay)
 - `FC` (Field cycling)
 """
-abstract type DataAxis{T} <: AbstractVector{T} end; export DataAxis
+abstract type DataAxis{T} <: AbstractVector{T} end;
+export DataAxis
 
 # Make DataAxis indexable
 #
@@ -43,7 +46,10 @@ end
 `DataAxis` type for inversion recovery measurements.
 The `x` field contains the corresponding time data.
 """
-struct IR{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export IR
+struct IR{T<:Real} <: DataAxis{T}
+    x::AbstractVector{T}
+end;
+export IR
 
 """
     SR{T<:Real} <: DataAxis{T}
@@ -51,7 +57,10 @@ struct IR{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export IR
 `DataAxis` type for saturation recovery measurements.
 The `x` field contains the corresponding time data.
 """
-struct SR{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export SR
+struct SR{T<:Real} <: DataAxis{T}
+    x::AbstractVector{T}
+end;
+export SR
 
 """
     CPMG{T<:Real} <: DataAxis{T}
@@ -59,7 +68,10 @@ struct SR{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export SR
 `DataAxis` type for CPMG measurements.
 The `x` field contains the corresponding time data.
 """
-struct CPMG{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export CPMG
+struct CPMG{T<:Real} <: DataAxis{T}
+    x::AbstractVector{T}
+end;
+export CPMG
 
 """
     PFG{T<:Real} <: DataAxis{T}
@@ -67,7 +79,10 @@ struct CPMG{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export CPMG
 `DataAxis` type for pulsed field gradient measurements.
 The `x` field contains the corresponding b-factor data.
 """
-struct PFG{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export PFG
+struct PFG{T<:Real} <: DataAxis{T}
+    x::AbstractVector{T}
+end;
+export PFG
 
 """
     Spectrum{T<:Real} <: DataAxis{T}
@@ -75,7 +90,10 @@ struct PFG{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export PFG
 `DataAxis` type for NMR spectra.
 The `x` field contains the corresponding ppm data.
 """
-struct Spectrum{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export Spectrum
+struct Spectrum{T<:Real} <: DataAxis{T}
+    x::AbstractVector{T}
+end;
+export Spectrum
 
 """
     FID{T<:Real} <: DataAxis{T}
@@ -83,7 +101,10 @@ struct Spectrum{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export Spectru
 `DataAxis` type for free induction decay measurements.
 The `x` field contains the corresponding time data.
 """
-struct FID{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export FID
+struct FID{T<:Real} <: DataAxis{T}
+    x::AbstractVector{T}
+end;
+export FID
 
 """
     FC{T<:Real} <: DataAxis{T}
@@ -91,7 +112,10 @@ struct FID{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export FID
 `DataAxis` type for field cycling (or "dispersion") measurements.
 The `x` field contains the corresponding B0 data.
 """
-struct FC{T<:Real} <: DataAxis{T} x::AbstractVector{T} end; export FC
+struct FC{T<:Real} <: DataAxis{T}
+    x::AbstractVector{T}
+end;
+export FC
 
 
 # Define experiment data containing both Axes and data 
@@ -107,10 +131,10 @@ matrix) in each of the dimensions. Relevant for compressed data, identity by
 default.
 """
 struct ExperimentData{D}
-    axes::NTuple{D, DataAxis}
-    data::AbstractArray{<:Number, D}
+    axes::NTuple{D,DataAxis}
+    data::AbstractArray{<:Number,D}
     SNR::Real
-    W::NTuple{D, Union{AbstractMatrix, UniformScaling}}
+    W::NTuple{D,Union{AbstractMatrix,UniformScaling}}
 end
 
 # Flexible outer constructor to catch dimension size mismatches
@@ -125,9 +149,9 @@ Constructor for `ExperimentalData`, calculating SNR and compressing the data if
 needed.
 """
 function ExperimentData(
-    axes::Tuple{Vararg{DataAxis}}, 
+    axes::Tuple{Vararg{DataAxis}},
     data::AbstractArray{<:Number,D};
-    compress = false
+    compress=false
 ) where {D}
 
     if length(axes) != D
@@ -178,7 +202,7 @@ Base.axes(d::ExperimentData, dim::Int) = axes(d.data, dim)
 function Base.getindex(E::ExperimentData{D}, I...) where {D}
 
     idx = Base.to_indices(E.data, I)
-    
+
     return ExperimentData(
         ntuple(i -> E.axes[i][idx[i]], D),
         E.data[idx...]
@@ -202,12 +226,12 @@ Output of the `invert` function, containing all the relevant information:
 """
 mutable struct InversionData{D}
     input::ExperimentData{D}
-    axes::NTuple{D, DataAxis}
-    data::AbstractArray{<:Number, D}
+    axes::NTuple{D,DataAxis}
+    data::AbstractArray{<:Number,D}
     residuals::AbstractArray
     alpha::Real
-    filter::AbstractArray{<:Number, D}
-    selections::Vector{Vector{Vector}} 
+    filter::AbstractArray{<:Number,D}
+    selections::Vector{Vector{Vector}}
     title::String
 end
 
@@ -259,7 +283,7 @@ Defaults to `0`, where `L` becomes the Identity matrix.
 This one is still experimental and not well-tested, 
 please submit an issue if you encounter any difficulties.
 """
-struct jump_nnls <: regularization_solver 
+struct jump_nnls <: regularization_solver
     order::Int
     solver::Symbol
 end

@@ -20,14 +20,18 @@ automatically (that is also the default option).
 """
 function invert(
     input::ExperimentData{D};
-    axes::NTuple{D, Union{AbstractVector{<:Real}, AbstractRange, Nothing}} = ntuple(i -> nothing, Val(D)),
-    alpha::Union{Real, alpha_optimizer} = gcv(),
-    solver::Union{regularization_solver, Type{<:regularization_solver}} = brd(),
-    silent::Bool = false,
-    scale::Bool = true,
+    axes::NTuple{
+        D,Union{AbstractVector{<:Real},AbstractRange,Nothing}
+    }=ntuple(i -> nothing, Val(D)),
+    alpha::Union{Real,alpha_optimizer}=gcv(),
+    solver::Union{
+        regularization_solver,Type{<:regularization_solver}
+    }=brd(),
+    silent::Bool=false,
+    scale::Bool=true,
 ) where {D}
 
-    if scale 
+    if scale
         # copy so that original data is not mutated
         input = deepcopy(input)
         scale_to_one!(input.data)
@@ -35,7 +39,7 @@ function invert(
 
     g = input.data
 
-    n_points = div(128, 2^(length(input.axes)-1) )
+    n_points = div(128, 2^(length(input.axes) - 1))
 
     axes = ntuple(Val(length(input.axes))) do i
         current_axis = axes[i]
@@ -43,9 +47,9 @@ function invert(
 
         if isnothing(current_axis)
             x = input.axes[i].x
-            lower, upper = x isa PFG ? 
-            (minimum(x)*7, maximum(x)*10) : 
-            (minimum(x)/7, maximum(x)*7)
+            lower, upper = x isa PFG ?
+                           (minimum(x) * 7, maximum(x) * 10) :
+                           (minimum(x) / 7, maximum(x) * 7)
 
             axis_type(collect(NMRInversions.logrange(lower, upper, n_points)))
 
@@ -62,26 +66,26 @@ function invert(
         f, r = solve_regularization(ker_struct.K, ker_struct.g, alpha, solver)
         f, r, alpha
     else
-        find_alpha(ker_struct, solver, alpha; silent = silent)
+        find_alpha(ker_struct, solver, alpha; silent=silent)
     end
 
     for i in eachindex(axes)
         if input.axes[i] isa PFG
             # convert to SI units
             axes[i] .= axes[i] ./ 1e9
-       end
+        end
     end
 
     data = reshape(f, length.(axes))
 
     return InversionData{D}(
-        input, 
-        axes, 
+        input,
+        axes,
         data,
-        r, 
-        α, 
-        ones(eltype(data), size(data)), 
-        [], 
+        r,
+        α,
+        ones(eltype(data), size(data)),
+        [],
         "",
     )
 end

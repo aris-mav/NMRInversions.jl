@@ -35,17 +35,17 @@ Arguments:
 - `y` is the recorded data, used to normalise the kernel.
 - `n` should be `1` for exponential and `2` for gaussian decays.
 """
-_kernel_eq(axis::IR, X; x0, y, n) = 
-    @. y[end] - (y[end] + abs(y[1])) * exp(-((axis.x-x0) / X)^n)
+_kernel_eq(axis::IR, X; x0, y, n) =
+    @. y[end] - (y[end] + abs(y[1])) * exp(-((axis.x - x0) / X)^n)
 
-_kernel_eq(axis::SR, X; x0, y, n) = 
-    @. y[end] * (1 - exp(-((axis.x-x0) / X))^n)
+_kernel_eq(axis::SR, X; x0, y, n) =
+    @. y[end] * (1 - exp(-((axis.x - x0) / X))^n)
 
-_kernel_eq(axis::CPMG, X; x0, y, n) = 
-    @. y[1] * exp(-((axis.x-x0) / X)^n)
+_kernel_eq(axis::CPMG, X; x0, y, n) =
+    @. y[1] * exp(-((axis.x - x0) / X)^n)
 
-_kernel_eq(axis::PFG, X; x0, y, n) = 
-    @. y[1] * exp(-((axis.x-x0) * X)^n)
+_kernel_eq(axis::PFG, X; x0, y, n) =
+    @. y[1] * exp(-((axis.x - x0) * X)^n)
 
 
 """
@@ -68,17 +68,17 @@ The output is a matrix, `K`.
 
 """
 function create_kernel(
-    x::DataAxis, 
-    X::AbstractVector{<:Real}; 
-    y::AbstractVector=ones(1), 
-    gaussian::Bool = false, 
+    x::DataAxis,
+    X::AbstractVector{<:Real};
+    y::AbstractVector=ones(1),
+    gaussian::Bool=false,
     x0::Real=0
 )
     return _kernel_eq(
-        x, X'; 
-        y= real.(y), 
-        n= gaussian ? 2 : 1,
-        x0= (isa(x, CPMG) ? x0 : x.x[1]), 
+        x, X';
+        y=real.(y),
+        n=gaussian ? 2 : 1,
+        x0=(isa(x, CPMG) ? x0 : x.x[1]),
     )
 end
 
@@ -88,7 +88,7 @@ end
 """
 function create_kernel(
     input::ExperimentData{1},
-    X::NTuple{1, AbstractVector},
+    X::NTuple{1,AbstractVector},
 )
 
     W_½ = sqrt(input.W[1])
@@ -96,9 +96,9 @@ function create_kernel(
     axis = input.axes[1]
     g = W_½ * input.data
 
-    usv = svd(W_½ * create_kernel(axis , X[1], y=g))
+    usv = svd(W_½ * create_kernel(axis, X[1], y=g))
 
-    idx = isnan(input.SNR) ? (:) : findall(i -> i .> (1 / input.SNR), usv.S) 
+    idx = isnan(input.SNR) ? (:) : findall(i -> i .> (1 / input.SNR), usv.S)
 
     U = usv.U[:, idx]
     S = usv.S[idx]
@@ -116,7 +116,7 @@ end
 """
 function create_kernel(
     input::ExperimentData{2},
-    X::NTuple{2, AbstractVector},
+    X::NTuple{2,AbstractVector},
 )
 
     axes = input.axes
@@ -128,8 +128,8 @@ function create_kernel(
     G = W1_½ * real.(data) * W2_½
 
     # Generate Kernels
-    K_dir = create_kernel(axes[1], X[1], y = vec(data[:,end]))
-    K_indir = create_kernel(axes[2], X[2], y = vec(data[1,:]))
+    K_dir = create_kernel(axes[1], X[1], y=vec(data[:, end]))
+    K_indir = create_kernel(axes[2], X[2], y=vec(data[1, :]))
 
     ## Perform SVD truncation
     usv_dir = svd(W1_½ * K_dir) #paper (13)
@@ -137,9 +137,9 @@ function create_kernel(
 
     # finding which singular components are contributed from K1 and K2
     # using outer product instead of Kronecker, to make indices more obvious
-    S21 = usv_indir.S * usv_dir.S' 
+    S21 = usv_indir.S * usv_dir.S'
 
-    idx = isnan(input.SNR) ? (:) : findall(i -> i .> (1 / input.SNR), S21) 
+    idx = isnan(input.SNR) ? (:) : findall(i -> i .> (1 / input.SNR), S21)
 
     s̃ = S21[idx]
     ñ = length(s̃)
@@ -154,7 +154,7 @@ function create_kernel(
     for k in 1:ñ
         # Get the specific vectors for this significant component
         v_indir = usv_indir.V[:, si[k]]
-        v_dir   = usv_dir.V[:, sj[k]]
+        v_dir = usv_dir.V[:, sj[k]]
 
         # The Kronecker product combines them into a single basis vector
         # This represents the joint "space" of both dimensions
