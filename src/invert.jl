@@ -20,7 +20,7 @@ automatically (that is also the default option).
 """
 function invert(
     input::ExperimentData{D};
-    axes::NTuple{D, Any} = ntuple(i -> nothing, Val(D)),
+    axes::NTuple{D, Union{AbstractVector{<:Real}, AbstractRange, Nothing}} = ntuple(i -> nothing, Val(D)),
     alpha::Union{Real, alpha_optimizer} = gcv(),
     solver::Union{regularization_solver, Type{<:regularization_solver}} = brd(),
     silent::Bool = false,
@@ -35,25 +35,26 @@ function invert(
 
     g = input.data
 
-    axes_mut = Union{Nothing, AbstractVector{<:Real}}[axes...]
-
     n_points = div(128, 2^(length(input.axes)-1) )
 
-    for i in eachindex(axes_mut)
-        if isnothing(axes_mut[i])
-            x = input.axes[i].x
-            lower, upper = if x isa PFG
-                minimum(x)*7 , maximum(x)*10
-            else
-                minimum(x)/7 , maximum(x)*7
-            end
-        end
-        axes_mut[i] = typeof(input.axes[i])(
-            collect( NMRInversions.logrange(lower, upper, n_points) )
-        )
-    end
+    axes = ntuple(Val(length(input.axes))) do i
+        current_axis = axes[i]
+        axis_type = typeof(input.axes[i])
 
-    axes = (axes_mut...,)
+        if isnothing(current_axis)
+            x = input.axes[i].x
+            lower, upper = x isa PFG ? 
+            (minimum(x)*7, maximum(x)*10) : 
+            (minimum(x)/7, maximum(x)*7)
+
+            axis_type(collect(NMRInversions.logrange(lower, upper, n_points)))
+
+        elseif current_axis isa AbstractRange
+            axis_type(collect(current_axis))
+        else
+            axis_type(current_axis)
+        end
+    end
 
     ker_struct = create_kernel(input.axes, axes, g)
 
