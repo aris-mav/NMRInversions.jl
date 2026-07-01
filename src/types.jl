@@ -176,7 +176,7 @@ function ExperimentData(
     end
 
     original_data = ExperimentData{D}(
-        axes, data, calc_snr(data), ntuple(i -> LinearAlgebra.I, D)
+        axes, data, calc_snr(axes, data), ntuple(i -> LinearAlgebra.I, D)
     )
 
     if compress
