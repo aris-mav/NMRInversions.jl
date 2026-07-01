@@ -1,6 +1,5 @@
 ## Plots for 1D inversions
-
-using NMRInversions: ExperimentData
+using NMRInversions
 """
     plot(res_mat::VecOrMat{inv_out_1D};kwargs...)
 
@@ -220,8 +219,11 @@ end
 function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.InversionData{1}; 
                       selections = false, offset::Real = 0, n_plots::Int =1, i = 1)
 
+    W_½ = sqrt(res.input.W[1])
     f = res.data .* res.filter
     x = res.input.axes[1]
+    g = res.input.data
+    wg = W_½ * g
 
     xfit = typeof(x)(
         exp10.(range(log10(x[1]), log10(x[end]), 512))
@@ -229,13 +231,13 @@ function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
 
     X = (x isa PFG ? res.axes[1] .* 1e9 : res.axes[1])
 
-    yfit = create_kernel(xfit, X , y = res.input.data) * f
+    yfit = create_kernel(xfit, X , y = wg) * f
 
-    r = create_kernel(x, X, y = res.input.data) * f - real.(res.input.data)
+    r = W_½ * create_kernel(x, X, y = wg) * f - real.(wg)
 
     scatter!(
         ax1, x, 
-        offset == 0 ? real.(res.input.data) : (scale_to_one!(real.(res.input.data)) .+ offset), 
+        offset == 0 ? real.(g) : (scale_to_one!(real.(g)) .+ offset), 
         colormap=:tab10, colorrange=(1, 10), color=i
     )
     lines!(
