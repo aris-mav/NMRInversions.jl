@@ -299,3 +299,30 @@ function scale_filter!(res::InversionData)
     scale = new_integral != 0 ? integral / new_integral : 0
     res.filter .= res.filter .* scale
 end
+
+"""
+    detect_spacing(x::AbstractVector)
+
+Figure out whether `x` is log-spaced (as opposed to linearly-spaced).
+"""
+function islogspaced(x::AbstractVector)
+
+    length(x) < 3 && error("Need at least 3 points for variance.")
+
+    lin_steps = diff(x)
+    lin_cv = std(lin_steps) / mean(lin_steps)
+
+    log_cv = if all(x .> 0)
+        log_steps = diff(log.(x))
+        std(log_steps) / mean(log_steps)
+    else
+        # Can't be log-spaced if there are negative numbers or zeros
+        Inf
+    end
+
+    if lin_cv < log_cv
+        return false
+    else
+        return true
+    end
+end
