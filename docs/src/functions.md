@@ -77,12 +77,12 @@ import_geospec
 For.tnt files from Tecmag consoles, `import_tnt`
 can be used. It should be noted however, that
 since pulse sequence implementations might vary,
-automatic parsing of the data into a `input1D` or
-`input2D` struct might fail. Therefore, the more
-manual `read_tnt_data` and `read_tnt_header`
-functions can be used for fine-tuned cases. If
-that sounds confusing, please submit an issue and
-we'll work on it!
+automatic parsing of the data into a
+`ExperimentData` structure might fail. Therefore,
+the more manual `read_tnt_data` and
+`read_tnt_header` functions can be used for
+fine-tuned cases. If that sounds confusing, please
+submit an issue and we'll work on it!
 
 ```@docs
 import_tnt
@@ -158,7 +158,7 @@ We basically take the `plot()` function offered by
 GLMakie and extend it to types from the package.
 
 
-You can use `plot()` for `input1D` or `input2D`
+You can use `plot()` for `ExperimentData`
 structures coming from import functions, e.g.:
 ```julia
 data = import_csv(IR, "./path/to/file.csv")

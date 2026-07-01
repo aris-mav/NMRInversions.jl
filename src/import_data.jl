@@ -8,7 +8,7 @@ The 2nd column should be the y data points.
 For imaginary numbers, the 2nd and 3rd columns can be used for 
 the real and imaginary part.
 
-The function reads the file and returns an `input1D` structure.
+The function reads the file and returns an `ExperimentData` structure.
 - `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
 - `file` is the path to the CSV file which contains the data (x, y) in two respective columns.
 
@@ -63,7 +63,7 @@ The 1st column should be the data point index.
 The 2nd column should include the x data point (time in ms).
 The 3rd column should be the y data points.
 
-The function reads the file and returns an `input1D` structure.
+The function reads the file and returns an `ExperimentData` structure.
 - `seq` is the 1D pulse sequence (e.g. IR, CPMG, PFG)
 - `file` is the path to the dps file which contains the data (x, y) in two respective columns.
 
@@ -371,7 +371,7 @@ end
 
 """
     import_tnt(seq, filename)
-Read data from a tecmag .tnt file, and return a `input1D` or `input2D` object with 
+Read data from a tecmag .tnt file, and return a `ExperimentData` object with 
 all the relevant information.
 
 This function is experimental, and since tecmag consoles work mainly with 
@@ -442,7 +442,7 @@ will open a file dialogue to select the files.
 
 The function reads the acqu.par.bak file to get the 
 acquisition parameters, and the .dat file to get the data. 
-The function returns an `input2D` structure.
+The function returns an `ExperimentData` structure.
 """
 function import_spinsolve(files=pick_multi_file(pwd()))
 
@@ -587,7 +587,7 @@ export import_geospec
 Import data from a .txt format, as exported by Geospec instruments.
 
 The function reads the relevant information, performs a phase correction on the data,
-and returns an `input1D` or `input2D` structure.
+and returns an `ExperimentData` structure.
 
 Calling this function without an argument by typing `import_geospec()` 
 will open a file dialog to select the .txt file.

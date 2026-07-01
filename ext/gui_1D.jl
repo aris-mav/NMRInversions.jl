@@ -1,9 +1,9 @@
 ## Plots for 1D inversions
 using NMRInversions
 """
-    plot(res_mat::VecOrMat{inv_out_1D};kwargs...)
+    plot(res_mat::VecOrMat{InversionData};kwargs...)
 
-Plot the results contained in a vector of `inv_out_1D` structures.
+Plot the results contained in a vector of `InversionData` structures.
 
 The keyword (optional) arguments are:
 
@@ -94,7 +94,7 @@ function redraw(fig::Figure,res::InversionData{1}, int_low, int_high)
 end
 
 """
-    plot(res::inv_out_1D)
+    plot(res::InversionData)
 
 Run the GUI to plot the 1D inversion results and select peaks you want to label.
 """

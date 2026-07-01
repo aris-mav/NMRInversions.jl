@@ -62,7 +62,7 @@ results = invert(data)
 
 !!! info
     The `results` variable above is an
-    `inv_out_1D` or `inv_out_2D` structure, which
+    `InversionData` structure, which
     contains all the relevant information produced
     by the `inversion` function. To access that
     information, we can look at the fields of the
@@ -113,7 +113,7 @@ plot(invert(import_spinsolve()))
     If you want a "quick and dirty" way to exclude
     some unwanted data points from your imported
     data, you may use indexing notation on the
-    `input1D`and `input2D` structures, just like
+    `ExperimentData` structures, just like
     you would on any Julia array! That can be very
     useful if some points are noisy.
 

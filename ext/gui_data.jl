@@ -1,5 +1,5 @@
 """
-    plot(data::input1D)
+    plot(data::ExperimentData)
 
 Quickly visualise the contents of a 1D NMR data structure.
 """
@@ -34,7 +34,7 @@ end
 
 
 """
-    plot(data::input2D)
+    plot(data::ExperimentData)
 
 Interactive GUI to visualise the contents of a 2D NMR data structure.
 """
