@@ -50,24 +50,43 @@ function Γ(m::Int, order::Int)
 end
 
 """
-    calc_snr(data)
+    calc_snr(axes, data)
+
 Calculate the Signal-to-Noise Ratio (SNR) from complex data,
 where the real part is (mostly) signal and the imaginary part is (mostly) noise.
 The STD of the latter half of the imaginary signal is used for the calculation 
 (former half might contain signal residues as well). 
 """
-function calc_snr(data::AbstractArray{<:Complex})
+function calc_snr(
+    axes::NTuple{D,DataAxis},
+    data::AbstractArray{<:Number,D},
+) where {D}
 
-    half_index = floor(Int, size(data, 1) / 2)
-    end_index = size(data, 1)
-    noise = collect(selectdim(imag.(data), 1, half_index:end_index))
-    SNR = maximum(abs.(real.(data))) / std(noise)
+    if isreal(data)
+        return NaN
+    else
+        # find the midpoint in each dimension
+        mid_value_idxs = [
+            searchsortedfirst(x, (x[begin] + x[end]) / 2)
+            for x in axes
+        ]
+        # see which dimension has the most point between midpoint and end
+        n_points = lastindex.(axes) .- mid_value_idxs
+        # select the one with the most of them
+        dim = argmax(n_points)
 
-    return SNR
-end
-"Overload for real data"
-function calc_snr(::AbstractArray{<:Real})
-    return NaN
+        lo = mid_value_idxs[dim]
+        hi = size(data, dim)
+
+        while hi - lo < 2
+            lo -= 1
+        end
+
+        noise = selectdim(imag.(data), dim, lo:hi)
+        SNR = maximum(abs.(real.(data))) / std(noise)
+
+        return SNR
+    end
 end
 
 """

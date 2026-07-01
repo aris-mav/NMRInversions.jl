@@ -1,36 +1,46 @@
+export window_average
 """
     window_average(
     input::ExperimentData,
     target_length::Int=128,
-    dims::Int=1;
+    dims::Int=0;
     log::Bool=false,
 )
 
 Compress data in one of its dimensions by dividing into non-overlaping bins and 
-averaging the values within. Returns the compressed data, as well as the 
-precision matrix (inverse of the covariance matrix) within a single 
-`ExperimentData` structure.
+averaging the values within.
+Returns the compressed data, as well as the precision matrix (inverse of the
+covariance matrix) within a single `ExperimentData` structure.
+If dims is not provided, the largest dimension is chosen by default.
 """
 function window_average(
     input::ExperimentData,
-    target_length::Int=128,
-    dims::Int=1;
-    log::Bool=false,
+    target_length::Int=0,
+    dims::Int=0;
+    log::Bool=true,
 )
+
+    if dims == 0
+        dims = argmax(length.(input.axes))
+    end
+
     x = input.axes[dims]
     data = input.data
 
     original_length = length(x)
 
+    if target_length <= 1
+        # automatically select a sensible target value
+        candidates = 2 .^ (1:10)
+        target_length = candidates[argmin(map(
+            x -> x < 0 ? Inf : x, # candidate can't be larger than original
+            original_length .- candidates # find the closest candidate
+        ))]
+    end
+
     if original_length <= target_length
         @info("Target length must be smaller than the current length. \
         Returning original data without compression.")
-        return input
-    end
-
-    if log && islogspaced(x)
-        @warn("Log-spaced window averaging on a log-spaced x array produces some \
-        errors in this function. Returning original data without compression.")
         return input
     end
 
@@ -109,10 +119,13 @@ function window_average(
         new_data[out_select...] .= mean(view(data, select...), dims=dims)
     end
 
+    new_axes = Base.setindex(input.axes, new_axis, dims)
+
     return ExperimentData(
-        Base.setindex(input.axes, new_axis, dims),
+        new_axes,
         new_data,
-        calc_snr(new_data),
+        calc_snr(new_axes, new_data),
         Base.setindex(input.W, W, dims),
     )
+
 end
