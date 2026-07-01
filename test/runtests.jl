@@ -1,4 +1,3 @@
-using NMRInversions
 using Test
 using NMRInversions
 using SparseArrays
@@ -8,119 +7,88 @@ using GLMakie
 
 Random.seed!(1)
 
-function test_artificial_data(seq::Type{<:DataAxis}, SNR=100; kwargs...)
+function test_invert(seq::Type{<:DataAxis}, SNR=100; kwargs...)
 
-    x = exp10.(range(log10(1e-4), log10(5), 128)) # acquisition range
+    x = seq(
+        exp10.(range(log10(1e-4), log10(5), 128))
+    ) # acquisition range
     X = exp10.(range(-5, 1, 128)) # T range
-    K = create_kernel(seq, x, X)
-    f_custom = [0.5exp.(-(x)^2 / 3) + exp.(-(x - 1.3)^2 / 0.5) for x in range(-5, 5, length(X))]
+    K = create_kernel(x, X)
+    f_custom = [
+        0.5exp.(-(x)^2 / 3) + exp.(-(x - 1.3)^2 / 0.5)
+        for x in range(-5, 5, length(X))
+    ]
     g = K * f_custom
-    y = g + (maximum(g) / SNR) .* randn(length(x))
-    results = invert(seq, x, y, lims=(-5, 1, 128); kwargs...)
+    y = @. g + (maximum(g) / SNR) * randn()
 
-    score = LinearAlgebra.norm(f_custom - (results.f ./ (maximum(results.f)) .* maximum(f_custom)))
+    data = ExperimentData(seq(x), y)
+    results = invert(data, axes=(X,); kwargs...)
+
+    # The condition below is COMPLETELY arbitrary, but seems sensible
+    score = LinearAlgebra.norm(
+        f_custom - (results.data ./ (maximum(results.data)) .* maximum(f_custom))
+    )
     threshold = 10 * SNR^(-0.35)
-    display("Sequence: $seq, SNR: $SNR, Score: $score, Threshold: $threshold")
 
-    # The condition below is COMPLETELY arbitrary
-    # just happens to match what we expect as sensible results
+    display("Sequence: $seq, SNR: $SNR, Score: $score, Threshold: $threshold")
     return score < threshold
 
-    #=f = Figure()=#
-    #=ax = Axis(f[:,:])=#
-    #=plot!(ax, f_custom )=#
-    #=plot!(ax, results.f ./ (maximum(results.f)) .* maximum(f_custom))=#
-    #=return f=#
 end
 
 function T2T2_data()
 
     x_direct = range(1, 5000, 500) .* (250 * 1e-6)
     x_indirect = logrange(1, 5000, 32) .* (250 * 1e-6)
-    X = exp10.(range(-5, 1, 128)) # T range
-    f = [0.5exp.(-(x + 0.7)^2 / 0.2) + exp.(-(x - 1.3)^2 / 1.9) for x in range(-5, 5, length(X))]
-
-    # T2a = 5e-1
-    # T2b = 5e-2
-    # A = [exp.(-x_direct ./ T2a)  exp.(-x_direct ./ T2b)]
-    # B = [exp.(-x_indirect ./ T2a)  exp.(-x_indirect ./ T2b)]
-    # K = [0.5  0.0 ; 
-    #     0.1  0.4]
-
+    X = exp10.(range(-5, 1, 128))
+    f = [
+        0.5exp.(-(x + 0.7)^2 / 0.2) + exp.(-(x - 1.3)^2 / 1.9)
+        for x in range(-5, 5, length(X))
+    ]
     A = create_kernel(CPMG, x_direct, X)
     B = create_kernel(CPMG, x_indirect, X)
-    K = Diagonal(f) # off diagonal peaks are for exchange
+    K = Diagonal(f)
 
     G = A * K * B'
 
     noise_real = (maximum(G) * 0.01) .* randn(size(G)...)
     noise_imag = (maximum(G) * 0.01) .* randn(size(G)...)
 
-    data = input2D(CPMGCPMG, x_direct, x_indirect, complex.(G .+ noise_real, noise_imag))
+    data = ExperimentData(
+        (CPMG(x_direct), CPMG(x_indirect)),
+        complex.(G .+ noise_real, noise_imag)
+    )
 
     return data
 end
 
-function test_artificial_data_2D() #throws errors, needs fixing
+function test_expfit(seq::Type{<:DataAxis})
 
-    x_direct = exp10.(range(log10(1e-4), log10(5), 1024)) # acquisition range
-    x_indirect = exp10.(range(log10(1e-4), log10(5), 32)) # acquisition range
-
-    X_direct = exp10.(range(-5, 1, 64)) # T range
-    X_indirect = exp10.(range(-5, 1, 64)) # T range
-
-    # Create a rotated gaussian distribution (which would look like real data)
-    θ = 135
-    σ₁ = 1.3
-    σ₂ = 0.4
-    x₀ = 0
-    y₀ = 1.3
-    a = ((cosd(θ)^2) / (2 * σ₁^2)) + ((sind(θ)^2) / (2 * σ₂^2))
-    b = -((sind(2 * θ)) / (4 * σ₁^2)) + ((sind(2 * θ)) / (4 * σ₂^2))
-    c = ((sind(θ)^2) / (2 * σ₁^2)) + ((cosd(θ)^2) / (2 * σ₂^2))
-    F_original = ([exp.(-(a * (x - x₀)^2 + 2 * b * (x - x₀) * (y - y₀) + c * (y - y₀)^2)) for x in range(-5, 5, length(X_direct)), y in range(-5, 5, length(X_indirect))])
-
-    K1 = create_kernel(CPMG, x_direct, X_direct)
-    K2 = create_kernel(IR, x_indirect, X_indirect)
-
-    data = K1 * F_original * K2'
-    data = complex.(data, 0.001 .* maximum(real(data)) .* randn(size(data)))
-
-    results = invert(IRCPMG, x_direct, x_indirect, data, alpha=0.01, lims1=(-5, 1, 64), lims2=(-5, 1, 64), normalize=false)
-
-    score = LinearAlgebra.norm(results.F - F_original)
-
-    return score < 0.5
-
-end
-
-
-function test_expfit()
-
-    x = [range(0.001, 3, 32)...]
+    x = seq(collect(NMRInversions.logrange(0.001, 3, 32)))
     u = [3, 0.2, 4, 0.05]
-    y = mexp(CPMG, u, x) + 0.01 .* randn(length(x))
-    data = input1D(CPMG, x, y)
-    results = expfit(2, data, normalize=false)
+    y = mexp(u, x) + 0.01 .* randn(length(x))
+    data = ExperimentData(x, y)
+
+    results = expfit(data, 2)
 
     return sum((sort(u) .- sort(results.u)) .^ 2) < 0.5
 end
 
-
 @testset "Inversions on artificial data" begin
     for seq in [IR, CPMG, SR]
         for snr in exp10.(2:1:4)
-            @test test_artificial_data(seq, snr, alpha=gcv(), silent=true)
+            @test test_invert(seq, snr, alpha=gcv(), silent=true)
         end
     end
-    @test test_artificial_data(IR, 500, alpha=gcv(1), silent=true)
-    @test test_artificial_data(IR, 500, alpha=lcurve(1), silent=true)
-    @test test_artificial_data(IR, 500, alpha=gcv(1e-5, 10), silent=true)
-    @test test_artificial_data(IR, 500, alpha=lcurve(1e-5, 10), silent=true)
+    @test test_invert(IR, 500, alpha=gcv(1), silent=true)
+    @test test_invert(IR, 500, alpha=lcurve(1), silent=true)
+    @test test_invert(IR, 500, alpha=gcv(1e-5, 10), silent=true)
+    @test test_invert(IR, 500, alpha=lcurve(1e-5, 10), silent=true)
 end
 
 @testset "expfits" begin
-    @test test_expfit()
+    for seq in [IR, CPMG, SR]
+        @test test_expfit(seq)
+    end
 end
 
 @testset "GLMakie and import_geospec" begin
