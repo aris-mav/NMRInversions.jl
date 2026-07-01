@@ -118,8 +118,6 @@ function expfit(
             ]
         end
 
-        println(u0)
-
     elseif isa(n, Vector)
 
         u0 = Float64.(n)
