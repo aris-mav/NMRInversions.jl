@@ -1,3 +1,4 @@
+using NMRInversions
 using Test
 using NMRInversions
 using SparseArrays
@@ -7,20 +8,20 @@ using GLMakie
 
 Random.seed!(1)
 
-function test_artificial_data(seq::Type{<:pulse_sequence1D}, SNR = 100 ; kwargs...)
+function test_artificial_data(seq::Type{<:DataAxis}, SNR=100; kwargs...)
 
-    x = exp10.(range(log10(1e-4), log10(5), 32)) # acquisition range
+    x = exp10.(range(log10(1e-4), log10(5), 128)) # acquisition range
     X = exp10.(range(-5, 1, 128)) # T range
     K = create_kernel(seq, x, X)
     f_custom = [0.5exp.(-(x)^2 / 3) + exp.(-(x - 1.3)^2 / 0.5) for x in range(-5, 5, length(X))]
     g = K * f_custom
-    y = g +  (maximum(g)/SNR) .* randn(length(x))
-    results = invert( seq, x, y, lims=(-5,1,128);kwargs...) 
+    y = g + (maximum(g) / SNR) .* randn(length(x))
+    results = invert(seq, x, y, lims=(-5, 1, 128); kwargs...)
 
     score = LinearAlgebra.norm(f_custom - (results.f ./ (maximum(results.f)) .* maximum(f_custom)))
     threshold = 10 * SNR^(-0.35)
     display("Sequence: $seq, SNR: $SNR, Score: $score, Threshold: $threshold")
-    
+
     # The condition below is COMPLETELY arbitrary
     # just happens to match what we expect as sensible results
     return score < threshold
@@ -33,11 +34,11 @@ function test_artificial_data(seq::Type{<:pulse_sequence1D}, SNR = 100 ; kwargs.
 end
 
 function T2T2_data()
-    
-    x_direct = range(1,5000,500) .* (250 * 1e-6)
-    x_indirect = logrange(1,5000,32) .* (250 * 1e-6)
+
+    x_direct = range(1, 5000, 500) .* (250 * 1e-6)
+    x_indirect = logrange(1, 5000, 32) .* (250 * 1e-6)
     X = exp10.(range(-5, 1, 128)) # T range
-    f = [0.5exp.(-(x+0.7)^2 / 0.2) + exp.(-(x - 1.3)^2 / 1.9) for x in range(-5, 5, length(X))]
+    f = [0.5exp.(-(x + 0.7)^2 / 0.2) + exp.(-(x - 1.3)^2 / 1.9) for x in range(-5, 5, length(X))]
 
     # T2a = 5e-1
     # T2b = 5e-2
@@ -89,7 +90,7 @@ function test_artificial_data_2D() #throws errors, needs fixing
 
     score = LinearAlgebra.norm(results.F - F_original)
 
-    return  score < 0.5
+    return score < 0.5
 
 end
 
@@ -97,10 +98,10 @@ end
 function test_expfit()
 
     x = [range(0.001, 3, 32)...]
-    u = [3, 0.2 ,4 ,0.05]
+    u = [3, 0.2, 4, 0.05]
     y = mexp(CPMG, u, x) + 0.01 .* randn(length(x))
     data = input1D(CPMG, x, y)
-    results = expfit(2,data,normalize=false)
+    results = expfit(2, data, normalize=false)
 
     return sum((sort(u) .- sort(results.u)) .^ 2) < 0.5
 end
@@ -108,14 +109,14 @@ end
 
 @testset "Inversions on artificial data" begin
     for seq in [IR, CPMG, SR]
-        for snr in exp10.(2:1:4) 
-            @test test_artificial_data(seq,snr,alpha=gcv(),silent=true)
+        for snr in exp10.(2:1:4)
+            @test test_artificial_data(seq, snr, alpha=gcv(), silent=true)
         end
     end
-    @test test_artificial_data(IR, 500, alpha=gcv(1),silent=true)
-    @test test_artificial_data(IR, 500, alpha=lcurve(1),silent=true)
-    @test test_artificial_data(IR, 500, alpha=gcv(1e-5,10),silent=true)
-    @test test_artificial_data(IR, 500, alpha=lcurve(1e-5,10),silent=true)
+    @test test_artificial_data(IR, 500, alpha=gcv(1), silent=true)
+    @test test_artificial_data(IR, 500, alpha=lcurve(1), silent=true)
+    @test test_artificial_data(IR, 500, alpha=gcv(1e-5, 10), silent=true)
+    @test test_artificial_data(IR, 500, alpha=lcurve(1e-5, 10), silent=true)
 end
 
 @testset "expfits" begin
@@ -123,15 +124,18 @@ end
 end
 
 @testset "GLMakie and import_geospec" begin
-    @test isa( 
-        plot(invert(import_geospec("../example_data/geospec_txt/IR_bunter.txt"),silent=true)), 
+    @test isa(
+        plot(invert(
+            import_geospec("../example_data/geospec_txt/IR_bunter.txt"),
+            silent=true)
+        ),
         Figure
     )
-    @test isa( 
+    @test isa(
         plot(invert(
             import_geospec("../example_data/geospec_txt/IRCPMG_bunter.txt"),
-            alpha = 0.5, silent = true)
-             ), 
+            alpha=0.5, silent=true)
+        ),
         Figure
     )
 end

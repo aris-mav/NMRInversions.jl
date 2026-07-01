@@ -1,9 +1,15 @@
 """
-    window_average(G::Matrix{T}, target_rows::Int) where T
+    window_average(
+    input::ExperimentData,
+    target_length::Int=128,
+    dims::Int=1;
+    log::Bool=false,
+)
 
 Compress data in one of its dimensions by dividing into non-overlaping bins and 
 averaging the values within. Returns the compressed data, as well as the 
-precision matrix (inverse of the covariance matrix).
+precision matrix (inverse of the covariance matrix) within a single 
+`ExperimentData` structure.
 """
 function window_average(
     input::ExperimentData,
@@ -17,7 +23,14 @@ function window_average(
     original_length = length(x)
 
     if original_length <= target_length
-        @info("Target length must be smaller than the current length.")
+        @info("Target length must be smaller than the current length. \
+        Returning original data without compression.")
+        return input
+    end
+
+    if log && islogspaced(x)
+        @warn("Log-spaced window averaging on a log-spaced x array produces some \
+        errors in this function. Returning original data without compression.")
         return input
     end
 
@@ -42,8 +55,8 @@ function window_average(
 
     if idx_edges[end] > original_length + 1
         @warn """
-        Data size ($original_length) is too small for a log-spaced 
-            target_length of $target_length. Capping boundaries."
+        Original data size $original_length is too small for a target_length of
+            $target_length. Capping boundaries."
         """
         for i in 1:length(idx_edges)
             if idx_edges[i] > original_length + 1
