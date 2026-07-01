@@ -10,14 +10,14 @@ covariance matrix) within a single `ExperimentData` structure.
 Keyword arguments:
 
 - `dims` : which dimension you want to compress (defaults to the largest).
-- `target_length` : the final length of the `dims` (defaults to a power of 2).
-- `log` : whether log-spacing should be used in the output x axis (default true).
+- `bins` : the final length of the `dims` (defaults to a power of 2).
+- `scale` : output x-scale, choose between `:auto`, `:log`, `:linear`.
 """
 function compress(
     input::ExperimentData;
     dims::Int=0,
-    target_length::Int=0,
-    log::Bool=true,
+    bins::Int=0,
+    scale::Symbol=:auto,
 )
 
     if dims == 0
@@ -28,22 +28,30 @@ function compress(
 
     original_length = length(x)
 
-    if target_length <= 1
+    if bins <= 1
         # automatically select a sensible target value, max 64 points by default
-        candidates = 2 .^ (1:6) 
-        target_length = candidates[argmin(map(
-            x -> x < 0 ? Inf : x, # candidate can't be larger than original
+        candidates = 2 .^ (1:6)
+        bins = candidates[argmin(map(
+            x -> x <= 0 ? Inf : x, # candidate can't be larger than original
             original_length .- candidates # find the closest candidate
         ))]
     end
 
-    if original_length <= target_length
+    if original_length <= bins
         @info("Target length must be smaller than the current length. \
         Returning original data without compression.")
         return input
     end
 
-    return window_average(input, target_length, dims, log)
+    logscale = if scale == :auto
+        x isa Union{IR,SR,CPMG,PFG} ? true : false
+    elseif scale == :log
+        true
+    elseif scale == :linear
+        false
+    end
+
+    return window_average(input, bins, dims, logscale)
 end
 
 function window_average(
