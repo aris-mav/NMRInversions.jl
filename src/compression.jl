@@ -1,22 +1,22 @@
-export window_average
+export compress
 """
-    window_average(
-    input::ExperimentData,
-    target_length::Int=128,
-    dims::Int=0;
-    log::Bool=false,
-)
-
 Compress data in one of its dimensions by dividing into non-overlaping bins and 
 averaging the values within.
 Returns the compressed data, as well as the precision matrix (inverse of the
 covariance matrix) within a single `ExperimentData` structure.
-If dims is not provided, the largest dimension is chosen by default.
+
+- `input` : the `ExperimentData` you want to compress.
+
+Keyword arguments:
+
+- `dims` : which dimension you want to compress (defaults to the largest).
+- `target_length` : the final length of the `dims` (defaults to a power of 2).
+- `log` : whether log-spacing should be used in the output x axis (default true).
 """
-function window_average(
-    input::ExperimentData,
+function compress(
+    input::ExperimentData;
+    dims::Int=0,
     target_length::Int=0,
-    dims::Int=0;
     log::Bool=true,
 )
 
@@ -25,13 +25,12 @@ function window_average(
     end
 
     x = input.axes[dims]
-    data = input.data
 
     original_length = length(x)
 
     if target_length <= 1
-        # automatically select a sensible target value
-        candidates = 2 .^ (1:10)
+        # automatically select a sensible target value, max 64 points by default
+        candidates = 2 .^ (1:6) 
         target_length = candidates[argmin(map(
             x -> x < 0 ? Inf : x, # candidate can't be larger than original
             original_length .- candidates # find the closest candidate
@@ -44,12 +43,26 @@ function window_average(
         return input
     end
 
+    return window_average(input, target_length, dims, log)
+end
+
+function window_average(
+    input::ExperimentData,
+    nbins::Int,
+    dims::Int,
+    log::Bool,
+)
+
+    x = input.axes[dims]
+    data = input.data
+    original_length = length(x)
+
     # Construct evenly spaced bin edges in axis coordinate space
     # These define how we partition the axis range into compression windows
     if log
-        edges = NMRInversions.logrange(first(x), last(x), target_length + 1)
+        edges = NMRInversions.logrange(first(x), last(x), nbins + 1)
     else
-        edges = range(first(x), last(x), length=target_length + 1)
+        edges = range(first(x), last(x), length=nbins + 1)
     end
 
     # Convert those axis-space edges into index-space boundaries
@@ -66,7 +79,7 @@ function window_average(
     if idx_edges[end] > original_length + 1
         @warn """
         Original data size $original_length is too small for a target_length of
-            $target_length. Capping boundaries."
+            $nbins. Capping boundaries."
         """
         for i in 1:length(idx_edges)
             if idx_edges[i] > original_length + 1
@@ -75,14 +88,16 @@ function window_average(
         end
     end
 
-    bin_counts = [idx_edges[b+1] - idx_edges[b] for b in 1:target_length]
-    W = Diagonal(bin_counts)
+    bin_counts = [idx_edges[b+1] - idx_edges[b] for b in 1:nbins]
 
-    new_size = Base.setindex(size(data), target_length, dims)
-    new_axis = typeof(x)(similar(x.x, target_length))
+    Wdims = Diagonal(bin_counts)
+
+    new_size = Base.setindex(size(data), nbins, dims)
+
+    new_axis = typeof(x)(similar(x.x, nbins))
     new_data = similar(input.data, new_size)
 
-    for b in 1:target_length
+    for b in 1:nbins
 
         # Define index range for this bin in original data
         lo = idx_edges[b]
@@ -125,7 +140,7 @@ function window_average(
         new_axes,
         new_data,
         calc_snr(new_axes, new_data),
-        Base.setindex(input.W, W, dims),
+        Base.setindex(input.W, Wdims, dims),
     )
 
 end
