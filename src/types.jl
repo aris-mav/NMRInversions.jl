@@ -180,7 +180,7 @@ function ExperimentData(
     )
 
     if compress
-        return window_average(original_data)
+        return compress(original_data)
     else
         return original_data
     end
@@ -199,13 +199,36 @@ Base.lastindex(d::ExperimentData) = lastindex(d.data)
 Base.lastindex(d::ExperimentData, dim::Int) = size(d.data, dim)
 Base.axes(d::ExperimentData, dim::Int) = axes(d.data, dim)
 
+# Slice W matrix
+_slice_W(W::AbstractMatrix, idx) = W[idx, idx]
+# Or just return W if it is LinearAlgebra.I or similar
+_slice_W(W::UniformScaling, _) = W
+
 function Base.getindex(E::ExperimentData{D}, I...) where {D}
 
     idx = Base.to_indices(E.data, I)
 
-    return ExperimentData(
-        ntuple(i -> E.axes[i][idx[i]], D),
-        E.data[idx...]
+    if length(idx) != D
+        throw(ArgumentError(
+            "Provide one index per dimension (expected $D, got $(length(idx))).")
+        )
+    end
+
+    keep = findall(i -> !(idx[i] isa Integer), 1:D)
+    new_D = length(keep)
+
+    if new_D == 0
+        return E.data[idx...] # fully scalar index -> return the raw value
+    end
+
+    new_axes = ntuple(j -> E.axes[keep[j]][idx[keep[j]]], new_D)
+    new_W = ntuple(j -> _slice_W(E.W[keep[j]], idx[keep[j]]), new_D)
+
+    return ExperimentData{new_D}(
+        new_axes,
+        E.data[idx...],
+        E.SNR,
+        new_W
     )
 end
 
