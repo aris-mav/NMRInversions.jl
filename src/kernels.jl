@@ -23,6 +23,18 @@ struct svd_kernel_struct
 end
 
 """
+    haskernel(seq::Type{<:DataAxis})
+
+Return `true` if there is a _kernel_eq function for the given type.
+"""
+function haskernel(seq::Type{<:DataAxis})
+    hasmethod(_kernel_eq, Tuple{<:seq, Any}, (:x0, :y, :n))
+end
+function haskernel(seq::DataAxis)
+    haskernel(typeof(seq))
+end
+
+"""
     _kernel_eq(axis<:DataAxis, X; x0, y, n)
 
 Internal functions passed to the one defined below.
@@ -65,7 +77,6 @@ gaussian. Defaults to `false` (exponential by default).
 - `x0` is the offset in `x` (can be the first point `x[1]`).
 
 The output is a matrix, `K`.
-
 """
 function create_kernel(
     x::DataAxis,

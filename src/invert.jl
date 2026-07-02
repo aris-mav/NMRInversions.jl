@@ -31,43 +31,80 @@ function invert(
     scale::Bool=true,
 ) where {D}
 
+    invertable_dims = haskernel.(input.axes)
+
+    if all(!, invertable_dims)
+        error("None of the dimensions are invertable.")
+    end
+
     if scale
         # copy so that original data is not mutated
         input = deepcopy(input)
         scale_to_one!(input.data)
     end
 
-    g = input.data
-
     n_points = div(128, 2^(length(input.axes) - 1))
 
     axes = ntuple(Val(length(input.axes))) do i
-        current_axis = axes[i]
-        axis_type = typeof(input.axes[i])
+        if invertable_dims[i]
+            if isnothing(axes[i])
+                x = input.axes[i].x
+                lower, upper = x isa PFG ?
+                               (minimum(x) * 7, maximum(x) * 10) :
+                               (minimum(x) / 7, maximum(x) * 7)
 
-        if isnothing(current_axis)
-            x = input.axes[i].x
-            lower, upper = x isa PFG ?
-                           (minimum(x) * 7, maximum(x) * 10) :
-                           (minimum(x) / 7, maximum(x) * 7)
-
-            axis_type(collect(NMRInversions.logrange(lower, upper, n_points)))
-
-        elseif current_axis isa AbstractRange
-            axis_type(collect(current_axis))
+                values = NMRInversions.logrange(lower, upper, n_points)
+            else
+                values = axes[i]
+            end
+            typeof(input.axes[i])(values)
         else
-            axis_type(current_axis)
+            input.axes[i]
         end
     end
 
-    ker_struct = create_kernel(input, axes)
+    data, r, α =
+        if all(invertable_dims)
 
-    f, r, α = if alpha isa Real
-        f, r = solve_regularization(ker_struct.K, ker_struct.g, alpha, solver)
-        f, r, alpha
-    else
-        find_alpha(ker_struct, solver, alpha; silent=silent)
-    end
+            f, r, α = _solve(create_kernel(input, axes), alpha, solver, silent)
+            data = reshape(f, length.(axes))
+
+            data, r, α
+        else
+            # which dimensions get a fixed index each iteration 
+            # (in slowest-to-fastest order)
+            dims_to_iterate = reverse(findall(!, invertable_dims))
+
+            # the actual index ranges for those dimensions, 
+            # e.g. (1:1, 1:3) for dims (3,2)
+            ranges = Base.axes.(Ref(input), dims_to_iterate)
+
+            data = Array{Float64}(undef, length.(axes)...)
+
+            for values in Iterators.product(ranges...)
+                # `values` is a tuple like (i3, i2), 
+                # one fixed index per iterated dim,
+                # in the same order as dims_to_iterate
+
+                # map each iterated dimension to its current fixed value
+                fixed = Dict(dims_to_iterate .=> values)
+
+                # build the full index: `:` where invertable, fixed[d] otherwise
+                idx = ntuple(length(invertable_dims)) do d
+                    invertable_dims[d] ? Colon() : fixed[d]
+                end
+
+                silent || println("Inverting slice $(_show_idx(idx))")
+
+                data[idx...], r, α = _solve(
+                    create_kernel(
+                        input[idx...], axes[findall(invertable_dims)]
+                    ),
+                    alpha, solver, silent
+                )
+            end
+            data, r, α
+        end
 
     for i in eachindex(axes)
         if input.axes[i] isa PFG
@@ -75,8 +112,6 @@ function invert(
             axes[i] .= axes[i] ./ 1e9
         end
     end
-
-    data = reshape(f, length.(axes))
 
     return InversionData{D}(
         input,
@@ -88,4 +123,27 @@ function invert(
         [],
         "",
     )
+end
+
+function _solve(ker_struct::svd_kernel_struct,
+    alpha::Real,
+    solver::regularization_solver,
+    _
+)
+    f, r = solve_regularization(
+        ker_struct.K, ker_struct.g, alpha, solver
+    )
+    return f, r, alpha
+end
+
+function _solve(ker_struct::svd_kernel_struct,
+    alpha::alpha_optimizer,
+    solver::regularization_solver,
+    silent
+)
+    find_alpha(ker_struct, solver, alpha; silent=silent)
+end
+
+function _show_idx(idx)
+    "[" * join((x isa Colon ? ":" : string(x) for x in idx), ",") * "]"
 end
