@@ -165,8 +165,8 @@ function autophase(data::ExperimentData; rotation::Real=0)
         # get correction angle as the average of the above
         θ = mean(angles)
 
-        # rotate data
-        y .*= exp(-im * θ + rotation)
+        # rotate data ( cis(x) is exp(im*x) )
+        y .*= cis(-(θ + rotation))
 
         # check if first or last point is the correct way around
         # (redundant but doesn't hurt)
