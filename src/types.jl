@@ -24,7 +24,6 @@ abstract type DataAxis{T} <: AbstractVector{T} end;
 export DataAxis
 
 # Make DataAxis indexable
-#
 Base.size(E::DataAxis) = size(E.x)
 Base.length(E::DataAxis) = length(E.x)
 Base.IndexStyle(::Type{<:DataAxis}) = IndexLinear()

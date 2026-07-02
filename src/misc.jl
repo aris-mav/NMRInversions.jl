@@ -144,7 +144,7 @@ function autophase(data::ExperimentData; rotation::Real=0)
 
         # find the 1st dimension of the chosen type
         dim = findfirst(isa.(data.axes, type))
-        dim == nothing && continue
+        isnothing(dim) && continue
 
         # index all elements (:) of the chosen dimension, 1 for other dimensions
         idx = ntuple(

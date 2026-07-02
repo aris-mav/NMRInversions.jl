@@ -143,12 +143,13 @@ function window_average(
     end
 
     new_axes = Base.setindex(input.axes, new_axis, dims)
+    new_W = Base.setindex(input.W, Wdims, dims)
 
     return ExperimentData(
         new_axes,
         new_data,
-        calc_snr(new_axes, new_data),
-        Base.setindex(input.W, Wdims, dims),
+        input.SNR,
+        new_W
     )
 
 end
