@@ -25,7 +25,7 @@ function Makie.plot(
 
     position1 = fig[1:5, 1:5]
     position2 = (stacked && length(res_mat) > 1) ? fig[1:10, 6:10] : fig[1:5, 6:10]
-    position3 = fig[6:10, 1:5]
+    position3 = fig[7:11, 1:5]
 
     ax1 = Axis(
         position1,
@@ -60,7 +60,7 @@ function Makie.plot(
     if length(res_mat) > 1
         if stacked
         else
-            Legend(fig[6:10, 6:10], ax2)
+            Legend(fig[6:11, 6:10], ax2)
         end
     end
 
