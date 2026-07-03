@@ -74,6 +74,7 @@ function invert(
             # which dimensions get a fixed index each iteration 
             # (in slowest-to-fastest order)
             dims_to_iterate = reverse(findall(!, invertable_dims))
+            names = nameof.(typeof.(input.axes))[findall(invertable_dims)]
 
             # the actual index ranges for those dimensions, 
             # e.g. (1:1, 1:3) for dims (3,2)
@@ -94,7 +95,7 @@ function invert(
                     invertable_dims[d] ? Colon() : fixed[d]
                 end
 
-                silent || println("Inverting slice $(_show_idx(idx))")
+                silent || println("Inverting $names, at input$(_show_idx(idx))")
 
                 data[idx...], r, α = _solve(
                     create_kernel(
