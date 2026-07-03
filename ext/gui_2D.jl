@@ -83,32 +83,26 @@ function Makie.plot!(
     x = res.axes[2].x
     y = res.axes[1].x
 
-    labels = Dict(
-        :IR => L"T_1 \, \textrm{(s)}",
-        :SR => L"T_1 \, \textrm{(s)}",
-        :CPMG => L"T_2 \,\textrm{(s)}",
-        :PFG => L"D \, \textrm{(m^2/s)}"
-    )
-    xlbl = labels[nameof(typeof(res.axes[2]))]
-    ylbl = labels[nameof(typeof(res.axes[1]))]
+    xlbl = lblX(res.axes[2])
+    ylbl = lblX(res.axes[1])
 
-    # if both are the same (e.g. T2T2)
     if ==(typeof.(res.axes)...)
-        xlbl *= " (direct)"
-        ylbl *= " (indirect)"
+        # if both axes are of the same type (e.g. T2T2)
+        xlbl = L"%$xlbl \text{(direct)}"
+        ylbl = L"%$ylbl \text{(indirect)}"
     end
 
-    if any(x -> x isa PFG, res.axes)
-        x_low = exp10(floor(log10(x[1])))
-        x_high = exp10(ceil(log10(x[end])))
-        y_low = exp10(floor(log10(y[1])))
-        y_high = exp10(ceil(log10(y[end])))
-
-    else # diagonal should be in the middle
+    if all(isa.(res.axes, Union{IR,SR,CPMG}))
+        # diagonal should be in the middle
         x_low = exp10(floor(log10(min(x[1], y[1]))))
         x_high = exp10(ceil(log10(max(x[end], y[end]))))
         y_low = exp10(floor(log10(min(x[1], y[1]))))
         y_high = exp10(ceil(log10(max(x[end], y[end]))))
+    else
+        x_low = exp10(floor(log10(x[1])))
+        x_high = exp10(ceil(log10(x[end])))
+        y_low = exp10(floor(log10(y[1])))
+        y_high = exp10(ceil(log10(y[end])))
     end
 
     gr = fig[1:10, 1:10] = GridLayout()
@@ -123,7 +117,6 @@ function Makie.plot!(
         xscale=log10, yscale=log10,
         limits=(x_low, x_high, y_low, y_high)
     )
-
     axtop = Axis(
         gr[1:2, 1:8], xscale=log10,
         title=title, titlesize=titlesize, titlefont=titlefont,
@@ -240,21 +233,17 @@ function draw_on_axes(
         xc = xdist ⋅ x / sum(spo)
         yc = ydist ⋅ y / sum(spo)
 
+        sx = symb(res.axes[1])
+        sy = symb(res.axes[2])
 
         lbl = if res.axes[2] isa Union{IR,SR} && res.axes[1] isa CPMG
-            "T₁/T₂ = $(round(wa_indir[i]/wa_dir[i] , digits=1)) \n\
-            Volume = $(round(volumes[i] *100 ,digits = 1))%"
-        elseif res.axes[2] isa PFG
-            "D = $(round(wa_indir[i], sigdigits=3)), \
-            T₂ = $(round(wa_dir[i], sigdigits=3)) \n\
-            Volume = $(round(volumes[i] *100 ,digits = 1))%"
-
-        elseif res.axes[2] isa CPMG
-            "T₂ₐ = $(round(wa_indir[i], sigdigits=3)), \
-            T₂ᵦ = $(round(wa_dir[i], sigdigits=3)) \n\
-            Volume = $(round(volumes[i] *100 ,digits = 1))%"
-
+            "T₁/T₂ = $(round(wa_indir[i]/wa_dir[i] , digits=1))"
+        else
+            "$sy = $(round(wa_indir[i], sigdigits=3)), \
+            $sx = $(round(wa_dir[i], sigdigits=3))"
         end
+
+        lbl *= "\nVolume = $(round(volumes[i] *100 ,digits = 1))%"
 
         alphas = 0.83
 
@@ -384,35 +373,29 @@ function Makie.plot(res::NMRInversions.InversionData{2})
     coord_label = Observable("")
     coord_label[] = "Hover mouse over plot to view coordinates."
 
-    labels = Dict(
-        :IR => "T₁",
-        :SR => "T₁",
-        :CPMG => "T₂",
-        :PFG => "D",
-    )
-    ylbl = labels[nameof(typeof(res.axes[1]))]
-    xlbl = labels[nameof(typeof(res.axes[2]))]
+    sx = symb(res.axes[2])
+    sy = symb(res.axes[1])
 
     # if both are the same (e.g. T2T2)
     if ==(typeof.(res.axes)...)
-        xlbl *= "x"
-        ylbl *= "y"
+        sx *= "(x)"
+        sy *= "(y)"
     end
 
     on(events(gui).mouseposition) do _
         if is_mouseinside(axmain)
             xcoord[] = (exp10.(mouseposition(axmain)[1]))
             ycoord[] = (exp10.(mouseposition(axmain)[2]))
-            coord_label[] = "$xlbl = $(round(xcoord[],sigdigits=2)) , \
-                $ylbl = $(round(ycoord[],sigdigits=2))"
+            coord_label[] = "$sx = $(round(xcoord[],sigdigits=2)) , \
+                                $sy = $(round(ycoord[],sigdigits=2))"
         elseif is_mouseinside(axtop)
             xcoord[] = (exp10.(mouseposition(axtop)[1]))
             ycoord[] = 0.0
-            coord_label[] = "$xlbl = $(round(xcoord[],sigdigits=2))"
+            coord_label[] = "$sx = $(round(xcoord[],sigdigits=2))"
         elseif is_mouseinside(axright)
             xcoord[] = 0.0
             ycoord[] = (exp10.(mouseposition(axright)[2]))
-            coord_label[] = "$ylbl = $(round(ycoord[],sigdigits=2))"
+            coord_label[] = "$sy = $(round(ycoord[],sigdigits=2))"
         else
             xcoord[] = 0.0
             ycoord[] = 0.0

@@ -7,6 +7,8 @@ function lblx(ax::DataAxis)
         return "time (s)"
     elseif ax isa PFG
         return "b factor (s/m² e-9)"
+    else
+        return ""
     end
 end
 
@@ -16,7 +18,21 @@ function lblX(ax::DataAxis)
     elseif ax isa CPMG
         return L"T_2 \, \textrm{(s)}"
     elseif ax isa PFG
-        return "D (m²/s)"
+        return L"D \, \textrm{(m^2/s)}"
+    else
+        return ""
+    end
+end
+
+function symb(ax::DataAxis)
+    if ax isa Union{IR,SR}
+        return "T₁"
+    elseif ax isa CPMG
+        return "T₂"
+    elseif ax isa PFG
+        return "D"
+    else
+        return ""
     end
 end
 
