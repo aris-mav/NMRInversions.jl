@@ -29,7 +29,7 @@ Keyword (optional) arguments:
 - `bandplots` : Whether to use band plots to highlight the selections in the top and right distributions (default: `true`)
 """
 function Makie.plot(
-    res_mat::AbstractVecOrMat{NMRInversions.InversionData{2}}; dims = (400,400),
+    res_mat::AbstractVecOrMat{NMRInversions.InversionData{2}}; dims=(400, 400),
     kwargs...)
 
     if !isa(res_mat, AbstractMatrix)
@@ -39,7 +39,7 @@ function Makie.plot(
     f = Figure(size=dims .* reverse(size(res_mat)))
 
     for (ind, res) in pairs(res_mat)
-        plot!(f[Tuple(ind)...], res;  kwargs...)
+        plot!(f[Tuple(ind)...], res; kwargs...)
     end
 
     return f
@@ -72,22 +72,22 @@ Keyword (optional) arguments:
 - `bandplots` : Whether to use band plots to highlight the selections in the top and right distributions (default: `true`)
 """
 function Makie.plot!(
-    fig::Union{Makie.Figure,Makie.GridPosition}, 
+    fig::Union{Makie.Figure,Makie.GridPosition},
     res::NMRInversions.InversionData{2};
-    title=res.title, colormap=:viridis, contf=false, levels = 40, 
-    labelsizes = (23, 23), ticksizes = (15, 15), titlesize = 17, titlefont = :bold ,
-    legendlabelsize = 12, gap = 0, extend_grid = false, legendposition = :lt,
-    bandplots = true,
+    title=res.title, colormap=:viridis, contf=false, levels=40,
+    labelsizes=(23, 23), ticksizes=(15, 15), titlesize=17, titlefont=:bold,
+    legendlabelsize=12, gap=0, extend_grid=false, legendposition=:lt,
+    bandplots=true,
 )
 
     x = res.axes[2].x
     y = res.axes[1].x
 
     labels = Dict(
-        :IR   => L"T_1 \, \textrm{(s)}",
-        :SR   => L"T_1 \, \textrm{(s)}",
+        :IR => L"T_1 \, \textrm{(s)}",
+        :SR => L"T_1 \, \textrm{(s)}",
         :CPMG => L"T_2 \,\textrm{(s)}",
-        :PFG  => L"D \, \textrm{(m^2/s)}"
+        :PFG => L"D \, \textrm{(m^2/s)}"
     )
     xlbl = labels[nameof(typeof(res.axes[2]))]
     ylbl = labels[nameof(typeof(res.axes[1]))]
@@ -99,16 +99,16 @@ function Makie.plot!(
     end
 
     if any(x -> x isa PFG, res.axes)
-        x_low =  exp10(floor(log10(x[1])))
-        x_high =  exp10(ceil(log10(x[end])))
-        y_low =  exp10(floor(log10(y[1])))
-        y_high =  exp10(ceil(log10(y[end])))
+        x_low = exp10(floor(log10(x[1])))
+        x_high = exp10(ceil(log10(x[end])))
+        y_low = exp10(floor(log10(y[1])))
+        y_high = exp10(ceil(log10(y[end])))
 
     else # diagonal should be in the middle
-        x_low =  exp10(floor(log10(min(x[1],y[1])))) 
-        x_high =  exp10(ceil(log10(max(x[end],y[end])))) 
-        y_low =  exp10(floor(log10(min(x[1],y[1])))) 
-        y_high =  exp10(ceil(log10(max(x[end],y[end])))) 
+        x_low = exp10(floor(log10(min(x[1], y[1]))))
+        x_high = exp10(ceil(log10(max(x[end], y[end]))))
+        y_low = exp10(floor(log10(min(x[1], y[1]))))
+        y_high = exp10(ceil(log10(max(x[end], y[end]))))
     end
 
     gr = fig[1:10, 1:10] = GridLayout()
@@ -119,22 +119,22 @@ function Makie.plot!(
         xlabel=xlbl, ylabel=ylbl,
         xlabelsize=labelsizes[1], ylabelsize=labelsizes[2],
         xticklabelsize=ticksizes[1], yticklabelsize=ticksizes[2],
-        xtickalign = 0, ytickalign = 0,
-        xscale = log10, yscale = log10,
-        limits = (x_low, x_high, y_low, y_high)
+        xtickalign=0, ytickalign=0,
+        xscale=log10, yscale=log10,
+        limits=(x_low, x_high, y_low, y_high)
     )
 
     axtop = Axis(
-        gr[1:2, 1:8], xscale = log10,
+        gr[1:2, 1:8], xscale=log10,
         title=title, titlesize=titlesize, titlefont=titlefont,
-        ygridvisible=false, 
-        limits = (x_low, x_high ,0 , nothing) 
+        ygridvisible=false,
+        limits=(x_low, x_high, 0, nothing)
     )
     axright = Axis(
-        gr[3:10, 9:10], yscale = log10,
+        gr[3:10, 9:10], yscale=log10,
         xgridvisible=false,
-        limits = (
-            0, nothing, y_low , y_high,
+        limits=(
+            0, nothing, y_low, y_high,
         )
     )
 
@@ -156,11 +156,11 @@ function Makie.plot!(
     linkxaxes!(axmain, axtop)
     linkyaxes!(axright, axmain)
 
-    hidedecorations!(axtop, grid= !extend_grid)
-    hidedecorations!(axright, grid= !extend_grid)
+    hidedecorations!(axtop, grid=!extend_grid)
+    hidedecorations!(axright, grid=!extend_grid)
 
-    colgap!(gr , gap)
-    rowgap!(gr , gap)
+    colgap!(gr, gap)
+    rowgap!(gr, gap)
     if gap <= 3
         hidespines!(axtop, :b)
         hidespines!(axright, :l)
@@ -171,15 +171,15 @@ function Makie.plot!(
     Makie.deactivate_interaction!(axtop, :rectanglezoom) # Disable zoom
 
     draw_on_axes(
-        axmain, axtop, axright, res, colormap, contf, 
+        axmain, axtop, axright, res, colormap, contf,
         levels, legendlabelsize, legendposition, bandplots
     )
 end
 
 
 function draw_on_axes(
-    axmain, axtop, axright, res, 
-    clmap, contf, levels, legendlabelsize, 
+    axmain, axtop, axright, res,
+    clmap, contf, levels, legendlabelsize,
     legendposition, bandplots)
 
     empty!(axmain)
@@ -195,10 +195,10 @@ function draw_on_axes(
         reset_limits!(axmain)
         l = axmain.finallimits[]
         heatmap!(
-            axmain, 
-            NMRInversions.logrange(l.origin[1],l.widths[1],length(x)), 
-            NMRInversions.logrange(l.origin[2],l.widths[2],length(y)), 
-            fill(cgrad(Symbol(clmap))[1],size(z)...), 
+            axmain,
+            NMRInversions.logrange(l.origin[1], l.widths[1], length(x)),
+            NMRInversions.logrange(l.origin[2], l.widths[2], length(y)),
+            fill(cgrad(Symbol(clmap))[1], size(z)...),
         )
         contourf!(axmain, x, y, z, colormap=clmap, levels=levels)
     else
@@ -208,23 +208,23 @@ function draw_on_axes(
     linecolor = :black
 
     lines!(
-        axtop, x, vec(sum(z, dims=2)), color = linecolor, alpha=0.8, linewidth =1
+        axtop, x, vec(sum(z, dims=2)), color=linecolor, alpha=0.8, linewidth=1
     )
     lines!(
-        axright, vec(sum(z, dims=1)), y, color = linecolor, alpha=0.8, linewidth =1
+        axright, vec(sum(z, dims=1)), y, color=linecolor, alpha=0.8, linewidth=1
     )
 
     #Create a matrix for all the discrete points in the space
     points = [[i, j] for i in x, j in y]
     mask = zeros(size(points))
 
-    wa_indir, wa_dir, volumes = weighted_averages(res, silent = true)
+    wa_indir, wa_dir, volumes = weighted_averages(res, silent=true)
 
     markers = collect('a':'z')
     colors = cgrad(:tab10)
 
     if !any(x -> x isa PFG, res.axes)
-        plot_diagonal(axmain,x,y)
+        plot_diagonal(axmain, x, y)
     end
 
     for (i, polygon) in enumerate(res.selections)
@@ -259,19 +259,19 @@ function draw_on_axes(
         alphas = 0.83
 
         if bandplots == true
-            band!(axtop, x, zeros(length(x)), xdist, 
-                  color = colors[i], alpha = alphas-0.2)
-            band!(axright, y, zeros(length(y)), ydist, 
-                  color = colors[i], alpha = alphas-0.2, direction = :y)
-        end 
+            band!(axtop, x, zeros(length(x)), xdist,
+                color=colors[i], alpha=alphas - 0.2)
+            band!(axright, y, zeros(length(y)), ydist,
+                color=colors[i], alpha=alphas - 0.2, direction=:y)
+        end
 
-        lines!(axmain, Point2f.(polygon), 
-               linestyle=:dash, color = colors[i], alpha=alphas)
+        lines!(axmain, Point2f.(polygon),
+            linestyle=:dash, color=colors[i], alpha=alphas)
 
         scatter!(
             axmain, xc, yc, markersize=15,
-            marker=markers[i], color = colors[i],
-            label=Makie.rich(lbl, color = colors[i]),
+            marker=markers[i], color=colors[i],
+            label=Makie.rich(lbl, color=colors[i]),
             glowcolor=:white, glowwidth=4,
         )
     end
@@ -279,18 +279,18 @@ function draw_on_axes(
 
     if !isempty(res.selections)
         axislegend(axmain, position=legendposition,
-                   framevisible = false,
-                   labelsize = legendlabelsize)
+            framevisible=false,
+            labelsize=legendlabelsize)
     end
 end
 
-function plot_diagonal(ax,x,y)
+function plot_diagonal(ax, x, y)
 
-    low = exp10(floor(log10(min(x[1],y[1]))))
-    high = exp10(ceil(log10(max(x[end],y[end]))))
+    low = exp10(floor(log10(min(x[1], y[1]))))
+    high = exp10(ceil(log10(max(x[end], y[end]))))
     lines!(
-        ax, 
-        [ (low, low), (high,high) ], 
+        ax,
+        [(low, low), (high, high)],
         color=:black, linewidth=1
     )
 end
@@ -299,13 +299,13 @@ function dynamic_plots(
     res, axmain, axtop, axright, selection, poly, xcoord, ycoord)
 
     color = cgrad(:tab10)[length(res.selections)+1]
-    scatter!(axmain, selection, color= color)
-    lines!(axmain, poly, color= color)
+    scatter!(axmain, selection, color=color)
+    lines!(axmain, poly, color=color)
 
-    vlines!(axmain, xcoord, color = :black, linewidth = 0.5, alpha = 0.5)
-    vlines!(axtop, xcoord, color = :black, linewidth = 0.5, alpha = 0.5)
-    hlines!(axmain, ycoord, color = :black, linewidth = 0.5, alpha = 0.5)
-    hlines!(axright, ycoord, color = :black, linewidth = 0.5, alpha = 0.5)
+    vlines!(axmain, xcoord, color=:black, linewidth=0.5, alpha=0.5)
+    vlines!(axtop, xcoord, color=:black, linewidth=0.5, alpha=0.5)
+    hlines!(axmain, ycoord, color=:black, linewidth=0.5, alpha=0.5)
+    hlines!(axright, ycoord, color=:black, linewidth=0.5, alpha=0.5)
 
 end
 
@@ -326,23 +326,23 @@ Run the GUI to plot the results and select peaks you want to label.
 """
 function Makie.plot(res::NMRInversions.InversionData{2})
 
-    GLMakie.activate!(; title= "2D inversion GUI")
+    GLMakie.activate!(; title="2D inversion GUI")
 
     gui = Figure(size=(900, 500))
 
-    plot!(gui[2:10, 1:9], res, title = "")
+    plot!(gui[2:10, 1:9], res, title="")
 
     axmain = gui.content[1]
     axtop = gui.content[2]
     axright = gui.content[3]
-    
+
     # Title textbox
-    tb = Textbox(gui[1, 1:7], 
-                 width=300, 
-                 reset_on_defocus=true,
-                 stored_string= res.title == "" ? " " : res.title
-                 )
-    
+    tb = Textbox(gui[1, 1:7],
+        width=300,
+        reset_on_defocus=true,
+        stored_string=res.title == "" ? " " : res.title
+    )
+
     # Buttons
     labelb = Button(gui[1, 10:15]; label="Label current selection")
     filterb = Button(gui[2, 10:15]; label="Filter-out selection")
@@ -354,8 +354,8 @@ function Makie.plot(res::NMRInversions.InversionData{2})
 
     Label(gui[5, 10:13], "Colormap:", halign=:right)
     colormenu = Menu(
-        gui[5, 14:18], 
-        options = ["viridis","tempo","heat","curl","balance","solar"],
+        gui[5, 14:18],
+        options=["viridis", "tempo", "heat", "curl", "balance", "solar"],
         default="viridis"
     )
 
@@ -363,7 +363,7 @@ function Makie.plot(res::NMRInversions.InversionData{2})
     Label(gui[6, 10:13], "Levels:", halign=:right)
 
     levelsbox = Textbox(
-        gui[6, 14:16], width=100, stored_string="40", 
+        gui[6, 14:16], width=100, stored_string="40",
         validator=Int, reset_on_defocus=true
     )
     levels = Observable(40)
@@ -375,7 +375,7 @@ function Makie.plot(res::NMRInversions.InversionData{2})
     bandcheck = Checkbox(gui[8, 14], checked=true)
 
     Label(
-        gui[9,10:19],
+        gui[9, 10:19],
         "α = $(round(res.alpha, sigdigits=3)), SNR = $(round(res.input.SNR, digits=1))"
     )
 
@@ -420,7 +420,7 @@ function Makie.plot(res::NMRInversions.InversionData{2})
         end
     end
 
-    Label(gui[10,10:19], coord_label)
+    Label(gui[10, 10:19], coord_label)
 
     z = res.data' .* res.filter'
     x = res.axes[2]
@@ -444,7 +444,7 @@ function Makie.plot(res::NMRInversions.InversionData{2})
 
     # Dynamic plots
     dynamic_plots(
-        res,axmain, axtop, axright, selection, visual_polygon, xcoord, ycoord)
+        res, axmain, axtop, axright, selection, visual_polygon, xcoord, ycoord)
 
     begin ## SELECTING POINTS
 
@@ -453,13 +453,13 @@ function Makie.plot(res::NMRInversions.InversionData{2})
 
         # Update selection Observable by pushing the selected point to it
         on(spoint) do _
-            push!(selection[], spoint[]) 
+            push!(selection[], spoint[])
             selection[] = selection[] # Update explicitly so that the plots are updated automatically
 
             if size(selection[], 1) > 2
                 polygon[] = vcat(selection[], [selection[][1]])
                 mask[] = [
-                    PolygonOps.inpolygon(p, polygon[]; in=1, on=1, out=0) 
+                    PolygonOps.inpolygon(p, polygon[]; in=1, on=1, out=0)
                     for p in points
                 ]
             end
@@ -469,15 +469,15 @@ function Makie.plot(res::NMRInversions.InversionData{2})
             if is_mouseinside(axmain)
                 if size(selection[], 1) > 1
                     visual_polygon[] = vcat(
-                        selection[], 
-                        [Point{2,Float32}(xcoord[],ycoord[])], 
+                        selection[],
+                        [Point{2,Float32}(xcoord[], ycoord[])],
                         [selection[][1]]
                     )
                 end
             end
             if !is_mouseinside(axmain)
                 if size(selection[], 1) > 1
-                    visual_polygon[] =  polygon[] 
+                    visual_polygon[] = polygon[]
                 end
             end
         end
@@ -497,8 +497,8 @@ function Makie.plot(res::NMRInversions.InversionData{2})
                 push!(res.selections, polygon[])
 
                 draw_on_axes(
-                    axmain, axtop, axright, res, 
-                    Symbol(colormenu.selection[]), fillcheck.checked[],levels[], 
+                    axmain, axtop, axright, res,
+                    Symbol(colormenu.selection[]), fillcheck.checked[], levels[],
                     12, :lt, bandcheck.checked[]
                 )
                 dynamic_plots(
@@ -539,11 +539,11 @@ function Makie.plot(res::NMRInversions.InversionData{2})
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(
-                axmain, axtop, axright, res, colormenu.selection[], 
-                fillcheck.checked[],levels[],12,:lt, bandcheck.checked[]
+                axmain, axtop, axright, res, colormenu.selection[],
+                fillcheck.checked[], levels[], 12, :lt, bandcheck.checked[]
             )
             dynamic_plots(
-                res, axmain, axtop, axright, selection, 
+                res, axmain, axtop, axright, selection,
                 visual_polygon, xcoord, ycoord
             )
 
@@ -559,11 +559,11 @@ function Makie.plot(res::NMRInversions.InversionData{2})
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(
-                axmain, axtop, axright, res, colormenu.selection[], 
-                fillcheck.checked[], levels[],12,:lt, bandcheck.checked[]
+                axmain, axtop, axright, res, colormenu.selection[],
+                fillcheck.checked[], levels[], 12, :lt, bandcheck.checked[]
             )
             dynamic_plots(
-                res, axmain, axtop, axright, selection, 
+                res, axmain, axtop, axright, selection,
                 visual_polygon, xcoord, ycoord
             )
 
@@ -578,11 +578,11 @@ function Makie.plot(res::NMRInversions.InversionData{2})
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(
-                axmain, axtop, axright, res, colormenu.selection[], 
-                fillcheck.checked[], levels[],12,:lt, bandcheck.checked[]
+                axmain, axtop, axright, res, colormenu.selection[],
+                fillcheck.checked[], levels[], 12, :lt, bandcheck.checked[]
             )
             dynamic_plots(
-                res, axmain, axtop, axright, selection, 
+                res, axmain, axtop, axright, selection,
                 visual_polygon, xcoord, ycoord
             )
 
@@ -596,11 +596,11 @@ function Makie.plot(res::NMRInversions.InversionData{2})
 
             # permutedims so that res is a matrix
             f = plot(
-                permutedims([res]), levels = levels[], 
-                colormap = Symbol(colormenu.selection[]), 
-                contf = fillcheck.checked[], bandplots=bandcheck.checked[]
+                permutedims([res]), levels=levels[],
+                colormap=Symbol(colormenu.selection[]),
+                contf=fillcheck.checked[], bandplots=bandcheck.checked[]
             )
-            savedir = NMRInversions.save_file(res.title, filterlist = "png")
+            savedir = NMRInversions.save_file(res.title, filterlist="png")
 
             if savedir == ""
                 display("Please enter a name for your file on the file dialog.")
@@ -618,44 +618,44 @@ function Makie.plot(res::NMRInversions.InversionData{2})
 
         on(colormenu.selection) do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-            draw_on_axes(axmain, axtop, axright, res, 
-                         colormenu.selection[], fillcheck.checked[], 
-                         levels[],12,:lt, bandcheck.checked[]
-                         )
+            draw_on_axes(axmain, axtop, axright, res,
+                colormenu.selection[], fillcheck.checked[],
+                levels[], 12, :lt, bandcheck.checked[]
+            )
             dynamic_plots(
-                res, axmain, axtop, axright, selection, 
+                res, axmain, axtop, axright, selection,
                 visual_polygon, xcoord, ycoord
             )
         end
 
-        on(fillcheck.checked)  do _
+        on(fillcheck.checked) do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(
-                axmain, axtop, axright, res, colormenu.selection[], 
-                fillcheck.checked[], levels[],12,:lt, bandcheck.checked[]
+                axmain, axtop, axright, res, colormenu.selection[],
+                fillcheck.checked[], levels[], 12, :lt, bandcheck.checked[]
             )
-            dynamic_plots(res, axmain, axtop, axright, 
-                          selection, visual_polygon, xcoord, ycoord)
+            dynamic_plots(res, axmain, axtop, axright,
+                selection, visual_polygon, xcoord, ycoord)
         end
 
-        on(bandcheck.checked)  do _
+        on(bandcheck.checked) do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             draw_on_axes(
-                axmain, axtop, axright, res, colormenu.selection[], 
-                fillcheck.checked[], levels[],12,:lt, bandcheck.checked[]
+                axmain, axtop, axright, res, colormenu.selection[],
+                fillcheck.checked[], levels[], 12, :lt, bandcheck.checked[]
             )
-            dynamic_plots(res, axmain, axtop, axright, 
-                          selection, visual_polygon, xcoord, ycoord)
+            dynamic_plots(res, axmain, axtop, axright,
+                selection, visual_polygon, xcoord, ycoord)
         end
 
         on(levelsbox.stored_string) do s
             levels[] = parse(Int, s)
             draw_on_axes(
-                axmain, axtop, axright, res, colormenu.selection[], 
-                fillcheck.checked[], levels[],12,:lt, bandcheck.checked[]
+                axmain, axtop, axright, res, colormenu.selection[],
+                fillcheck.checked[], levels[], 12, :lt, bandcheck.checked[]
             )
-            dynamic_plots(res, axmain, axtop, axright, 
-                          selection, visual_polygon, xcoord, ycoord)
+            dynamic_plots(res, axmain, axtop, axright,
+                selection, visual_polygon, xcoord, ycoord)
         end
 
     end ## BUTTON CLICKS
@@ -666,24 +666,24 @@ end
 ## override function to prevent logscale bug
 # https://discourse.julialang.org/t/glmakie-selecting-points-in-log-log-plot-sync-dissimilar-axes/130371/9
 function select_point(
-    scene; blocking = false, priority=2, space = :data, kwargs...)
+    scene; blocking=false, priority=2, space=:data, kwargs...)
 
     key = Mouse.left
     waspressed = Observable(false)
-    point = Observable([Point2f(0,0)])
-    point_ret = Observable(Point2f(0,0))
+    point = Observable([Point2f(0, 0)])
+    point_ret = Observable(Point2f(0, 0))
 
     # Create an initially hidden  arrow
     plotted_point = scatter!(
-        scene, point; space = :data, 
-        transformation = Makie.Transformation(scene; transform_func = identity), 
-        visible = false, marker = Circle, markersize = 20px,
-        color = RGBAf(0.1, 0.1, 0.8, 0.5), kwargs...,
+        scene, point; space=:data,
+        transformation=Makie.Transformation(scene; transform_func=identity),
+        visible=false, marker=Circle, markersize=20px,
+        color=RGBAf(0.1, 0.1, 0.8, 0.5), kwargs...,
     )
 
     onany(
-        events(scene).mousebutton, 
-        Makie.transform_func_obs(scene), 
+        events(scene).mousebutton,
+        Makie.transform_func_obs(scene),
         priority=priority
     ) do event, transform_func
 

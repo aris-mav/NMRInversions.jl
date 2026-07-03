@@ -54,7 +54,7 @@ If you want to use a vector of `expfit_struct` structures, make sure to
 splat it by using `...` in the function call (e.g. `plot!(fig, [data1, data2, data3]...)`).
 """
 function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitData...;
-     markersize=7, normeq=false, yscale = identity)
+    markersize=7, normeq=false, yscale=identity)
 
     xlbl = if res[1].input.axes[1] isa PFG
         "b factor (s/m² e-9)"
@@ -63,8 +63,8 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitDat
     end
 
     ax = Axis(
-        fig[1, 1], 
-        xlabel=xlbl, 
+        fig[1, 1],
+        xlabel=xlbl,
         ylabel="Signal (a.u.)",
         yscale=yscale,
     )
@@ -77,17 +77,17 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitDat
         if isempty(r.title)
             scatter!(ax, x, y, markersize=markersize)
         else
-            scatter!(ax, x, y, markersize=markersize, label= r.title )
+            scatter!(ax, x, y, markersize=markersize, label=r.title)
         end
 
-        xfit = NMRInversions.logrange( x[1], x[end], 2^10)
+        xfit = NMRInversions.logrange(x[1], x[end], 2^10)
         yfit = NMRInversions.mexp(r.u, typeof(r.input.axes[1])(xfit))
 
         lines!(ax, xfit, yfit, label=getfield(r, normeq == true ? :eqn : :eq))
     end
 
-    fig[2, 1] = Legend(fig, ax, orientation = :vertical,
-                       tellwidth = false, tellheight = true,
-                       nbanks=(res[1].title == "" ? 1 : 2)
-                       )
+    fig[2, 1] = Legend(fig, ax, orientation=:vertical,
+        tellwidth=false, tellheight=true,
+        nbanks=(res[1].title == "" ? 1 : 2)
+    )
 end

@@ -3,7 +3,7 @@ module gui_ext
 using NMRInversions, GLMakie, PolygonOps, LinearAlgebra, NativeFileDialog
 
 function lblx(ax::DataAxis)
-    if ax isa Union{IR, SR, CPMG}
+    if ax isa Union{IR,SR,CPMG}
         return "time (s)"
     elseif ax isa PFG
         return "b factor (s/m² e-9)"
@@ -11,7 +11,7 @@ function lblx(ax::DataAxis)
 end
 
 function lblX(ax::DataAxis)
-    if ax isa Union{IR, SR}
+    if ax isa Union{IR,SR}
         return L"T_1 \, \textrm{(s)}"
     elseif ax isa CPMG
         return L"T_2 \, \textrm{(s)}"
