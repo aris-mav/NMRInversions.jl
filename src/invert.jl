@@ -43,9 +43,9 @@ function invert(
         scale_to_one!(input.data)
     end
 
-    n_points = div(128, 2^(length(input.axes) - 1))
+    n_points = div(128, 2^(ndims(input) - 1))
 
-    axes = ntuple(Val(length(input.axes))) do i
+    axes = ntuple(Val(ndims(input))) do i
         if dims_to_invert[i]
             if isnothing(axes[i])
                 x = input.axes[i].x
@@ -63,33 +63,28 @@ function invert(
         end
     end
 
-    data, r, α =
-        if all(dims_to_invert)
+    # if dim should be inverted, select all of it
+    # if not, iterate through its elements
+    slices = Tuple(
+        inv ? (Colon(),) : Base.axes(input, dim)
+        for (dim, inv) in enumerate(dims_to_invert)
+    )
 
-            f, r, α = _solve(create_kernel(input, axes), alpha, solver, silent)
-            data = reshape(f, length.(axes))
+    data = Array{Float64}(undef, length.(axes))
+    alphas = Array{Float64}(undef, length.(axes))
+    residuals = Array{Float64}(undef, size(input.data))
 
-            data, r, α
-        else
-            names = nameof.(typeof.(input.axes))[findall(dims_to_invert)]
+    for idx in Iterators.product(slices...)
 
-            data = Array{Float64}(undef, length.(axes)...)
-
-            slices = Tuple(
-                invertable ? (Colon(),) : Base.axes(input, dim)
-                for (dim, invertable) in enumerate(dims_to_invert)
-            )
-
-            for idx in Iterators.product(slices...)
-
-                silent || println("Inverting $names, data$(_show_idx(idx))")
-
-                data[idx...], r, α = _solve(
-                    create_kernel(input[idx...], axes[findall(dims_to_invert)]),
-                    alpha, solver, silent)
-            end
-            data, r, α
+        if !silent && !all(dims_to_invert)
+            println("Inverting \
+            $(nameof.(typeof.(input.axes))[findall(dims_to_invert)]), \
+            at data$(_show_idx(idx))")
         end
+
+        data[idx...], residuals[idx...], alphas[idx...] = _solve(
+            input[idx...], axes[findall(dims_to_invert)], alpha, solver, silent)
+    end
 
     for i in eachindex(axes)
         if input.axes[i] isa PFG
@@ -102,31 +97,50 @@ function invert(
         input,
         axes,
         data,
-        r,
-        α,
+        residuals,
+        alphas,
         ones(eltype(data), size(data)),
         [],
         "",
     )
 end
 
-function _solve(ker_struct::svd_kernel_struct,
-    alpha::Real,
+function _solve(
+    input::ExperimentData, axes,
+    alpha::Union{Real,alpha_optimizer},
     solver::regularization_solver,
-    _
+    silent=silent
 )
-    f, r = solve_regularization(
-        ker_struct.K, ker_struct.g, alpha, solver
-    )
-    return f, r, alpha
-end
 
-function _solve(ker_struct::svd_kernel_struct,
-    alpha::alpha_optimizer,
-    solver::regularization_solver,
-    silent
-)
-    find_alpha(ker_struct, solver, alpha; silent=silent)
+    D = ndims(input)
+
+    if D > 2
+        error("3D inversions not implemented yet, please submit an issue.")
+    end
+
+    k = create_kernel(input, axes)
+
+    if isa(alpha, Real)
+        f, _ = solve_regularization(k.K, k.g, alpha, solver)
+    else
+        f, _, α = find_alpha(k, solver, alpha; silent=silent)
+    end
+
+    Kf = if D == 1
+        k.K_uncompressed[1] * f
+    elseif D == 2
+        k.K_uncompressed[1] * reshape(f, length.(axes)) * k.K_uncompressed[2]'
+    end
+
+    g = real.(input.data)
+
+    r = Kf - g
+
+    if isa(α, Real)
+        alphas = fill(α, size(f))
+    end
+
+    return f, r, alphas
 end
 
 function _show_idx(idx)

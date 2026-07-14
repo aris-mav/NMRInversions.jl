@@ -189,7 +189,7 @@ function gcv_score(α, r, s, x; next_alpha=true)
 end
 
 function gcv_cost(α::Real,
-    svds::svd_kernel_struct,
+    svds::Kernel,
     solver::regularization_solver)
 
     f, r = solve_regularization(svds.K, svds.g, α, solver)
@@ -237,7 +237,7 @@ end
 Solve repeatedly until the GCV score stops decreasing, following Mitchell 2012 paper.
 Select the solution with minimum gcv score and return it, along with the residuals.
 """
-function find_alpha(svds::svd_kernel_struct,
+function find_alpha(svds::Kernel,
     solver::regularization_solver,
     mode::gcv_mitchell; silent=false)
 
@@ -297,7 +297,7 @@ end
 """
 Find alpha via univariate optimization.
 """
-function find_alpha(svds::svd_kernel_struct,
+function find_alpha(svds::Kernel,
     solver::regularization_solver,
     mode::find_alpha_univariate; silent=true
 )
@@ -333,7 +333,7 @@ end
 """
 Find alpha using Fminbox optimization.
 """
-function find_alpha(svds::svd_kernel_struct,
+function find_alpha(svds::Kernel,
     solver::regularization_solver,
     mode::find_alpha_box; silent=true
 )
@@ -368,7 +368,7 @@ end
 Test `n` alpha values between `lower` and `upper` and select the one 
 which is at the heel of the L curve, accoding to Hansen 2010.
 """
-function find_alpha(svds::svd_kernel_struct,
+function find_alpha(svds::Kernel,
     solver::regularization_solver,
     mode::lcurve_range; silent=false
 )

@@ -11,7 +11,7 @@ can be used as input to our functions.
     `foo.a` and the value of `b` using `foo.b`.
 
 
-## Pulse sequences - Data Axes
+## Pulse Sequences - Data Axes
 
 The following types are used so that the `invert`
 function can create the appropriate kernel for the
@@ -35,7 +35,7 @@ make the package scale to n-dimensions, thus this
 convention is used from version 2.0 onwards.
 
 
-## Inversion solvers
+## Inversion Solvers
 
 These are used to let the invert function know
 which solver to use. 
@@ -60,7 +60,7 @@ external package extensions.
 jump_nnls
 ```
 
-## Finding optimal alpha
+## Finding Optimal Alpha
 
 These are methods for finding the optimal
 regularization parameter. They can be used as
@@ -76,7 +76,7 @@ gcv
 lcurve
 ```
 
-## Inversion and expfit inputs
+## Inversion and Expfit Inputs
 
 These can be used as inputs containing all of the
 necessary information to run the `invert` and
@@ -88,7 +88,7 @@ job).
 ExperimentData
 ```
 
-##  Inversion and expfit outputs
+##  Inversion and Expfit Outputs
 
 When you run an inversion function (e.g. ` r =
 invert(a)`), the output is an `InversionData`
@@ -99,8 +99,8 @@ InversionData
 ExpfitData
 ```
 
-## Kernel structure
+## Kernel Structure
 
 ```@docs
-svd_kernel_struct
+Kernel
 ```

@@ -1,8 +1,8 @@
 export create_kernel
 
-export svd_kernel_struct
+export Kernel
 """
-    svd_kernel_struct(K,g,U,S,V)
+    Kernel(K,g,U,S,V)
 A structure containing the following fields:
 - `K`, the kernel matrix.
 - `g`, the data vector.
@@ -10,16 +10,14 @@ A structure containing the following fields:
 - `S`, the singular values vector.
 - `V`, the right singular values matrix.
 
-To access the fields of a structure, we use the dot notation, 
-e.g. if the structure is called `a` and we want to access the kernel contained in there,
-we type `a.K`
 """
-struct svd_kernel_struct
+struct Kernel
     K::AbstractMatrix
     g::AbstractVector
     U::AbstractMatrix
     S::AbstractVector
     V::AbstractMatrix
+    K_uncompressed::AbstractVector{AbstractMatrix}
 end
 
 """
@@ -107,7 +105,9 @@ function create_kernel(
     axis = input.axes[1]
     g = W_½ * input.data
 
-    usv = svd(W_½ * create_kernel(axis, X[1], y=g))
+    K = create_kernel(axis, X[1], y=g)
+
+    usv = svd(W_½ * K)
 
     idx = isnan(input.SNR) ? (:) : findall(i -> i .> (1 / input.SNR), usv.S)
 
@@ -118,7 +118,7 @@ function create_kernel(
     K_new = Diagonal(S) * V'
     g_new = U' * real.(g)
 
-    return svd_kernel_struct(K_new, g_new, U, S, V)
+    return Kernel(K_new, g_new, U, S, V, [K])
 end
 
 
@@ -174,5 +174,5 @@ function create_kernel(
 
     K̃₀ = Diagonal(s̃) * Ṽ₀'
 
-    return svd_kernel_struct(K̃₀, g̃, Ũ₀, s̃, Ṽ₀)
+    return Kernel(K̃₀, g̃, Ũ₀, s̃, Ṽ₀,[K_dir, K_indir])
 end

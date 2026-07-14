@@ -197,6 +197,7 @@ Base.size(d::ExperimentData, dim::Int) = size(d.data, dim)
 Base.lastindex(d::ExperimentData) = lastindex(d.data)
 Base.lastindex(d::ExperimentData, dim::Int) = size(d.data, dim)
 Base.axes(d::ExperimentData, dim::Int) = axes(d.data, dim)
+Base.ndims(d::ExperimentData) = ndims(d.data)
 
 # Slice W matrix
 _slice_W(W::AbstractMatrix, idx) = W[idx, idx]
@@ -250,8 +251,8 @@ mutable struct InversionData{D}
     input::ExperimentData{D}
     axes::NTuple{D,DataAxis}
     data::AbstractArray{<:Number,D}
-    residuals::AbstractArray
-    alpha::Real
+    residuals::AbstractArray{<:Number,D}
+    alphas::AbstractArray{<:Number,D}
     filter::AbstractArray{<:Number,D}
     selections::Vector{Vector{Vector}}
     title::String

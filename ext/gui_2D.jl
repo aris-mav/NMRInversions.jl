@@ -348,7 +348,6 @@ function Makie.plot(res::NMRInversions.InversionData{2})
         default="viridis"
     )
 
-
     Label(gui[6, 10:13], "Levels:", halign=:right)
 
     levelsbox = Textbox(
@@ -362,11 +361,6 @@ function Makie.plot(res::NMRInversions.InversionData{2})
 
     Label(gui[8, 10:13], "Band plots:", halign=:right)
     bandcheck = Checkbox(gui[8, 14], checked=true)
-
-    Label(
-        gui[9, 10:19],
-        "α = $(round(res.alpha, sigdigits=3)), SNR = $(round(res.input.SNR, digits=1))"
-    )
 
     xcoord = Observable(0.0)
     ycoord = Observable(0.0)
