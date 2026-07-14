@@ -31,9 +31,9 @@ function invert(
     scale::Bool=true,
 ) where {D}
 
-    invertable_dims = haskernel.(input.axes)
+    dims_to_invert = haskernel.(input.axes)
 
-    if all(!, invertable_dims)
+    if all(!, dims_to_invert)
         error("None of the dimensions are invertable.")
     end
 
@@ -46,7 +46,7 @@ function invert(
     n_points = div(128, 2^(length(input.axes) - 1))
 
     axes = ntuple(Val(length(input.axes))) do i
-        if invertable_dims[i]
+        if dims_to_invert[i]
             if isnothing(axes[i])
                 x = input.axes[i].x
                 lower, upper = x isa PFG ?
@@ -64,45 +64,29 @@ function invert(
     end
 
     data, r, α =
-        if all(invertable_dims)
+        if all(dims_to_invert)
 
             f, r, α = _solve(create_kernel(input, axes), alpha, solver, silent)
             data = reshape(f, length.(axes))
 
             data, r, α
         else
-            # which dimensions get a fixed index each iteration 
-            # (in slowest-to-fastest order)
-            dims_to_iterate = reverse(findall(!, invertable_dims))
-            names = nameof.(typeof.(input.axes))[findall(invertable_dims)]
-
-            # the actual index ranges for those dimensions, 
-            # e.g. (1:1, 1:3) for dims (3,2)
-            ranges = Base.axes.(Ref(input), dims_to_iterate)
+            names = nameof.(typeof.(input.axes))[findall(dims_to_invert)]
 
             data = Array{Float64}(undef, length.(axes)...)
 
-            for values in Iterators.product(ranges...)
-                # `values` is a tuple like (i3, i2), 
-                # one fixed index per iterated dim,
-                # in the same order as dims_to_iterate
+            slices = Tuple(
+                invertable ? (Colon(),) : Base.axes(input, dim)
+                for (dim, invertable) in enumerate(dims_to_invert)
+            )
 
-                # map each iterated dimension to its current fixed value
-                fixed = Dict(dims_to_iterate .=> values)
+            for idx in Iterators.product(slices...)
 
-                # build the full index: `:` where invertable, fixed[d] otherwise
-                idx = ntuple(length(invertable_dims)) do d
-                    invertable_dims[d] ? Colon() : fixed[d]
-                end
-
-                silent || println("Inverting $names, at input$(_show_idx(idx))")
+                silent || println("Inverting $names, data$(_show_idx(idx))")
 
                 data[idx...], r, α = _solve(
-                    create_kernel(
-                        input[idx...], axes[findall(invertable_dims)]
-                    ),
-                    alpha, solver, silent
-                )
+                    create_kernel(input[idx...], axes[findall(dims_to_invert)]),
+                    alpha, solver, silent)
             end
             data, r, α
         end
