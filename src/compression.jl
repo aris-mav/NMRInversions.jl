@@ -65,21 +65,27 @@ function window_average(
     data = input.data
     original_length = length(x)
 
-    # Construct evenly spaced bin edges in axis coordinate space
-    # These define how we partition the axis range into compression windows
+    # separate 1st point and the rest, so that the 1st point is preserve
+    rest_x = view(x, 2:original_length)
+    
     if log
-        edges = NMRInversions.logrange(first(x), last(x), nbins + 1)
+        edges = NMRInversions.logrange(first(rest_x), last(rest_x), nbins)
     else
-        edges = range(first(x), last(x), length=nbins + 1)
+        edges = range(first(rest_x), last(rest_x), length=nbins)
     end
 
-    # Convert those axis-space edges into index-space boundaries
-    # Each edge is mapped to the first index where x >= edge
-    idx_edges = [searchsortedfirst(x, e) for e in edges]
-
+    # Map the remaining edges to index boundaries
+    rest_idx_edges = [searchsortedfirst(x, e) for e in edges]
+    
+    # Combine the first point's boundary with the rest
+    # Bin 1 starts at 1. Bin 2 starts at 2. 
+    # Subsequent bins follow our computed edges.
+    idx_edges = vcat([1, 2], rest_idx_edges[2:end])
+    
     # Ensure the final boundary includes the full array
     idx_edges[end] = original_length + 1
 
+    # Monotonicity check
     for i in 2:length(idx_edges)
         idx_edges[i] = max(idx_edges[i], idx_edges[i-1] + 1)
     end
@@ -151,5 +157,4 @@ function window_average(
         input.SNR,
         new_W
     )
-
 end
