@@ -122,6 +122,7 @@ function _solve(
 
     if isa(alpha, Real)
         f, _ = solve_regularization(k.K, k.g, alpha, solver)
+        α = alpha
     else
         f, _, α = find_alpha(k, solver, alpha; silent=silent)
     end
