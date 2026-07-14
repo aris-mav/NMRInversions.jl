@@ -76,13 +76,13 @@ end
 @testset "Inversions on artificial data" begin
     for seq in [IR, CPMG, SR]
         for snr in exp10.(2:1:4)
-            @test test_invert(seq, snr, alpha=gcv(), silent=true)
+            @test test_invert(seq, snr, alpha=GCV(), silent=true)
         end
     end
-    @test test_invert(IR, 500, alpha=gcv(1), silent=true)
-    @test test_invert(IR, 500, alpha=lcurve(1), silent=true)
-    @test test_invert(IR, 500, alpha=gcv(1e-5, 10), silent=true)
-    @test test_invert(IR, 500, alpha=lcurve(1e-5, 10), silent=true)
+    @test test_invert(IR, 500, alpha=GCV(1), silent=true)
+    @test test_invert(IR, 500, alpha=LCurve(1), silent=true)
+    @test test_invert(IR, 500, alpha=GCV(1e-5, 10), silent=true)
+    @test test_invert(IR, 500, alpha=LCurve(1e-5, 10), silent=true)
 end
 
 @testset "expfits" begin

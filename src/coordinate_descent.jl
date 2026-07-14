@@ -1,11 +1,11 @@
-# coordinate descent L1 regularisation, based on:
+# coordinate descent L1 regularization, based on:
 # https://github.com/RoyiAvital/Projects/blob/c7de61f03b1797d96d959b8b6ad718f5a4f040f8/Optimization/LsL1SolversAnalysis/SolveLsL1Cd.m
 
 using LinearAlgebra
 
-export cdL1
+export CDL1
 """
-    cdL1(; iterations, tol)
+    CDL1(; iterations, tol)
 Coordinate descent method for L1 regularization.
 
 It can be used as a "solver" for the invert function.
@@ -18,14 +18,14 @@ iterations before the algorithm stops (default value `10000`).
 - `tol` is the relative tolerance (default value `1e-5`)
 
 """
-struct cdL1 <: regularization_solver
+struct CDL1 <: RegularizationSolver
     iterations::Int
     tol::Real
 end
-cdL1(; iterations::Int=10000, tol::Real=1e-5) = cdL1(iterations, tol)
+CDL1(; iterations::Int=10000, tol::Real=1e-5) = CDL1(iterations, tol)
 
 function solve_regularization(
-    K::AbstractMatrix, g::AbstractVector, α::Real, solver::cdL1
+    K::AbstractMatrix, g::AbstractVector, α::Real, solver::CDL1
 )
     return solve_ls_l1_cd(K, g, α, solver.iterations, solver.tol)
 end

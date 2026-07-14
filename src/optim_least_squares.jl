@@ -15,7 +15,7 @@ Defaults to `0`, where `L` becomes the Identity matrix.
 - `algorithm` is of `Optim.FirstOrderOptimizer` type (defaults to `LBFGS()`).
 - `opts` an `Optim.Options()` structure which can provide some preferences to the solver.
 """
-struct optim_nnls <: regularization_solver
+struct optim_nnls <: RegularizationSolver
     L::Union{Int,AbstractMatrix}
     algorithm::Optim.FirstOrderOptimizer
     opts::Optim.Options

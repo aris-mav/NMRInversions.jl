@@ -5,7 +5,7 @@ Quickly visualise the contents of a 1D NMR data structure.
 """
 function Makie.plot(data::NMRInversions.ExperimentData{1})
 
-    GLMakie.activate!(; title="Data visualisation")
+    GLMakie.activate!(; title="Data visualization")
 
     fig = Figure()
     ax = Axis(fig[:, :])
@@ -40,7 +40,7 @@ Interactive GUI to visualise the contents of a 2D NMR data structure.
 """
 function Makie.plot(data::NMRInversions.ExperimentData{2})
 
-    GLMakie.activate!(; title="Data visualisation")
+    GLMakie.activate!(; title="Data visualization")
 
     dt = real.(data.data)
     xd = data.axes[1]

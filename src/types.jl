@@ -1,11 +1,11 @@
 "Superset of supported solvers for regularization."
-abstract type regularization_solver end;
-export regularization_solver
+abstract type RegularizationSolver end;
+export RegularizationSolver
 
 "Superset of supported methods to determine the α parameter in tikhonov
 regularization."
-abstract type alpha_optimizer end;
-export alpha_optimizer
+abstract type AlphaOptimizer end;
+export AlphaOptimizer
 
 """
     DataAxis{T} <: AbstractVector{T}
@@ -243,9 +243,9 @@ Output of the `invert` function, containing all the relevant information:
 - `data` : the results of the inversion.
 - `residuals` : an array containing the residuals of the fit.
 - `alpha` : the smooting term used to produce the `data` array.
-- `filter` : an array working as a mask to the `data` array (mostly for visualisation).
-- `selections` : polygon selections for the `data` array (mostly for visualisation).
-- `title` : a title descibing this object (mostly for visualisation).
+- `filter` : an array working as a mask to the `data` array (mostly for visualization).
+- `selections` : polygon selections for the `data` array (mostly for visualization).
+- `title` : a title descibing this object (mostly for visualization).
 """
 mutable struct InversionData{D}
     input::ExperimentData{D}
@@ -284,7 +284,7 @@ end
 
 
 # define structs for extension solvers
-function solve_regularization(K, g, α, solver::regularization_solver)
+function solve_regularization(K, g, α, solver::RegularizationSolver)
     error("The package needed for $(typeof(solver)) is not loaded.")
 end
 
@@ -306,7 +306,7 @@ Defaults to `0`, where `L` becomes the Identity matrix.
 This one is still experimental and not well-tested, 
 please submit an issue if you encounter any difficulties.
 """
-struct jump_nnls <: regularization_solver
+struct jump_nnls <: RegularizationSolver
     order::Int
     solver::Symbol
 end

@@ -16,7 +16,7 @@ b.eqn  # Print the equation of the bi-exponential fit
 results = invert(data) # do an inversion
 plot(results) # visualize and interact with results
 
-results = invert(data, alpha = lcurve(0.001, 10)) #check to see whether lcurve produces different results from gcv
+results = invert(data, alpha = LCurve(0.001, 10)) #check to see whether lcurve produces different results from GCV
 plot(results) # visualize and interact with results
 
 

@@ -112,20 +112,20 @@ inputs for the `alpha` argument in the `invert`
 function:
 
 ```@docs
-gcv()
-gcv(::Real; kwargs...)
-gcv(::Real, ::Real ; kwargs...)
-lcurve(::Real, ::Real, ::Int)
-lcurve(::Real; kwargs...)
-lcurve(::Real, ::Real ; kwargs...)
+GCV()
+GCV(::Real; kwargs...)
+GCV(::Real, ::Real ; kwargs...)
+LCurve(::Real, ::Real, ::Int)
+LCurve(::Real; kwargs...)
+LCurve(::Real, ::Real ; kwargs...)
 ```
 
-The `gcv()` method [Mitchell2012](@cite) usually
+The `GCV()` method [Mitchell2012](@cite) usually
 involves the least amount of function calls and it
 is thus much faster, thus used as the default
 option. If you want more precision, the univariate
 or box methods should be used instead. Note that
-`gcv()` will NOT work for `pdhgm()` solver, so
+`GCV()` will NOT work for `pdhgm()` solver, so
 you'll have to choose an alternative explicitly
 when using that solver.
 

@@ -185,7 +185,7 @@ where:
   ``Lf`` would be the 1st or 2nd derivative of ``f``.
 
 This way, we minimize the residuals (``||Kf-g||``)
-while preventing the norm of the  solution
+while preventing the norm of the solution
 (``||f||``) or its derivatives (``||Lf||``) from
 getting out of control due to the noise in ``g``.
 
@@ -200,7 +200,7 @@ for ``\alpha`` using the GCV method. There is also
 an option to use the `L-curve` method to find
 ``\alpha``, or supply a constant value for it.
 
-A common alternative is "L1" regularisation, which
+A common alternative is "L1" regularization, which
 is written as:
 ```math 
 \min_{f \geq 0} \ ||Kf-g||_2^2 + \alpha
@@ -214,8 +214,7 @@ and less "broad". It is useful in cases where we
 expect distinct components instead of a continuum.
 Since the 1-norm is not differentiable at 0, the
 problem is not as straightforward as the Tikhonov
-case, but it can still be handled with methods
-such as "Primal Dual Hybrid
-Gradient"[Reci2017](@cite) or "coordinate
-descent", both natively implemented in this
-package.
+case. It can still be handled with methods such as
+"Primal Dual Hybrid Gradient"[Reci2017](@cite) or
+"coordinate descent", both natively implemented in
+this package.

@@ -3,9 +3,9 @@
 
 using LinearAlgebra
 
-export pdhgm
+export PDHGM
 """
-    pdhgm(σ, τ, tol)
+    PDHGM(σ, τ, tol)
 Primal dual hybrid gradient method for L1 regularization, 
 following [this paper](https://doi.org/10.1016/j.jmr.2017.05.010)
 [Reci2017](@cite).
@@ -31,17 +31,17 @@ Therefore, it is best to normalize the NMR signal to a maximum of 1
 for convenience.
 
 Note that for this method, the role of α is inverted, with larger α values
-leading to less smoothing, not more. For that reason, `alpha=gcv()` (Mitchell method)
-will not work. Please use `alpha=gcv(starting_value)` or `alpha=gcv(lower_limit, upper_limit)', or some lcurve method instead.
+leading to less smoothing, not more. For that reason, `alpha=GCV()` (Mitchell method)
+will not work. Please use `alpha=GCV(starting_value)` or `alpha=gcv(lower_limit, upper_limit)', or some LCurve method instead.
 """
-struct pdhgm <: regularization_solver
+struct PDHGM <: RegularizationSolver
     σ::Real
     τ::Real
     tol::Real
 end
-pdhgm(; sigma::Real=10, tau::Real=0.1, tol::Real=1e-5) = pdhgm(sigma, tau, tol)
+PDHGM(; sigma::Real=10, tau::Real=0.1, tol::Real=1e-5) = PDHGM(sigma, tau, tol)
 
-function PDHGM(
+function PDHGM_solve(
     K::AbstractMatrix, s::AbstractVector, α::Real; tol=1e-5, τ=0.1, σ=10
 )
 
@@ -65,7 +65,7 @@ function PDHGM(
     return f
 end
 
-function PDHGM2(
+function PDHGM2_solve(
     K::AbstractMatrix, s::AbstractVector, α::Real; tol=1e-5, τ=0.1, σ=10
 )
 
@@ -105,10 +105,10 @@ function PDHGM2(
 end
 
 function solve_regularization(
-    K::AbstractMatrix, g::AbstractVector, α::Real, solver::pdhgm
+    K::AbstractMatrix, g::AbstractVector, α::Real, solver::PDHGM
 )
 
-    f = PDHGM2(K, g, α, tol=solver.tol, τ=solver.τ, σ=solver.σ)
+    f = PDHGM2_solve(K, g, α, tol=solver.tol, τ=solver.τ, σ=solver.σ)
 
     r = K * f - g
 

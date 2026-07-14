@@ -17,7 +17,7 @@ Defaults to `0`, where `L` becomes the Identity matrix.
     * `:fnnls`
     * `:pivot`
 """
-struct nnls <: regularization_solver
+struct nnls <: RegularizationSolver
     L::Union{Int,AbstractMatrix}
     algorithm::Symbol
 end

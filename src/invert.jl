@@ -11,8 +11,8 @@ range of the output (e.g. relaxation times or diffusion coefficients) in
 every corresponding dimension. `nothing` can be passed instead of an array in 
 any of the tuple elements, in which case a sensible array will be generated 
 automatically (that is also the default option).
-- `alpha` : can either be a single scalar value (e.g. 0.65) or an `alpha_optimizer`.
-- `solver` : is the `regularization_solver` used to solve the optimization problem.
+- `alpha` : can either be a single scalar value (e.g. 0.65) or an `AlphaOptimizer`.
+- `solver` : is the `RegularizationSolver` used to solve the optimization problem.
 - `silent` : whether the function should be printing information while it runs 
 (defaults to `false`).
 - `scale` : whether the input data should be scaled to a maximum value of 1 
@@ -23,10 +23,10 @@ function invert(
     axes::NTuple{
         D,Union{AbstractVector{<:Real},AbstractRange,Nothing}
     }=ntuple(i -> nothing, Val(D)),
-    alpha::Union{Real,alpha_optimizer}=gcv(),
+    alpha::Union{Real,AlphaOptimizer}=GCV(),
     solver::Union{
-        regularization_solver,Type{<:regularization_solver}
-    }=brd(),
+        RegularizationSolver,Type{<:RegularizationSolver}
+    }=BRD(),
     silent::Bool=false,
     scale::Bool=true,
 ) where {D}
@@ -107,8 +107,8 @@ end
 
 function _solve(
     input::ExperimentData, axes,
-    alpha::Union{Real,alpha_optimizer},
-    solver::regularization_solver,
+    alpha::Union{Real,AlphaOptimizer},
+    solver::RegularizationSolver,
     silent=silent
 )
 
