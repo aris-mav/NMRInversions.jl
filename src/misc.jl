@@ -279,6 +279,7 @@ function weighted_averages(r::InversionData{2}; silent::Bool=false)
             :SR => ["<T₁>", "s"],
             :CPMG => ["<T₂>", "s"],
             :PFG => ["<D>", "m²/s"],
+            :Spectrum => ["<δ>", "ppm"],
         )
         dir_lbl = labels[nameof(typeof(r.axes[1]))]
         ind_lbl = labels[nameof(typeof(r.axes[2]))]
@@ -320,13 +321,13 @@ function scale_filter!(res::InversionData)
 end
 
 """
-    detect_spacing(x::AbstractVector)
-
 Figure out whether `x` is log-spaced (as opposed to linearly-spaced).
 """
 function islogspaced(x::AbstractVector)
 
     length(x) < 3 && error("Need at least 3 points for variance.")
+
+    any(<(0), x) && return false
 
     lin_steps = diff(x)
     lin_cv = std(lin_steps) / mean(lin_steps)

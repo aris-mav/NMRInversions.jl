@@ -7,6 +7,8 @@ function lblx(ax::DataAxis)
         return "time (s)"
     elseif ax isa PFG
         return "b factor (s/m² e-9)"
+    elseif ax isa Spectrum
+        return "δ (ppm)"
     else
         return ""
     end
@@ -19,6 +21,8 @@ function lblX(ax::DataAxis)
         return L"T_2 \, \textrm{(s)}"
     elseif ax isa PFG
         return L"D \, \textrm{(m^2/s)}"
+    elseif ax isa Spectrum
+        return L"\delta \, \textrm{(ppm)}"
     else
         return ""
     end
@@ -31,6 +35,8 @@ function symb(ax::DataAxis)
         return "T₂"
     elseif ax isa PFG
         return "D"
+    elseif ax isa Spectrum
+        return "δ"
     else
         return ""
     end

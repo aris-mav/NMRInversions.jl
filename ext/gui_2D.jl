@@ -1,5 +1,6 @@
 ## Plots for 2D inversions
 using NMRInversions
+using NMRInversions: islogspaced
 using GLMakie
 
 """
@@ -92,17 +93,28 @@ function Makie.plot!(
         ylbl = L"%$ylbl \text{(indirect)}"
     end
 
-    if all(isa.(res.axes, Union{IR,SR,CPMG}))
+    xsc, ysc = map(val -> islogspaced(val) ? log10 : identity, (x, y))
+
+    if all(isa.(res.axes, Union{IR,SR,CPMG})) && xsc == log10 && ysc == log10
         # diagonal should be in the middle
         x_low = exp10(floor(log10(min(x[1], y[1]))))
         x_high = exp10(ceil(log10(max(x[end], y[end]))))
-        y_low = exp10(floor(log10(min(x[1], y[1]))))
-        y_high = exp10(ceil(log10(max(x[end], y[end]))))
+        y_low, y_high = x_low, x_high
     else
-        x_low = exp10(floor(log10(x[1])))
-        x_high = exp10(ceil(log10(x[end])))
-        y_low = exp10(floor(log10(y[1])))
-        y_high = exp10(ceil(log10(y[end])))
+        if xsc == log10
+            x_low = exp10(floor(log10(x[1])))
+            x_high = exp10(ceil(log10(x[end])))
+        else
+            x_low = x[1]
+            x_high = x[end]
+        end
+        if ysc == log10
+            y_low = exp10(floor(log10(y[1])))
+            y_high = exp10(ceil(log10(y[end])))
+        else
+            y_low = y[1]
+            y_high = y[end]
+        end
     end
 
     gr = fig[1:10, 1:10] = GridLayout()
@@ -114,36 +126,40 @@ function Makie.plot!(
         xlabelsize=labelsizes[1], ylabelsize=labelsizes[2],
         xticklabelsize=ticksizes[1], yticklabelsize=ticksizes[2],
         xtickalign=0, ytickalign=0,
-        xscale=log10, yscale=log10,
+        xscale=xsc, yscale=ysc,
         limits=(x_low, x_high, y_low, y_high)
     )
     axtop = Axis(
-        gr[1:2, 1:8], xscale=log10,
+        gr[1:2, 1:8], xscale=xsc,
         title=title, titlesize=titlesize, titlefont=titlefont,
         ygridvisible=false,
         limits=(x_low, x_high, 0, nothing)
     )
     axright = Axis(
-        gr[3:10, 9:10], yscale=log10,
+        gr[3:10, 9:10], yscale=ysc,
         xgridvisible=false,
         limits=(
             0, nothing, y_low, y_high,
         )
     )
 
-    if abs(log10(x_low)) + abs(log10(x_high)) <= 7
-        axmain.xticks = LogTicks(floor(log10(x_low)):ceil(log10(x_high)))
-        axtop.xticks = LogTicks(floor(log10(x_low)):ceil(log10(x_high)))
-    else
-        axmain.xticks = LogTicks(floor(log10(x_low)):2:ceil(log10(x_high)))
-        axtop.xticks = LogTicks(floor(log10(x_low)):2:ceil(log10(x_high)))
+    if xsc == log10
+        if abs(log10(x_low)) + abs(log10(x_high)) <= 7
+            axmain.xticks = LogTicks(floor(log10(x_low)):ceil(log10(x_high)))
+            axtop.xticks = LogTicks(floor(log10(x_low)):ceil(log10(x_high)))
+        else
+            axmain.xticks = LogTicks(floor(log10(x_low)):2:ceil(log10(x_high)))
+            axtop.xticks = LogTicks(floor(log10(x_low)):2:ceil(log10(x_high)))
+        end
     end
-    if abs(log10(y_low)) + abs(log10(y_high)) <= 7
-        axmain.yticks = LogTicks(floor(log10(y_low)):ceil(log10(y_high)))
-        axright.yticks = LogTicks(floor(log10(y_low)):ceil(log10(y_high)))
-    else
-        axmain.yticks = LogTicks(floor(log10(y_low)):2:ceil(log10(y_high)))
-        axright.yticks = LogTicks(floor(log10(y_low)):2:ceil(log10(y_high)))
+    if ysc == log10
+        if abs(log10(y_low)) + abs(log10(y_high)) <= 7
+            axmain.yticks = LogTicks(floor(log10(y_low)):ceil(log10(y_high)))
+            axright.yticks = LogTicks(floor(log10(y_low)):ceil(log10(y_high)))
+        else
+            axmain.yticks = LogTicks(floor(log10(y_low)):2:ceil(log10(y_high)))
+            axright.yticks = LogTicks(floor(log10(y_low)):2:ceil(log10(y_high)))
+        end
     end
 
     linkxaxes!(axmain, axtop)
@@ -216,7 +232,7 @@ function draw_on_axes(
     markers = collect('a':'z')
     colors = cgrad(:tab10)
 
-    if !any(x -> x isa PFG, res.axes)
+    if all(x -> x isa Union{IR,SR,CPMG}, res.axes)
         plot_diagonal(axmain, x, y)
     end
 
@@ -367,8 +383,9 @@ function Makie.plot(res::NMRInversions.InversionData{2})
     coord_label = Observable("")
     coord_label[] = "Hover mouse over plot to view coordinates."
 
-    sx = symb(res.axes[2])
-    sy = symb(res.axes[1])
+    x, y = res.axes[[2, 1]]
+    sx, sy = symb.((x, y))
+    xsc, ysc = map(val -> islogspaced(val) ? exp10 : identity, (x, y))
 
     # if both are the same (e.g. T2T2)
     if ==(typeof.(res.axes)...)
@@ -378,17 +395,17 @@ function Makie.plot(res::NMRInversions.InversionData{2})
 
     on(events(gui).mouseposition) do _
         if is_mouseinside(axmain)
-            xcoord[] = (exp10.(mouseposition(axmain)[1]))
-            ycoord[] = (exp10.(mouseposition(axmain)[2]))
+            xcoord[] = (xsc.(mouseposition(axmain)[1]))
+            ycoord[] = (ysc.(mouseposition(axmain)[2]))
             coord_label[] = "$sx = $(round(xcoord[],sigdigits=2)) , \
                                 $sy = $(round(ycoord[],sigdigits=2))"
         elseif is_mouseinside(axtop)
-            xcoord[] = (exp10.(mouseposition(axtop)[1]))
+            xcoord[] = (xsc.(mouseposition(axtop)[1]))
             ycoord[] = 0.0
             coord_label[] = "$sx = $(round(xcoord[],sigdigits=2))"
         elseif is_mouseinside(axright)
             xcoord[] = 0.0
-            ycoord[] = (exp10.(mouseposition(axright)[2]))
+            ycoord[] = (ysc.(mouseposition(axright)[2]))
             coord_label[] = "$sy = $(round(ycoord[],sigdigits=2))"
         else
             xcoord[] = 0.0
