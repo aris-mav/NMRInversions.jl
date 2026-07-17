@@ -37,6 +37,11 @@ function Base.getindex(E::T, I::AbstractRange{<:Integer}) where {T<:DataAxis}
     T(E.x[I])
 end
 
+# Promote integer inputs to float for any DataAxis subtype
+function (::Type{T})(x::AbstractVector{<:Integer}) where {T<:DataAxis}
+    T(float.(x))
+end
+
 # Define all the DataAxis types
 
 """
