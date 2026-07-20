@@ -24,10 +24,8 @@ function invert(
         D,Union{AbstractVector{<:Real},AbstractRange,Nothing}
     }=ntuple(i -> nothing, Val(D)),
     alpha::Union{Real,AlphaOptimizer}=GCV(),
-    solver::Union{
-        RegularizationSolver,Type{<:RegularizationSolver}
-    }=BRD(),
-    silent::Bool=false,
+    solver::Union{RegularizationSolver,Type{<:RegularizationSolver}}=BRD(),
+    silent::Bool=true,
     scale::Bool=true,
 ) where {D}
 
@@ -82,8 +80,12 @@ function invert(
             at data$(_show_idx(idx))")
         end
 
+        scale_kernel = count(dims_to_invert) < length(dims_to_invert) ?
+                       true : false
+
         data[idx...], residuals[idx...], alphas[idx...] = _solve(
-            input[idx...], axes[findall(dims_to_invert)], alpha, solver, silent)
+            input[idx...], axes[findall(dims_to_invert)],
+            alpha, solver, silent, scale_kernel)
     end
 
     for i in eachindex(axes)
@@ -109,7 +111,8 @@ function _solve(
     input::ExperimentData, axes,
     alpha::Union{Real,AlphaOptimizer},
     solver::RegularizationSolver,
-    silent=silent
+    silent::Bool,
+    kscale::Bool,
 )
 
     D = ndims(input)
@@ -118,7 +121,7 @@ function _solve(
         error("3D inversions not implemented yet, please submit an issue.")
     end
 
-    k = create_kernel(input, axes)
+    k = create_kernel(input, axes, scale=kscale)
 
     if isa(alpha, Real)
         f, _ = solve_regularization(k.K, k.g, alpha, solver)
