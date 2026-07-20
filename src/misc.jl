@@ -270,7 +270,7 @@ function weighted_averages(r::InversionData{2}; silent::Bool=false)
         indir_dist = vec(sum(spo, dims=2))
         dir_dist = vec(sum(spo, dims=1))
 
-        wa_indir[i] = indir_dist' * y / sum(spo)
+        wa_indir[i] = indir_dist' * x / sum(spo)
         wa_dir[i] = dir_dist' * y / sum(spo)
         volumes[i] = sum(spo) / sum(z)
 
