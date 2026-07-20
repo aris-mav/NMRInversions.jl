@@ -26,7 +26,7 @@ end
 Return `true` if there is a _kernel_eq function for the given type.
 """
 function haskernel(seq::Type{<:DataAxis})
-    hasmethod(_kernel_eq, Tuple{<:seq, Any}, (:x0, :y, :n))
+    hasmethod(_kernel_eq, Tuple{<:seq,Any}, (:x0, :y, :n))
 end
 function haskernel(seq::DataAxis)
     haskernel(typeof(seq))
@@ -139,8 +139,8 @@ function create_kernel(
     G = W1_½ * real.(data) * W2_½
 
     # Generate Kernels
-    K_dir = create_kernel(axes[1], X[1], y=vec(data[:, end]))
-    K_indir = create_kernel(axes[2], X[2], y=vec(data[1, :]))
+    K_dir = create_kernel(axes[1], X[1], y=vec(data[:, argmax(abs.(data[1, :]))]))
+    K_indir = create_kernel(axes[2], X[2], y=vec(data[argmax(abs.(data[:, 1])), :]))
 
     ## Perform SVD truncation
     usv_dir = svd(W1_½ * K_dir) #paper (13)
@@ -174,5 +174,5 @@ function create_kernel(
 
     K̃₀ = Diagonal(s̃) * Ṽ₀'
 
-    return Kernel(K̃₀, g̃, Ũ₀, s̃, Ṽ₀,[K_dir, K_indir])
+    return Kernel(K̃₀, g̃, Ũ₀, s̃, Ṽ₀, [K_dir, K_indir])
 end
