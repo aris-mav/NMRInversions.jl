@@ -46,7 +46,7 @@ function Makie.plot(
     linkxaxes!(ax1, ax3)
 
     for (i, r) in enumerate(res_mat)
-        draw_on_axes(ax1, ax2, ax3, r,
+        static_plots(ax1, ax2, ax3, r,
             selections=selections,
             offset=stacked ? i * 1.1 : 0,
             n_plots=length(res_mat),
@@ -88,7 +88,7 @@ function redraw(fig::Figure, res::InversionData{1}, int_low, int_high)
     empty!(fig.content[1])
     empty!(fig.content[2])
     empty!(fig.content[3])
-    draw_on_axes(fig.content[1], fig.content[2], fig.content[3], res, selections=true)
+    static_plots(fig.content[1], fig.content[2], fig.content[3], res, selections=true)
     vlines!(fig.content[2], int_low, color=:red)
     vlines!(fig.content[2], int_high, color=:red)
 end
@@ -215,7 +215,7 @@ end
 """
 - `offset` normalises the data to 1 and plots them as `data .+ offset`, used to stack many graphs.
 """
-function draw_on_axes(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
+function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
     selections=false, offset::Real=0, n_plots::Int=1, i=1)
 
     W_½ = sqrt(res.input.W[1])

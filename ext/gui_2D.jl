@@ -337,7 +337,15 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
     gui = Figure(size=(900, 500))
 
-    plot!(gui[2:10, 1:9], res, title="")
+    stored_title =
+        if haskey(kwargs, :title)
+            kwargs[:title]
+        elseif res.title != ""
+            res.title
+        end
+    kwargs = merge(NamedTuple(kwargs), (; title=""))
+
+    plot!(gui[2:10, 1:9], res; kwargs...)
 
     axmain = gui.content[1]
     axtop = gui.content[2]
@@ -347,7 +355,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
     tb = Textbox(gui[1, 1:7],
         width=300,
         reset_on_defocus=true,
-        stored_string=res.title == "" ? " " : res.title
+        stored_string=stored_title
     )
 
     # Buttons
@@ -494,7 +502,9 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             else
 
                 delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-                push!(res.selections, polygon[])
+                push!(res.selections,
+                    transp_check.checked[] ? polygon[] : reverse.(polygon[])
+                )
 
                 static_plots(
                     axmain, axtop, axright, res,
@@ -530,7 +540,6 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             if size(selection[], 1) < 3
                 @warn("You need to make a selection.")
             else
-
                 res.filter .= res.filter .* [
                     PolygonOps.inpolygon(p, polygon[]; in=0, on=0, out=1)
                     for p in points
@@ -655,6 +664,10 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
         end
 
         on(transp_check.checked) do _
+            selection[] = Point{2,Float32}[]
+            polygon[] = Point{2,Float32}[]
+            visual_polygon[] = Point{2,Float32}[]
+            mask[] = zeros(size(points))
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
