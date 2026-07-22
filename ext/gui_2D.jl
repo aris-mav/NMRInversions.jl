@@ -88,14 +88,63 @@ function Makie.plot!(
     axtop = Axis(gr[1:2, 1:8])
     axright = Axis(gr[3:10, 9:10])
 
+    axmain.xlabelsize = labelsizes[1]
+    axmain.ylabelsize = labelsizes[2]
+    axmain.xticklabelsize = ticksizes[1]
+    axmain.yticklabelsize = ticksizes[2]
+    axtop.title = title
+    axtop.titlesize = titlesize
+    axtop.titlefont = titlefont
+    axmain.xtickalign = 0
+    axmain.ytickalign = 0
+    axright.xgridvisible = false
+    axtop.ygridvisible = false
+
+    linkxaxes!(axmain, axtop)
+    linkyaxes!(axright, axmain)
+
+    hidedecorations!(axtop, grid=!extend_grid)
+    hidedecorations!(axright, grid=!extend_grid)
+
+    colgap!(gr, gap)
+    rowgap!(gr, gap)
+    if gap <= 3
+        hidespines!(axtop, :b)
+        hidespines!(axright, :l)
+    end
+
+    Makie.deactivate_interaction!(axmain, :rectanglezoom) # Disable zoom
+    Makie.deactivate_interaction!(axright, :rectanglezoom) # Disable zoom
+    Makie.deactivate_interaction!(axtop, :rectanglezoom) # Disable zoom
+
+    static_plots(
+        axmain, axtop, axright, res, colormap, contf,
+        levels, legendlabelsize, legendposition, bandplots,
+        transp,
+    )
+end
+
+
+function static_plots(
+    axmain, axtop, axright, res,
+    clmap, contf, levels, legendlabelsize,
+    legendposition, bandplots, transp)
+
+    empty!(axmain)
+    empty!(axtop)
+    empty!(axright)
 
     if transp
-        x, y = (res.axes[2].x, res.axes[1].x)
+        x, y = (res.axes[2], res.axes[1])
+        z = res.data' .* res.filter'
         xlbl, ylbl = (lblX(res.axes[2]), lblX(res.axes[1]))
     else
-        x, y = (res.axes[1].x, res.axes[2].x)
+        x, y = (res.axes[1], res.axes[2])
+        z = res.data .* res.filter
         xlbl, ylbl = (lblX(res.axes[1]), lblX(res.axes[2]))
     end
+    axmain.xlabel = xlbl
+    axmain.ylabel = ylbl
 
     if ==(typeof.(res.axes)...)
         # if both axes are of the same type (e.g. T2T2)
@@ -126,29 +175,15 @@ function Makie.plot!(
             y_high = y[end]
         end
     end
-
-    axmain.xlabel = xlbl
-    axmain.ylabel = ylbl
-    axmain.xlabelsize = labelsizes[1]
-    axmain.ylabelsize = labelsizes[2]
-    axmain.xticklabelsize = ticksizes[1]
-    axmain.yticklabelsize = ticksizes[2]
-    axmain.xtickalign = 0
-    axmain.ytickalign = 0
     axmain.limits = (x_low, x_high, y_low, y_high)
+    axtop.limits = (x_low, x_high, 0, nothing)
+    axright.limits = (0, nothing, y_low, y_high)
+
+    # scale must be defined after the limits
     axmain.xscale = xsc
     axmain.yscale = ysc
-
-    axtop.limits = (x_low, x_high, 0, nothing)
     axtop.xscale = xsc
-    axtop.title = title
-    axtop.titlesize = titlesize
-    axtop.titlefont = titlefont
-    axtop.ygridvisible = false
-
-    axright.limits = (0, nothing, y_low, y_high)
     axright.yscale = ysc
-    axright.xgridvisible = false
 
     if xsc == log10
         if abs(log10(x_low)) + abs(log10(x_high)) <= 7
@@ -158,6 +193,9 @@ function Makie.plot!(
         end
         axmain.xticks = xt
         axtop.xticks = xt
+    else
+        axmain.xticks = Makie.automatic
+        axtop.xticks = Makie.automatic
     end
 
     if ysc == log10
@@ -168,58 +206,17 @@ function Makie.plot!(
         end
         axmain.yticks = yt
         axright.yticks = yt
-    end
-
-    linkxaxes!(axmain, axtop)
-    linkyaxes!(axright, axmain)
-
-    hidedecorations!(axtop, grid=!extend_grid)
-    hidedecorations!(axright, grid=!extend_grid)
-
-    colgap!(gr, gap)
-    rowgap!(gr, gap)
-    if gap <= 3
-        hidespines!(axtop, :b)
-        hidespines!(axright, :l)
-    end
-
-    Makie.deactivate_interaction!(axmain, :rectanglezoom) # Disable zoom
-    Makie.deactivate_interaction!(axright, :rectanglezoom) # Disable zoom
-    Makie.deactivate_interaction!(axtop, :rectanglezoom) # Disable zoom
-
-    draw_on_axes(
-        axmain, axtop, axright, res, colormap, contf,
-        levels, legendlabelsize, legendposition, bandplots,
-        transp,
-    )
-end
-
-
-function draw_on_axes(
-    axmain, axtop, axright, res,
-    clmap, contf, levels, legendlabelsize,
-    legendposition, bandplots, transp)
-
-    empty!(axmain)
-    empty!(axtop)
-    empty!(axright)
-
-    if transp
-        x, y = (res.axes[2], res.axes[1])
-        z = res.data' .* res.filter'
     else
-        x, y = (res.axes[1], res.axes[2])
-        z = res.data .* res.filter
+        axmain.yticks = Makie.automatic
+        axright.yticks = Makie.automatic
     end
 
-    # Plots
     if contf == true
         reset_limits!(axmain)
-        l = axmain.finallimits[]
         heatmap!(
             axmain,
-            NMRInversions.logrange(l.origin[1], l.widths[1], length(x)),
-            NMRInversions.logrange(l.origin[2], l.widths[2], length(y)),
+            NMRInversions.logrange(x_low, x_high, length(x)),
+            NMRInversions.logrange(y_low, y_high, length(y)),
             fill(cgrad(Symbol(clmap))[1], size(z)...),
         )
         contourf!(axmain, x, y, z, colormap=clmap, levels=levels)
@@ -329,16 +326,6 @@ function dynamic_plots(
 
 end
 
-#=function draw_3d(ax3d, res, sp)=#
-#==#
-#=    surface!(ax3d, res.F' .* res.filter', colormap=:tempo)=#
-#==#
-#=    surface!(ax3d, spo, colormap=:blues,=#
-#=        colorrange=(minimum(filter(x -> x != 0, vec(z))), maximum(z)),=#
-#=        lowclip=:transparent)=#
-#==#
-#=end=#
-
 
 """
     Makie.plot(res::InversionData{2})
@@ -398,17 +385,14 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
     xcoord = Observable(0.0)
     ycoord = Observable(0.0)
-    coord_label = Observable("")
-    coord_label[] = "Hover mouse over plot to view coordinates."
+    current_coordinates_label = Observable("")
+    current_coordinates_label[] = "Hover mouse over plot to view coordinates."
 
-    transp = true
-
-    if transp
+    if transp_check.checked[]
         x, y = res.axes[[2, 1]]
     else
         x, y = res.axes[[1, 2]]
     end
-
     sx, sy = symb.((x, y))
     xsc, ysc = map(val -> islogspaced(val) ? exp10 : identity, (x, y))
 
@@ -422,39 +406,36 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
         if is_mouseinside(axmain)
             xcoord[] = (xsc.(mouseposition(axmain)[1]))
             ycoord[] = (ysc.(mouseposition(axmain)[2]))
-            coord_label[] = "$sx = $(_display_round(xcoord[])) , \
+            current_coordinates_label[] = "$sx = $(_display_round(xcoord[])) , \
                                 $sy = $(_display_round(ycoord[]))"
         elseif is_mouseinside(axtop)
             xcoord[] = (xsc.(mouseposition(axtop)[1]))
             ycoord[] = 0.0
-            coord_label[] = "$sx = $(_display_round(xcoord[]))"
+            current_coordinates_label[] = "$sx = $(_display_round(xcoord[]))"
         elseif is_mouseinside(axright)
             xcoord[] = 0.0
             ycoord[] = (ysc.(mouseposition(axright)[2]))
-            coord_label[] = "$sy = $(_display_round(ycoord[]))"
+            current_coordinates_label[] = "$sy = $(_display_round(ycoord[]))"
         else
             xcoord[] = 0.0
             ycoord[] = 0.0
-            coord_label[] = "Hover mouse over plot to view coordinates."
+            current_coordinates_label[] = "Hover mouse over plot to view coordinates."
         end
     end
 
-    Label(gui[10, 10:19], coord_label)
+    Label(gui[10, 10:19], current_coordinates_label)
 
-    z = res.data' .* res.filter'
-    x = res.axes[2]
-    y = res.axes[1]
+    if transp_check.checked[]
+        z = res.data' .* res.filter'
+        x, y = res.axes[2], res.axes[1]
+    else
+        z = res.data .* res.filter
+        x, y = res.axes[1], res.axes[2]
+    end
 
     #Create a matrix for all the discrete points in the space
     points = [[i, j] for i in x, j in y] #important, used by inpolygon later
     mask = Observable(zeros(size(points)))
-
-    # Selected points only
-    spo = @lift(($mask .* $z))
-
-    # Selected points Direct dimension distribution
-    dir_dist = @lift(vec(sum($spo, dims=1)))
-    indir_dist = @lift(vec(sum($spo, dims=2)))
 
     # Initialise Selection vectors
     selection = Observable(Point{2,Float32}[])
@@ -515,7 +496,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
                 delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
                 push!(res.selections, polygon[])
 
-                draw_on_axes(
+                static_plots(
                     axmain, axtop, axright, res,
                     Symbol(colormenu.selection[]), fill_check.checked[], levels[],
                     12, :lt, band_check.checked[], transp_check.checked[]
@@ -557,7 +538,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             end
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-            draw_on_axes(
+            static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
                 transp_check.checked[]
@@ -578,7 +559,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             empty!(res.selections)
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-            draw_on_axes(
+            static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
                 transp_check.checked[]
@@ -598,7 +579,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             res.filter .= ones(size(res.data))
 
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-            draw_on_axes(
+            static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
                 transp_check.checked[]
@@ -640,7 +621,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
         on(colormenu.selection) do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-            draw_on_axes(axmain, axtop, axright, res,
+            static_plots(axmain, axtop, axright, res,
                 colormenu.selection[], fill_check.checked[],
                 levels[], 12, :lt, band_check.checked[],
                 transp_check.checked[]
@@ -653,7 +634,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
         on(fill_check.checked) do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-            draw_on_axes(
+            static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
                 transp_check.checked[]
@@ -664,7 +645,18 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
         on(band_check.checked) do _
             delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
-            draw_on_axes(
+            static_plots(
+                axmain, axtop, axright, res, colormenu.selection[],
+                fill_check.checked[], levels[], 12, :lt, band_check.checked[],
+                transp_check.checked[]
+            )
+            dynamic_plots(res, axmain, axtop, axright,
+                selection, visual_polygon, xcoord, ycoord)
+        end
+
+        on(transp_check.checked) do _
+            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
+            static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
                 transp_check.checked[]
@@ -675,7 +667,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
         on(levelsbox.stored_string) do s
             levels[] = parse(Int, s)
-            draw_on_axes(
+            static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
                 transp_check.checked[]
