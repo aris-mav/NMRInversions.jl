@@ -3,16 +3,7 @@ using NMRInversions
 using NMRInversions: islogspaced
 using GLMakie
 
-"""
-    plot(results::AbstractVecOrMat{InversionData{2}}; kwargs...)
-
-Plot the results contained in a matrix of `InversionData{2}` structures.
-The arrangement is determined by the shape of the matrix.
-
-The arguments are:
-
-- `results` : The `InversionData{2}` matrix or vector containing the fit results.
-
+kwstring = """
 Keyword (optional) arguments:
 - `dims` : Dimensions of each plot (default: `(400, 400)`).
 - `title` : Title of the plot (default: `""`).
@@ -28,7 +19,21 @@ Keyword (optional) arguments:
 - `extend_grid` : Whether to extend the gridlines to the plots on the sides (default: `false`)
 - `legendposition` : Where to put the legend (default: `:lt` )
 - `bandplots` : Whether to use band plots to highlight the selections in the top and right distributions (default: `true`)
+- `tp`: whether the map should be transposed
+- `legend`: whether the legend describing the selections should be displayed
 """
+
+@doc """
+    plot(res_mat::AbstractVecOrMat{InversionData{2}}; kwargs...)
+
+Plot the results contained in a matrix of `InversionData{2}` structures.
+The arrangement is determined by the shape of the matrix.
+
+The arguments are:
+
+- `res_mat` : The `InversionData{2}` matrix or vector containing the fit results.
+
+""" * kwstring
 function Makie.plot(
     res_mat::AbstractVecOrMat{NMRInversions.InversionData{2}}; dims=(400, 400),
     kwargs...)
@@ -47,7 +52,7 @@ function Makie.plot(
 end
 
 
-"""
+@doc """
     plot!(fig, res::NMRInversions.InversionData{2}; kwargs...)
 
 Plot the results contained in a `InversionData{2}` structure on a figure or a grid position object.
@@ -57,28 +62,14 @@ The arguments are:
 - `fig` : The figure or grid position object.
 - `res` : The `InversionData{2}` structure containing the fit results.
 
-Keyword (optional) arguments:
-- `title` : Title of the plot (default: `""`).
-- `colormap` : Color map of the plot (default: `:viridis`).
-- `contf` : Whether to use a filled contour plot (default : `false`).
-- `levels` : Number of contour levels (default: `40`).
-- `labelsizes` : Size of the axis labels (default: `(23, 23)`).
-- `ticksizes` : Size of the axis ticks (default: `(14, 14)`).
-- `titlesize` : Size of the title (default: `17`).
-- `titlefont` : Font of the title (default: `:bold`).
-- `legendlabelsize` : Size of the legend label (default: `12`)
-- `gap` : The gap between the contour plot and the distribution plots (default: `0`)
-- `extend_grid` : Whether to extend the gridlines to the plots on the sides (default: `false`)
-- `legendposition` : Where to put the legend (default: `:lt` )
-- `bandplots` : Whether to use band plots to highlight the selections in the top and right distributions (default: `true`)
-"""
+""" * kwstring
 function Makie.plot!(
     fig::Union{Makie.Figure,Makie.GridPosition},
     res::NMRInversions.InversionData{2};
     title=res.title, colormap=:viridis, contf=false, levels=40,
     labelsizes=(23, 23), ticksizes=(15, 15), titlesize=17, titlefont=:bold,
     legendlabelsize=12, gap=0, extend_grid=false, legendposition=:lt,
-    bandplots=true, tp=true, legend=true,
+    bandplots=true, tp=false, legend=true,
 )
 
     gr = fig[1:13, 1:10] = GridLayout()
@@ -342,10 +333,11 @@ function update_legend(gui, res, ax)
     end
 end
 
-"""
-    Makie.plot(res::InversionData{2})
+@doc """
+    Makie.plot(res::InversionData{2}; kwargs...)
 Run the GUI to plot the results and select peaks you want to label.
-"""
+
+""" * kwstring
 function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
     GLMakie.activate!(; title="2D inversion GUI")
@@ -358,9 +350,18 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
         elseif res.title != ""
             res.title
         end
+
+    tp =
+        if haskey(kwargs, :tp)
+            kwargs[:tp]
+        else
+            false
+        end
+
     kwargs = merge(NamedTuple(kwargs), (;
         title="",
         legend=false,
+        tp=tp,
     ))
 
     plot!(gui[2:10, 1:9], res; kwargs...)
@@ -409,7 +410,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
     band_check = Checkbox(gui[7, 14], checked=true)
 
     Label(gui[8, 10:13], "Transpose:", halign=:right)
-    tp_check = Checkbox(gui[8, 14], checked=true)
+    tp_check = Checkbox(gui[8, 14], checked=tp)
 
     xcoord = Observable(0.0)
     ycoord = Observable(0.0)
@@ -627,7 +628,8 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             f = plot(
                 permutedims([res]), levels=levels[],
                 colormap=Symbol(colormenu.selection[]),
-                contf=fill_check.checked[], bandplots=band_check.checked[]
+                contf=fill_check.checked[], bandplots=band_check.checked[],
+                tp=tp_check.checked[]
             )
             savedir = NMRInversions.save_file(res.title, filterlist="png")
 
