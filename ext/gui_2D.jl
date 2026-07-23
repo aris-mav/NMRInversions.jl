@@ -557,11 +557,12 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             if size(selection[], 1) < 3
                 @warn("You need to make a selection.")
             else
-                poly = tp_check.checked[] ? polygon[] : reverse.(polygon[])
+                poly = tp_check.checked[] ? reverse.(polygon[]) : polygon[]
+
                 res.filter .= res.filter .* [
                     PolygonOps.inpolygon(p, poly; in=0, on=0, out=1)
                     for p in points
-                ]'
+                ]
             end
 
             static_plots(
