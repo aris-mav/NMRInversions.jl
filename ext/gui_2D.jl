@@ -395,33 +395,31 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
     current_coordinates_label = Observable("")
     current_coordinates_label[] = "Hover mouse over plot to view coordinates."
 
-    if tp_check.checked[]
-        x, y = res.axes[[2, 1]]
-    else
-        x, y = res.axes[[1, 2]]
-    end
-    sx, sy = symb.((x, y))
-    xsc, ysc = map(val -> islogspaced(val) ? exp10 : identity, (x, y))
-
-    # if both are the same (e.g. T2T2)
-    if ==(typeof.(res.axes)...)
-        sx *= "(x)"
-        sy *= "(y)"
-    end
-
     on(events(gui).mouseposition) do _
+        if tp_check.checked[]
+            x, y = res.axes[[2, 1]]
+        else
+            x, y = res.axes[[1, 2]]
+        end
+        sx, sy = symb.((x, y))
+        xsc, ysc = map(val -> islogspaced(val) ? exp10 : identity, (x, y))
+        if ==(typeof.(res.axes)...)
+            sx *= "(x)"
+            sy *= "(y)"
+        end
+
         if is_mouseinside(axmain)
-            xcoord[] = (xsc.(mouseposition(axmain)[1]))
-            ycoord[] = (ysc.(mouseposition(axmain)[2]))
+            xcoord[] = xsc.(mouseposition(axmain)[1])
+            ycoord[] = ysc.(mouseposition(axmain)[2])
             current_coordinates_label[] = "$sx = $(_display_round(xcoord[])) , \
                                 $sy = $(_display_round(ycoord[]))"
         elseif is_mouseinside(axtop)
-            xcoord[] = (xsc.(mouseposition(axtop)[1]))
+            xcoord[] = xsc.(mouseposition(axtop)[1])
             ycoord[] = 0.0
             current_coordinates_label[] = "$sx = $(_display_round(xcoord[]))"
         elseif is_mouseinside(axright)
             xcoord[] = 0.0
-            ycoord[] = (ysc.(mouseposition(axright)[2]))
+            ycoord[] = ysc.(mouseposition(axright)[2])
             current_coordinates_label[] = "$sy = $(_display_round(ycoord[]))"
         else
             xcoord[] = 0.0
@@ -539,8 +537,9 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             if size(selection[], 1) < 3
                 @warn("You need to make a selection.")
             else
+                poly = tp_check.checked[] ? polygon[] : reverse.(polygon[])
                 res.filter .= res.filter .* [
-                    PolygonOps.inpolygon(p, polygon[]; in=0, on=0, out=1)
+                    PolygonOps.inpolygon(p, poly; in=0, on=0, out=1)
                     for p in points
                 ]'
             end
