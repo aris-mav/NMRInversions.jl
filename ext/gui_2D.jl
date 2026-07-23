@@ -78,10 +78,10 @@ function Makie.plot!(
     title=res.title, colormap=:viridis, contf=false, levels=40,
     labelsizes=(23, 23), ticksizes=(15, 15), titlesize=17, titlefont=:bold,
     legendlabelsize=12, gap=0, extend_grid=false, legendposition=:lt,
-    bandplots=true, tp=true,
+    bandplots=true, tp=true, legend=true,
 )
 
-    gr = fig[1:10, 1:10] = GridLayout()
+    gr = fig[1:13, 1:10] = GridLayout()
 
     # order is important, dont change
     axmain = Axis(gr[3:10, 1:8])
@@ -122,6 +122,14 @@ function Makie.plot!(
         levels, legendlabelsize, legendposition, bandplots,
         tp,
     )
+    if !isempty(res.selections) && legend == true
+        Legend(gr[11:13, 2:8], axmain,
+            labelsize=legendlabelsize,
+            nbanks=2
+        )
+        rowgap!(gr, 10, 0)
+    end
+
 end
 
 
@@ -293,11 +301,11 @@ function static_plots(
         )
     end
 
-    if !isempty(res.selections)
-        axislegend(axmain, position=legendposition,
-            framevisible=false,
-            labelsize=legendlabelsize)
-    end
+    # if !isempty(res.selections)
+    #     axislegend(axmain, position=legendposition,
+    #         framevisible=false,
+    #         labelsize=legendlabelsize)
+    # end
 end
 
 function plot_diagonal(ax, x, y)
@@ -325,6 +333,14 @@ function dynamic_plots(
 
 end
 
+function update_legend(gui, res, ax)
+    delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
+    if !isempty(res.selections)
+        Legend(gui[11:(11+length(res.selections)+2), 1:8],
+            ax, nbanks=2, rowgap=8
+        )
+    end
+end
 
 """
     Makie.plot(res::InversionData{2})
@@ -334,7 +350,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
     GLMakie.activate!(; title="2D inversion GUI")
 
-    gui = Figure(size=(900, 500))
+    gui = Figure(size=(900, 600))
 
     stored_title =
         if haskey(kwargs, :title)
@@ -342,13 +358,18 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
         elseif res.title != ""
             res.title
         end
-    kwargs = merge(NamedTuple(kwargs), (; title=""))
+    kwargs = merge(NamedTuple(kwargs), (;
+        title="",
+        legend=false,
+    ))
 
     plot!(gui[2:10, 1:9], res; kwargs...)
 
     axmain = gui.content[1]
     axtop = gui.content[2]
     axright = gui.content[3]
+
+    update_legend(gui, res, axmain)
 
     # Title textbox
     tb = Textbox(gui[1, 1:7],
@@ -366,29 +387,29 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
     reset_filter_b = Button(gui[2, 15:19]; label="Reset filter")
     saveb = Button(gui[3, 15:19]; label="Save and exit")
 
-    Label(gui[5, 10:13], "Colormap:", halign=:right)
+    Label(gui[4, 10:13], "Colormap:", halign=:right)
     colormenu = Menu(
-        gui[5, 14:18],
+        gui[4, 14:18],
         options=["viridis", "tempo", "heat", "curl", "balance", "solar"],
         default="viridis"
     )
 
-    Label(gui[6, 10:13], "Levels:", halign=:right)
+    Label(gui[5, 10:13], "Levels:", halign=:right)
 
     levelsbox = Textbox(
-        gui[6, 14:16], width=100, stored_string="40",
+        gui[5, 14:16], width=100, stored_string="40",
         validator=Int, reset_on_defocus=true
     )
     levels = Observable(40)
 
-    Label(gui[7, 10:13], "Fill contour:", halign=:right)
-    fill_check = Checkbox(gui[7, 14], checked=false)
+    Label(gui[6, 10:13], "Fill contour:", halign=:right)
+    fill_check = Checkbox(gui[6, 14], checked=false)
 
-    Label(gui[8, 10:13], "Band plots:", halign=:right)
-    band_check = Checkbox(gui[8, 14], checked=true)
+    Label(gui[7, 10:13], "Band plots:", halign=:right)
+    band_check = Checkbox(gui[7, 14], checked=true)
 
-    Label(gui[9, 10:13], "Transpose:", halign=:right)
-    tp_check = Checkbox(gui[9, 14], checked=true)
+    Label(gui[8, 10:13], "Transpose:", halign=:right)
+    tp_check = Checkbox(gui[8, 14], checked=true)
 
     xcoord = Observable(0.0)
     ycoord = Observable(0.0)
@@ -428,7 +449,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
         end
     end
 
-    Label(gui[10, 10:19], current_coordinates_label)
+    Label(gui[13, 10:19], current_coordinates_label)
 
     if tp_check.checked[]
         z = res.data' .* res.filter'
@@ -497,12 +518,9 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             if size(selection[], 1) < 3
                 @warn("You need to make a selection.")
             else
-
-                delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
                 push!(res.selections,
                     tp_check.checked[] ? reverse.(polygon[]) : polygon[]
                 )
-
                 static_plots(
                     axmain, axtop, axright, res,
                     Symbol(colormenu.selection[]), fill_check.checked[], levels[],
@@ -512,6 +530,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
                     res, axmain, axtop, axright, selection,
                     visual_polygon, xcoord, ycoord
                 )
+                update_legend(gui, res, axmain)
                 # Clear for next selection
                 selection[] = Point{2,Float32}[]
                 polygon[] = Point{2,Float32}[]
@@ -544,7 +563,6 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
                 ]'
             end
 
-            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
@@ -554,6 +572,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
                 res, axmain, axtop, axright, selection,
                 visual_polygon, xcoord, ycoord
             )
+            update_legend(gui, res, axmain)
 
             selection[] = Point{2,Float32}[]
             polygon[] = Point{2,Float32}[]
@@ -565,7 +584,6 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
         on(reset_sel_b.clicks) do _
             empty!(res.selections)
 
-            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
@@ -575,6 +593,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
                 res, axmain, axtop, axright, selection,
                 visual_polygon, xcoord, ycoord
             )
+            update_legend(gui, res, axmain)
 
             selection[] = Point{2,Float32}[]
             polygon[] = Point{2,Float32}[]
@@ -585,7 +604,6 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
         on(reset_filter_b.clicks) do _
             res.filter .= ones(size(res.data))
 
-            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
@@ -595,6 +613,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
                 res, axmain, axtop, axright, selection,
                 visual_polygon, xcoord, ycoord
             )
+            update_legend(gui, res, axmain)
 
             selection[] = Point{2,Float32}[]
             polygon[] = Point{2,Float32}[]
@@ -627,7 +646,6 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
         end
 
         on(colormenu.selection) do _
-            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             static_plots(axmain, axtop, axright, res,
                 colormenu.selection[], fill_check.checked[],
                 levels[], 12, :lt, band_check.checked[],
@@ -637,10 +655,10 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
                 res, axmain, axtop, axright, selection,
                 visual_polygon, xcoord, ycoord
             )
+            update_legend(gui, res, axmain)
         end
 
         on(fill_check.checked) do _
-            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
@@ -648,10 +666,10 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             )
             dynamic_plots(res, axmain, axtop, axright,
                 selection, visual_polygon, xcoord, ycoord)
+            update_legend(gui, res, axmain)
         end
 
         on(band_check.checked) do _
-            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
@@ -659,6 +677,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             )
             dynamic_plots(res, axmain, axtop, axright,
                 selection, visual_polygon, xcoord, ycoord)
+            update_legend(gui, res, axmain)
         end
 
         on(tp_check.checked) do _
@@ -666,7 +685,6 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             polygon[] = Point{2,Float32}[]
             visual_polygon[] = Point{2,Float32}[]
             mask[] = zeros(size(points))
-            delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
@@ -674,6 +692,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             )
             dynamic_plots(res, axmain, axtop, axright,
                 selection, visual_polygon, xcoord, ycoord)
+            update_legend(gui, res, axmain)
         end
 
         on(levelsbox.stored_string) do s
@@ -685,6 +704,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             )
             dynamic_plots(res, axmain, axtop, axright,
                 selection, visual_polygon, xcoord, ycoord)
+            update_legend(gui, res, axmain)
         end
 
     end ## BUTTON CLICKS
