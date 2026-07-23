@@ -255,9 +255,8 @@ function weighted_averages(r::InversionData{2}; silent::Bool=false)
     wa_dir = Vector(undef, length(r.selections))
     volumes = Vector(undef, length(r.selections))
 
-    z = r.data' .* r.filter'
-    x = r.axes[2]
-    y = r.axes[1]
+    z = r.data .* r.filter
+    x, y = r.axes[1], r.axes[2]
 
     points = [[i, j] for i in x, j in y]
     mask = zeros(size(points))
@@ -267,11 +266,11 @@ function weighted_averages(r::InversionData{2}; silent::Bool=false)
         mask .= [PolygonOps.inpolygon(p, s; in=1, on=1, out=0) for p in points]
         spo = mask .* z
 
-        indir_dist = vec(sum(spo, dims=2))
-        dir_dist = vec(sum(spo, dims=1))
+        dir_dist = vec(sum(spo, dims=2))
+        indir_dist = vec(sum(spo, dims=1))
 
-        wa_indir[i] = indir_dist' * x / sum(spo)
-        wa_dir[i] = dir_dist' * y / sum(spo)
+        wa_indir[i] = indir_dist' * y / sum(spo)
+        wa_dir[i] = dir_dist' * x / sum(spo)
         volumes[i] = sum(spo) / sum(z)
 
         labels = Dict(

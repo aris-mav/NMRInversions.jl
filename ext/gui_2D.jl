@@ -78,7 +78,7 @@ function Makie.plot!(
     title=res.title, colormap=:viridis, contf=false, levels=40,
     labelsizes=(23, 23), ticksizes=(15, 15), titlesize=17, titlefont=:bold,
     legendlabelsize=12, gap=0, extend_grid=false, legendposition=:lt,
-    bandplots=true, transp=true,
+    bandplots=true, tp=true,
 )
 
     gr = fig[1:10, 1:10] = GridLayout()
@@ -120,7 +120,7 @@ function Makie.plot!(
     static_plots(
         axmain, axtop, axright, res, colormap, contf,
         levels, legendlabelsize, legendposition, bandplots,
-        transp,
+        tp,
     )
 end
 
@@ -128,13 +128,13 @@ end
 function static_plots(
     axmain, axtop, axright, res,
     clmap, contf, levels, legendlabelsize,
-    legendposition, bandplots, transp)
+    legendposition, bandplots, tp)
 
     empty!(axmain)
     empty!(axtop)
     empty!(axright)
 
-    if transp
+    if tp
         x, y = (res.axes[2], res.axes[1])
         z = res.data' .* res.filter'
         xlbl, ylbl = (lblX(res.axes[2]), lblX(res.axes[1]))
@@ -248,6 +248,9 @@ function static_plots(
 
     for (i, polygon) in enumerate(res.selections)
 
+        if tp
+            polygon = reverse.(polygon)
+        end
         # Selected points only
         mask .= [PolygonOps.inpolygon(p, polygon; in=1, on=1, out=0) for p in points]
         spo = mask .* z
@@ -259,17 +262,13 @@ function static_plots(
         xc = xdist ⋅ x / sum(spo)
         yc = ydist ⋅ y / sum(spo)
 
-        if transp
-            sx, sy = (symb(res.axes[2]), symb(res.axes[1]))
-        else
-            sx, sy = (symb(res.axes[1]), symb(res.axes[2]))
-        end
+        s_dir, s_indir = (symb(res.axes[1]), symb(res.axes[2]))
 
         lbl = if res.axes[2] isa Union{IR,SR} && res.axes[1] isa CPMG
             "T₁/T₂ = $(round(wa_indir[i]/wa_dir[i] , digits=1))"
         else
-            "$sy = $(_display_round(wa_indir[i])), \
-            $sx = $(_display_round(wa_dir[i]))"
+            "$s_indir = $(_display_round(wa_indir[i])), \
+            $s_dir = $(_display_round(wa_dir[i]))"
         end
 
         lbl *= "\nVolume = $(round(volumes[i] *100 ,digits = 1))%"
@@ -389,14 +388,14 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
     band_check = Checkbox(gui[8, 14], checked=true)
 
     Label(gui[9, 10:13], "Transpose:", halign=:right)
-    transp_check = Checkbox(gui[9, 14], checked=true)
+    tp_check = Checkbox(gui[9, 14], checked=true)
 
     xcoord = Observable(0.0)
     ycoord = Observable(0.0)
     current_coordinates_label = Observable("")
     current_coordinates_label[] = "Hover mouse over plot to view coordinates."
 
-    if transp_check.checked[]
+    if tp_check.checked[]
         x, y = res.axes[[2, 1]]
     else
         x, y = res.axes[[1, 2]]
@@ -433,7 +432,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
     Label(gui[10, 10:19], current_coordinates_label)
 
-    if transp_check.checked[]
+    if tp_check.checked[]
         z = res.data' .* res.filter'
         x, y = res.axes[2], res.axes[1]
     else
@@ -503,13 +502,13 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
                 delete!.(gui.content[findall(x -> x isa Legend, gui.content)])
                 push!(res.selections,
-                    transp_check.checked[] ? polygon[] : reverse.(polygon[])
+                    tp_check.checked[] ? reverse.(polygon[]) : polygon[]
                 )
 
                 static_plots(
                     axmain, axtop, axright, res,
                     Symbol(colormenu.selection[]), fill_check.checked[], levels[],
-                    12, :lt, band_check.checked[], transp_check.checked[]
+                    12, :lt, band_check.checked[], tp_check.checked[]
                 )
                 dynamic_plots(
                     res, axmain, axtop, axright, selection,
@@ -550,7 +549,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
-                transp_check.checked[]
+                tp_check.checked[]
             )
             dynamic_plots(
                 res, axmain, axtop, axright, selection,
@@ -571,7 +570,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
-                transp_check.checked[]
+                tp_check.checked[]
             )
             dynamic_plots(
                 res, axmain, axtop, axright, selection,
@@ -591,7 +590,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
-                transp_check.checked[]
+                tp_check.checked[]
             )
             dynamic_plots(
                 res, axmain, axtop, axright, selection,
@@ -633,7 +632,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             static_plots(axmain, axtop, axright, res,
                 colormenu.selection[], fill_check.checked[],
                 levels[], 12, :lt, band_check.checked[],
-                transp_check.checked[]
+                tp_check.checked[]
             )
             dynamic_plots(
                 res, axmain, axtop, axright, selection,
@@ -646,7 +645,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
-                transp_check.checked[]
+                tp_check.checked[]
             )
             dynamic_plots(res, axmain, axtop, axright,
                 selection, visual_polygon, xcoord, ycoord)
@@ -657,13 +656,13 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
-                transp_check.checked[]
+                tp_check.checked[]
             )
             dynamic_plots(res, axmain, axtop, axright,
                 selection, visual_polygon, xcoord, ycoord)
         end
 
-        on(transp_check.checked) do _
+        on(tp_check.checked) do _
             selection[] = Point{2,Float32}[]
             polygon[] = Point{2,Float32}[]
             visual_polygon[] = Point{2,Float32}[]
@@ -672,7 +671,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
-                transp_check.checked[]
+                tp_check.checked[]
             )
             dynamic_plots(res, axmain, axtop, axright,
                 selection, visual_polygon, xcoord, ycoord)
@@ -683,7 +682,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],
                 fill_check.checked[], levels[], 12, :lt, band_check.checked[],
-                transp_check.checked[]
+                tp_check.checked[]
             )
             dynamic_plots(res, axmain, axtop, axright,
                 selection, visual_polygon, xcoord, ycoord)
