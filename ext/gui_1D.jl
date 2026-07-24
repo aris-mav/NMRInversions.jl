@@ -29,15 +29,15 @@ function Makie.plot(
 
     ax1 = Axis(
         position1,
-        xlabel=lblx(res.input.axes[1]), ylabel="Signal (a.u.)",
+        xlabel=x_label(res.input.axes[1]), ylabel="Signal (a.u.)",
         yscale=yscale, xscale=xscale
     )
     ax2 = Axis(
         position2,
-        xlabel=lblX(res.axes[1]), xscale=log10
+        xlabel=X_label(res.axes[1]), xscale=log10
     )
     ax3 = Axis(
-        position3, xlabel=lblx(res.input.axes[1]), ylabel="Residuals (a.u.)",
+        position3, xlabel=x_label(res.input.axes[1]), ylabel="Residuals (a.u.)",
         xscale=xscale
     )
 

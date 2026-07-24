@@ -136,11 +136,11 @@ function static_plots(
     if tp
         x, y = (res.axes[2], res.axes[1])
         z = res.data' .* res.filter'
-        xlbl, ylbl = (lblX(res.axes[2]), lblX(res.axes[1]))
+        xlbl, ylbl = (X_label(res.axes[2]), X_label(res.axes[1]))
     else
         x, y = (res.axes[1], res.axes[2])
         z = res.data .* res.filter
-        xlbl, ylbl = (lblX(res.axes[1]), lblX(res.axes[2]))
+        xlbl, ylbl = (X_label(res.axes[1]), X_label(res.axes[2]))
     end
     axmain.xlabel = xlbl
     axmain.ylabel = ylbl

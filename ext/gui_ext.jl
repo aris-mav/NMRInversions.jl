@@ -2,45 +2,22 @@ module gui_ext
 
 using NMRInversions, GLMakie, PolygonOps, LinearAlgebra, NativeFileDialog
 
-function lblx(ax::DataAxis)
-    if ax isa Union{IR,SR,CPMG}
-        return "time (s)"
-    elseif ax isa PFG
-        return "b factor (s/m² e-9)"
-    elseif ax isa Spectrum
-        return "δ (ppm)"
-    else
-        return ""
-    end
-end
+x_label(::Union{IR,SR,CPMG}) = "time (s)"
+x_label(::PFG) = "b factor (s/m² e-9)"
+x_label(::Spectrum) = "δ (ppm)"
+x_label(::DataAxis) = ""
 
-function lblX(ax::DataAxis)
-    if ax isa Union{IR,SR}
-        return L"T_1 \, \textrm{(s)}"
-    elseif ax isa CPMG
-        return L"T_2 \, \textrm{(s)}"
-    elseif ax isa PFG
-        return L"D \, \textrm{(m^2/s)}"
-    elseif ax isa Spectrum
-        return L"\delta \, \textrm{(ppm)}"
-    else
-        return ""
-    end
-end
+X_label(::Union{IR,SR}) = L"T_1 \, \textrm{(s)}"
+X_label(::CPMG) = L"T_2 \, \textrm{(s)}"
+X_label(::PFG) = L"D \, \textrm{(m^2/s)}"
+X_label(::Spectrum) = L"\delta \, \textrm{(ppm)}"
+X_label(::DataAxis) = ""
 
-function symb(ax::DataAxis)
-    if ax isa Union{IR,SR}
-        return "T₁"
-    elseif ax isa CPMG
-        return "T₂"
-    elseif ax isa PFG
-        return "D"
-    elseif ax isa Spectrum
-        return "δ"
-    else
-        return ""
-    end
-end
+symb(::Union{IR,SR}) = "T₁"
+symb(::CPMG) = "T₂"
+symb(::PFG) = "D"
+symb(::Spectrum) = "δ"
+symb(::DataAxis) = ""
 
 include("./gui_data.jl")
 include("./gui_1D.jl")
