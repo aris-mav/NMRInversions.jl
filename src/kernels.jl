@@ -98,20 +98,16 @@ end
 function create_kernel(
     input::ExperimentData{1},
     X::NTuple{1,AbstractVector};
-    scale=false,
 )
 
     W_½ = sqrt(input.W[1])
-
     axis = input.axes[1]
-    g = W_½ * input.data
+    g = input.data
 
     K = create_kernel(axis, X[1], y=g)
+    scale_to_one!(K)
 
-    if scale
-        scale_to_one!(K)
-    end
-
+    g = W_½ * g
     usv = svd(W_½ * K)
 
     idx = isnan(input.SNR) ? (:) : findall(i -> i .> (1 / input.SNR), usv.S)
@@ -133,7 +129,6 @@ end
 function create_kernel(
     input::ExperimentData{2},
     X::NTuple{2,AbstractVector};
-    scale=false
 )
 
     axes = input.axes
@@ -148,10 +143,8 @@ function create_kernel(
     K_dir = create_kernel(axes[1], X[1], y=vec(data[:, argmax(abs.(data[1, :]))]))
     K_indir = create_kernel(axes[2], X[2], y=vec(data[argmax(abs.(data[:, 1])), :]))
 
-    if scale
-        scale_to_one!(K_dir)
-        scale_to_one!(K_indir)
-    end
+    scale_to_one!(K_dir)
+    scale_to_one!(K_indir)
 
     ## Perform SVD truncation
     usv_dir = svd(W1_½ * K_dir) #paper (13)

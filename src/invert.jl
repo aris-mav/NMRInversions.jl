@@ -80,12 +80,8 @@ function invert(
             at data$(_show_idx(idx))")
         end
 
-        scale_kernel = count(dims_to_invert) < length(dims_to_invert) ?
-                       true : false
-
         data[idx...], residuals[idx...], alphas[idx...] = _solve(
-            input[idx...], axes[findall(dims_to_invert)],
-            alpha, solver, silent, scale_kernel)
+            input[idx...], axes[findall(dims_to_invert)], alpha, solver, silent)
     end
 
     for i in eachindex(axes)
@@ -112,7 +108,6 @@ function _solve(
     alpha::Union{Real,AlphaOptimizer},
     solver::RegularizationSolver,
     silent::Bool,
-    kscale::Bool,
 )
 
     D = ndims(input)
@@ -121,7 +116,7 @@ function _solve(
         error("3D inversions not implemented yet, please submit an issue.")
     end
 
-    k = create_kernel(input, axes, scale=kscale)
+    k = create_kernel(input, axes)
 
     if isa(alpha, Real)
         f, _ = solve_regularization(k.K, k.g, alpha, solver)
