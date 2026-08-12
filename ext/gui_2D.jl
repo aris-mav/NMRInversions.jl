@@ -397,11 +397,16 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
     Label(gui[5, 10:13], "Levels:", halign=:right)
 
+    l = if haskey(kwargs, :levels)
+        kwargs[:levels]
+    else
+        40
+    end
     levelsbox = Textbox(
-        gui[5, 14:16], width=100, stored_string="40",
+        gui[5, 14:16], width=100, stored_string=string((l)),
         validator=Int, reset_on_defocus=true
     )
-    levels = Observable(40)
+    levels = Observable(l)
 
     Label(gui[6, 10:13], "Fill contour:", halign=:right)
     fill_check = Checkbox(gui[6, 14], checked=false)
