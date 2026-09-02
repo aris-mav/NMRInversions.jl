@@ -37,15 +37,15 @@ end
 
 function T2T2_data()
 
-    x_direct = range(1, 5000, 500) .* (250 * 1e-6)
-    x_indirect = logrange(1, 5000, 32) .* (250 * 1e-6)
+    x_direct = CPMG(range(1, 5000, 500) .* (250 * 1e-6))
+    x_indirect = CPMG(logrange(1, 5000, 32) .* (250 * 1e-6))
     X = exp10.(range(-5, 1, 128))
     f = [
         0.5exp.(-(x + 0.7)^2 / 0.2) + exp.(-(x - 1.3)^2 / 1.9)
         for x in range(-5, 5, length(X))
     ]
-    A = create_kernel(CPMG, x_direct, X)
-    B = create_kernel(CPMG, x_indirect, X)
+    A = create_kernel(x_direct, X)
+    B = create_kernel(x_indirect, X)
     K = Diagonal(f)
 
     G = A * K * B'

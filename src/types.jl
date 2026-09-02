@@ -30,6 +30,8 @@ Base.IndexStyle(::Type{<:DataAxis}) = IndexLinear()
 Base.getindex(E::DataAxis, i::Int) = E.x[i]
 Base.setindex!(E::DataAxis, val, i::Int) = (E.x[i] = val)
 
+Base.convert(::Type{S}, x::AbstractVector) where {S<:DataAxis} = S(x)
+
 function Base.getindex(E::T, I::AbstractArray{<:Integer}) where {T<:DataAxis}
     T(E.x[I])
 end
@@ -50,9 +52,9 @@ end
 `DataAxis` type for inversion recovery measurements.
 The `x` field contains the corresponding time data.
 """
-struct IR{T<:Real} <: DataAxis{T}
-    x::AbstractVector{T}
-end;
+struct IR{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
+    x::V
+end
 export IR
 
 """
@@ -61,9 +63,9 @@ export IR
 `DataAxis` type for saturation recovery measurements.
 The `x` field contains the corresponding time data.
 """
-struct SR{T<:Real} <: DataAxis{T}
-    x::AbstractVector{T}
-end;
+struct SR{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
+    x::V
+end
 export SR
 
 """
@@ -72,9 +74,9 @@ export SR
 `DataAxis` type for CPMG measurements.
 The `x` field contains the corresponding time data.
 """
-struct CPMG{T<:Real} <: DataAxis{T}
-    x::AbstractVector{T}
-end;
+struct CPMG{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
+    x::V
+end
 export CPMG
 
 """
@@ -83,9 +85,9 @@ export CPMG
 `DataAxis` type for pulsed field gradient measurements.
 The `x` field contains the corresponding b-factor data.
 """
-struct PFG{T<:Real} <: DataAxis{T}
-    x::AbstractVector{T}
-end;
+struct PFG{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
+    x::V
+end
 export PFG
 
 """
@@ -94,9 +96,9 @@ export PFG
 `DataAxis` type for NMR spectra.
 The `x` field contains the corresponding ppm data.
 """
-struct Spectrum{T<:Real} <: DataAxis{T}
-    x::AbstractVector{T}
-end;
+struct Spectrum{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
+    x::V
+end
 export Spectrum
 
 """
@@ -105,9 +107,10 @@ export Spectrum
 `DataAxis` type for free induction decay measurements.
 The `x` field contains the corresponding time data.
 """
-struct FID{T<:Real} <: DataAxis{T}
-    x::AbstractVector{T}
-end;
+struct FID{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
+    x::V
+end
+
 export FID
 
 """
@@ -116,9 +119,9 @@ export FID
 `DataAxis` type for field cycling (or "dispersion") measurements.
 The `x` field contains the corresponding B0 data.
 """
-struct FC{T<:Real} <: DataAxis{T}
-    x::AbstractVector{T}
-end;
+struct FC{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
+    x::V
+end
 export FC
 
 
