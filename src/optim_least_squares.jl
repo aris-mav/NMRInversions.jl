@@ -1,4 +1,4 @@
-using Optim
+using Optim, ADTypes, ForwardDiff
 
 export optim_nnls
 """
@@ -60,7 +60,7 @@ function solve_nnls(A::AbstractMatrix, b::AbstractVector, solver::optim_nnls;
         x -> norm(A * x - b),
         zeros(size(A, 2)), fill(Inf, size(A, 2)), start,
         Fminbox(solver.algorithm),
-        autodiff=:forward,
+        autodiff=ADTypes.AutoForwardDiff(),
         solver.opts
     ).minimizer
 
