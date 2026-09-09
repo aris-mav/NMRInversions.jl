@@ -204,53 +204,53 @@ function read_tnt_header(filename::String)
     h = Dict{String,Any}()
 
     # --- Points and scans (76 bytes) ---
-    h["npts"] = [read(io, Int32) for _ in 1:4]   # 16 bytes
-    h["actual_npts"] = [read(io, Int32) for _ in 1:4]   # 16 bytes
-    h["acq_points"] = read(io, Int32)                   #  4 bytes
-    h["npts_start"] = [read(io, Int32) for _ in 1:4]   # 16 bytes
-    h["scans"] = read(io, Int32)                   #  4 bytes
+    h["npts"] = [read(io, Int32) for _ in 1:4]            # 16 bytes
+    h["actual_npts"] = [read(io, Int32) for _ in 1:4]     # 16 bytes
+    h["acq_points"] = read(io, Int32)                     #  4 bytes
+    h["npts_start"] = [read(io, Int32) for _ in 1:4]      # 16 bytes
+    h["scans"] = read(io, Int32)                          #  4 bytes
     h["actual_scans"] = read(io, Int32)                   #  4 bytes
-    h["dummy_scans"] = read(io, Int32)                   #  4 bytes
+    h["dummy_scans"] = read(io, Int32)                    #  4 bytes
     h["repeat_times"] = read(io, Int32)                   #  4 bytes
-    h["sadimension"] = read(io, Int32)                   #  4 bytes
-    h["samode"] = read(io, Int32)                   #  4 bytes
+    h["sadimension"] = read(io, Int32)                    #  4 bytes
+    h["samode"] = read(io, Int32)                         #  4 bytes
     # space1[0] — zero bytes, nothing to skip
     # Running offset: 76
 
     # --- Field and frequencies (164 bytes cumulative, so 88 bytes here) ---
-    h["magnet_field"] = read(io, Float64)                 #  8
-    h["ob_freq"] = [read(io, Float64) for _ in 1:4]  # 32
-    h["base_freq"] = [read(io, Float64) for _ in 1:4]  # 32
-    h["offset_freq"] = [read(io, Float64) for _ in 1:4]  # 32
-    h["ref_freq"] = read(io, Float64)                 #  8
+    h["magnet_field"] = read(io, Float64)                  #  8
+    h["ob_freq"] = [read(io, Float64) for _ in 1:4]        # 32
+    h["base_freq"] = [read(io, Float64) for _ in 1:4]      # 32
+    h["offset_freq"] = [read(io, Float64) for _ in 1:4]    # 32
+    h["ref_freq"] = read(io, Float64)                      #  8
     h["NMR_frequency"] = read(io, Float64)                 #  8
-    h["obs_channel"] = read(io, Int16)                   #  2
-    skip(io, 42)  # space2[42]
+    h["obs_channel"] = read(io, Int16)                     #  2
+    skip(io, 42)                                           # space2[42]
     # 8+32+32+32+8+8+2+42 = 164. ✓
 
     # --- Spectral width, dwell, filter (128 bytes) ---
-    h["sw"] = [read(io, Float64) for _ in 1:4]  # 32
-    h["dwell"] = [read(io, Float64) for _ in 1:4]  # 32
-    h["filter"] = read(io, Float64)                  #  8
-    h["experiment_time"] = read(io, Float64)                  #  8
-    h["acq_time"] = read(io, Float64)                  #  8
-    h["last_delay"] = read(io, Float64)                  #  8
-    h["spectrum_direction"] = read(io, Int16)                    #  2
-    h["hardware_sideband"] = read(io, Int16)                    #  2
-    h["Taps"] = read(io, Int16)                    #  2
-    h["Type"] = read(io, Int16)                    #  2
-    h["bDigRec"] = read(io, Int32)                    #  4  (BOOL)
-    h["nDigitalCenter"] = read(io, Int32)                    #  4
-    skip(io, 16)  # space3[16]
+    h["sw"] = [read(io, Float64) for _ in 1:4]             # 32
+    h["dwell"] = [read(io, Float64) for _ in 1:4]          # 32
+    h["filter"] = read(io, Float64)                        #  8
+    h["experiment_time"] = read(io, Float64)               #  8
+    h["acq_time"] = read(io, Float64)                      #  8
+    h["last_delay"] = read(io, Float64)                    #  8
+    h["spectrum_direction"] = read(io, Int16)              #  2
+    h["hardware_sideband"] = read(io, Int16)               #  2
+    h["Taps"] = read(io, Int16)                            #  2
+    h["Type"] = read(io, Int16)                            #  2
+    h["bDigRec"] = read(io, Int32)                         #  4  (BOOL)
+    h["nDigitalCenter"] = read(io, Int32)                  #  4
+    skip(io, 16)                                           # space3[16]
     # 32+32+8+8+8+8+2+2+2+2+4+4+16 = 128 ✓
 
     # --- Hardware settings (20 bytes) ---
-    h["transmitter_gain"] = read(io, Int16)                   #  2
+    h["transmitter_gain"] = read(io, Int16)                #  2
     h["receiver_gain"] = read(io, Int16)                   #  2
-    h["NumberOfReceivers"] = read(io, Int16)                   #  2
-    h["RG2"] = read(io, Int16)                   #  2
-    h["receiver_phase"] = read(io, Float64)                 #  8
-    skip(io, 4)  # space4[4]
+    h["NumberOfReceivers"] = read(io, Int16)               #  2
+    h["RG2"] = read(io, Int16)                             #  2
+    h["receiver_phase"] = read(io, Float64)                #  8
+    skip(io, 4)                                            # space4[4]
     # 2+2+2+2+8+4 = 20 ✓
 
     # --- Spinning (4 bytes) ---
