@@ -734,7 +734,7 @@ function select_point(
     plotted_point = scatter!(
         scene, point; space=:data,
         transformation=Makie.Transformation(scene; transform_func=identity),
-        visible=false, marker=Circle, markersize=20px,
+        visible=false, marker=Circle, markersize=20,
         color=RGBAf(0.1, 0.1, 0.8, 0.5), kwargs...,
     )
 
