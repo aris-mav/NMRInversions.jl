@@ -238,5 +238,5 @@ For example:
 results = invert(my_data)
 plot(results)
 "Select regions interactively through the GUI"
-weighted_averages(results)
+mean(results)
 ```
