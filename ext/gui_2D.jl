@@ -236,7 +236,7 @@ function static_plots(
     points = [[i, j] for i in x, j in y]
     mask = zeros(size(points))
 
-    wa_indir, wa_dir, volumes = weighted_averages(res, silent=true)
+    wa_indir, wa_dir, volumes = NMRInversions.mean(res, silent=true)
 
     markers = collect('a':'z')
     colors = cgrad(:tab10)

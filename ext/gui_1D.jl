@@ -270,7 +270,7 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
             text_labels = ["<D> = ", " m²/s, Area= ", " %"]
         end
 
-        wa, areas = NMRInversions.weighted_averages(res, silent=true)
+        wa, areas = NMRInversions.mean(res, silent=true)
 
         for (i, idx) in enumerate(NMRInversions._selection_indices(res))
 

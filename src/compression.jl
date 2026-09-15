@@ -67,7 +67,7 @@ function window_average(
 
     # separate 1st point and the rest, so that the 1st point is preserve
     rest_x = view(x, 2:original_length)
-    
+
     if log
         edges = NMRInversions.logrange(first(rest_x), last(rest_x), nbins)
     else
@@ -76,12 +76,12 @@ function window_average(
 
     # Map the remaining edges to index boundaries
     rest_idx_edges = [searchsortedfirst(x, e) for e in edges]
-    
+
     # Combine the first point's boundary with the rest
     # Bin 1 starts at 1. Bin 2 starts at 2. 
     # Subsequent bins follow our computed edges.
     idx_edges = vcat([1, 2], rest_idx_edges[2:end])
-    
+
     # Ensure the final boundary includes the full array
     idx_edges[end] = original_length + 1
 
@@ -127,7 +127,7 @@ function window_average(
         idx = lo:hi
 
         # Compute new axis value as the mean coordinate of the original axis
-        new_axis[b] = mean(view(x.x, idx))
+        new_axis[b] = Statistics.mean(view(x.x, idx))
 
         # Build a multidimensional index that selects this bin along `dims`
         # and selects all elements along other dimensions
@@ -145,7 +145,7 @@ function window_average(
 
         # Compress the data within this bin's window by calculating the mean, 
         # then write the result into the corresponding slot of the downsampled array.
-        new_data[out_select...] .= mean(view(data, select...), dims=dims)
+        new_data[out_select...] .= Statistics.mean(view(data, select...), dims=dims)
     end
 
     new_axes = Base.setindex(input.axes, new_axis, dims)

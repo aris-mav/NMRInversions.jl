@@ -1,22 +1,24 @@
-This page contains the documentation for various useful 
-functions in the NMRInversions package.
+This page contains the documentation for various
+useful functions in the NMRInversions package.
 
 !!! tip
-    From the Julia command line, you can enter '?', 
-    followed by the name of any function, struct, 
-    or object you want to learn more about (try it!).
-    After typing `using NMRInversions` in the Julia console, 
-    this feature will work for all the functions mentioned below.
+
+    From the Julia command line, you can enter
+    '?', followed by the name of any function,
+    struct, or object you want to learn more about
+    (try it!). After typing `using NMRInversions`
+    in the Julia console, this feature will work
+    for all the functions mentioned below.
 
 !!! info 
-    In Julia, function definitions look like this:
-    ```
-    foo(x, y, z ; a, b)
-    ``` 
 
-    For the example above, `foo` is the name of the function, 
-    and the contents of the parenteses are the arguments.  
-    Within the parenteses, we got two types of arguments:
+    In Julia, function definitions look like this:
+    ``` foo(x, y, z ; a, b) ``` 
+
+    For the example above, `foo` is the name of
+    the function, and the contents of the
+    parenteses are the arguments.  Within the
+    parenteses, we got two types of arguments:
     - Positional arguments
      
     Everything that appears before the semicolon `;` 
@@ -24,51 +26,64 @@ functions in the NMRInversions package.
     and must be given in a specific order.
     - Keyword arguments.
 
-    Everything that appears after the semicolon `;` 
-    (b and a in this example) is optional,
-    and can be given in any order, but its name must be specified.
+    Everything that appears after the semicolon
+    `;` (b and a in this example) is optional, and
+    can be given in any order, but its name must
+    be specified.
 
-    In the example above, we can call the function by typing `foo(1, 2, 3)`,
-    (in which case, x=1, y=2, z=3, and the default value for `a` and `b` will be used). 
-    You can also call the function by typing `foo(1, 2, 3, a=3)`, to specify the value for `a`, 
-    or by typing `foo(1, 2, 3, b=3, a = 2)`, to specify the value for both `a` and `b`.
+    In the example above, we can call the function
+    by typing `foo(1, 2, 3)`, (in which case, x=1,
+    y=2, z=3, and the default value for `a` and
+    `b` will be used). You can also call the
+    function by typing `foo(1, 2, 3, a=3)`, to
+    specify the value for `a`, or by typing
+    `foo(1, 2, 3, b=3, a = 2)`, to specify the
+    value for both `a` and `b`.
 
-    Sometimes, if there are many keyword arguments, we write 
-    the function as foo(x, y ; kwargs...). 
-    For the necessary arguments before the semicolon, order matters. 
-    For the keyword arguments after the semicolon, order does not matter, 
-    but the name of each argument must be specified.
-    For more information, please refer to [this link](https://docs.julialang.org/en/v1/manual/functions/).
+    Sometimes, if there are many keyword
+    arguments, we write the function as foo(x, y ;
+    kwargs...). For the necessary arguments before
+    the semicolon, order matters. For the keyword
+    arguments after the semicolon, order does not
+    matter, but the name of each argument must be
+    specified. For more information, please refer
+    to [this
+    link](https://docs.julialang.org/en/v1/manual/functions/).
 
 ## Importing data 
-This package offers some functions to import NMR experiment data of various formats.
-Alternatively, you can of course import your data however you see fit.
-If a format you're working with is not yet supported, 
-please [submit an issue](https://github.com/arismavridis/NMRInversions.jl/issues/new) 
+
+This package offers some functions to import NMR
+experiment data of various formats. Alternatively,
+you can of course import your data however you see
+fit. If a format you're working with is not yet
+supported, please [submit an
+issue](https://github.com/arismavridis/NMRInversions.jl/issues/new)
 and we'll work on it.
 
-
-The most basic use case would be using data saved in a csv format, 
-where there are *only* two columns, 
-one for your x-axis (time for relaxation and b-factor for diffusion)
-and one for your y-axis (signal intensity).
-
+The most basic use case would be using data saved
+in a csv format, where there are *only* two
+columns, one for your x-axis (time for relaxation
+and b-factor for diffusion) and one for your
+y-axis (signal intensity).
 
 ```@docs
 import_csv
 ```
 
-If you're using a spinsolve instrument, you can use the `import_spinsolve` function.
-This one requires two files as an input. 
-The `aqcu.par` is automatically exported by SpinsolveExpert, 
-but you might have to export your data file manually in a csv format.
+If you're using a spinsolve instrument, you can
+use the `import_spinsolve` function. This one
+requires two files as an input. The `aqcu.par` is
+automatically exported by SpinsolveExpert, but you
+might have to export your data file manually in a
+csv format.
 
 ```@docs
 import_spinsolve(files)
 ```
 
-For geospec instruments, you can export your raw data as a text file.
-That text file can be read by the `import_geospec` function.
+For geospec instruments, you can export your raw
+data as a text file. That text file can be read by
+the `import_geospec` function.
 
 ```@docs
 import_geospec
@@ -91,8 +106,10 @@ read_tnt_header
 ```
 
 ## Inversion 
-The most important function is `invert()`, which is the main function of the package.
-It works as follows:
+
+The most important function is `invert()`, which
+is the main function of the package. It works as
+follows:
 
 ```@docs
 invert
@@ -102,6 +119,7 @@ Can be used in exactly the same way, whether the
 data is 1D or 2D.
 
 ## Finding alpha
+
 Here we provide two options for finding the
 optimal value for alpha, namely Generalized Cross
 Validation (GCV) or L-curve. Generally gcv seems
@@ -160,12 +178,9 @@ GLMakie and extend it to types from the package.
 
 You can use `plot()` for `ExperimentData`
 structures coming from import functions, e.g.:
-```julia
-data = import_csv(IR, "./path/to/file.csv")
-plot(data)
-```
 
 Similarly, for inversion results:
+
 ```julia
 data = import_csv(IR, "./path/to/file.csv")
 results = invert(data)
@@ -177,11 +192,10 @@ structures (e.g. `plot([results1, results2,
 results3]`) will plot all of them on the same
 figure, for a quick comparison.
 
-### Data plots
-```@docs
+### Data plots ```@docs
+
 plot(data::ExperimentData{1})
-plot(data::ExperimentData{2})
-```
+plot(data::ExperimentData{2}) ```
 
 ### 1D inversion plots
 
@@ -206,16 +220,20 @@ plot(::ExpfitData)
 ## Miscellaneous 
 
 ### Weighted averages
-Once you have selected some peaks in your inversion results through the GUI,
-you might want to extract the weighted averages of these selected peaks,
-to get the underlying relaxation times or diffusion coefficients.
-The following functions do the job:
+
+Once you have selected some peaks in your
+inversion results through the GUI, you might want
+to extract the weighted averages of these selected
+peaks, to get the underlying relaxation times or
+diffusion coefficients. The following functions do
+the job:
 
 ```@docs
-weighted_averages
+mean
 ```
 
 For example:
+
 ```julia
 results = invert(my_data)
 plot(results)

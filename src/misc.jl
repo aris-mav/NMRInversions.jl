@@ -1,3 +1,4 @@
+using ForwardDiff: value
 export scale_to_one!
 """
     scale_to_one!(a::AbstractArray)
@@ -163,7 +164,7 @@ function autophase(data::ExperimentData; rotation::Real=0)
         angles = angle.(y_slice)
 
         # get correction angle as the average of the above
-        θ = mean(angles)
+        θ = Statistics.mean(angles)
 
         # rotate data ( cis(x) is exp(im*x) )
         y .*= cis(-(θ + rotation))
@@ -199,111 +200,166 @@ function _selection_indices(r::InversionData{1})
     ]
 end
 
-export weighted_averages
+function _mean(normalised_weights, values)
+    if islogspaced(values)
+        return exp10.(normalised_weights' * log10.(values))
+    else
+        return normalised_weights' * values
+    end
+end
+
+export mean
 """
-    weighted_averages(r::InversionData{1})
-Return a vector with the weighted averages for 
-the selections in the input structure, and a 
-vector with the respective area fractions of 
-these selections.
+    mean(r::InversionData{1}; silent::Bool=false)
+
+Returns two vectors:
+
+- Average relaxation time (or diffusion coefficient etc.) \
+for each selection. If there are no selections the total is used instead.
+
+- Fraction of the area of each corresponding selection.
+
 """
-function weighted_averages(r::InversionData{1}; silent::Bool=false)
+function mean(r::InversionData{1}; silent::Bool=false)
 
     distribution = r.data .* r.filter
-    wa = Vector(undef, length(r.selections))
-    areas = Vector(undef, length(r.selections))
-    total_area = sum(distribution)
 
-    for (i, idx) in enumerate(_selection_indices(r))
-
-        # prevents total area above 100 if selections are touching
-        idx = first(idx)+1:last(idx)
-
-        area = sum(distribution[idx])
-        wa[i] = distribution[idx]' * r.axes[1][idx] / area
-        areas[i] = area / total_area
-
-        lbl = if r.axes[1] isa Union{IR,SR}
-            ["<T₁>", "s"]
-        elseif r.axes[1] isa CPMG
-            ["<T₂>", "s"]
-        elseif r.axes[1] isa PFG
-            ["<D>", "m²/s"]
-        end
-
-        if !silent
-            display("Selection $(collect('a':'z')[i]) :")
-            display(lbl[1] * " = $(round(wa[i], sigdigits=4)) " * lbl[2])
-            display("Area = $(round(areas[i], sigdigits=4) * 100) %")
-            display("")
-        end
+    lbl = if r.axes[1] isa Union{IR,SR}
+        ["<T₁>", "s"]
+    elseif r.axes[1] isa CPMG
+        ["<T₂>", "s"]
+    elseif r.axes[1] isa PFG
+        ["<D>", "m²/s"]
     end
 
-    return wa, areas
+    if isempty(r.selections)
+
+        wa = _mean(distribution ./ sum(distribution), r.axes[1])
+
+        if !silent
+            display("No selections available.")
+            display("The mean of the whole distribution is:")
+            display(lbl[1] * "_total = $(round(wa, sigdigits=4)) " * lbl[2])
+        end
+        return [wa], [1]
+    else
+        wa = Vector(undef, length(r.selections))
+        areas = Vector(undef, length(r.selections))
+        total_area = sum(distribution)
+
+        for (i, idx) in enumerate(_selection_indices(r))
+
+            # prevents total area above 100 if selections are touching
+            idx = (first(idx)+1):last(idx)
+
+            area = sum(distribution[idx])
+            wa[i] = _mean(distribution[idx] / area, r.axes[1][idx])
+            areas[i] = area / total_area
+
+            if !silent
+                display("Selection $(collect('a':'z')[i]) :")
+                display(lbl[1] * " = $(round(wa[i], sigdigits=4)) " * lbl[2])
+                display("Area = $(round(areas[i], sigdigits=4) * 100) %")
+                display("")
+            end
+        end
+        return wa, areas
+    end
 end
 
 
 """
-    weighted_averages(InversionData{2})
-Return two vectors with the weighted averages 
-for the selections in the input structure, one for each dimension,
-as well as a vector with the volume fractions of these selections.
-"""
-function weighted_averages(r::InversionData{2}; silent::Bool=false)
+    mean(r::InversionData{2}; silent::Bool=false)
 
-    wa_indir = Vector(undef, length(r.selections))
-    wa_dir = Vector(undef, length(r.selections))
-    volumes = Vector(undef, length(r.selections))
+Returns three vectors:
+
+- Average relaxation time (or diffusion coefficient etc.) \
+of the indirect dimension for each selection. \
+If there are no selections the total is used instead.
+
+- Same as above for the direct dimension.
+
+- Fraction of the area of each corresponding selection.
+"""
+function mean(r::InversionData{2}; silent::Bool=false)
 
     z = r.data .* r.filter
     x, y = r.axes[1], r.axes[2]
 
-    points = [[i, j] for i in x, j in y]
-    mask = zeros(size(points))
+    labels = Dict(
+        :IR => ["<T₁>", "s"],
+        :SR => ["<T₁>", "s"],
+        :CPMG => ["<T₂>", "s"],
+        :PFG => ["<D>", "m²/s"],
+        :Spectrum => ["<δ>", "ppm"],
+    )
+    dir_lbl = labels[nameof(typeof(r.axes[1]))]
+    ind_lbl = labels[nameof(typeof(r.axes[2]))]
 
-    for (i, s) in enumerate(r.selections)
+    if isempty(r.selections)
+        dir_dist = vec(sum(z, dims=2)) / sum(z)
+        indir_dist = vec(sum(z, dims=1)) / sum(z)
 
-        mask .= [PolygonOps.inpolygon(p, s; in=1, on=1, out=0) for p in points]
-        spo = mask .* z
-
-        dir_dist = vec(sum(spo, dims=2))
-        indir_dist = vec(sum(spo, dims=1))
-
-        wa_indir[i] = indir_dist' * y / sum(spo)
-        wa_dir[i] = dir_dist' * x / sum(spo)
-        volumes[i] = sum(spo) / sum(z)
-
-        labels = Dict(
-            :IR => ["<T₁>", "s"],
-            :SR => ["<T₁>", "s"],
-            :CPMG => ["<T₂>", "s"],
-            :PFG => ["<D>", "m²/s"],
-            :Spectrum => ["<δ>", "ppm"],
-        )
-        dir_lbl = labels[nameof(typeof(r.axes[1]))]
-        ind_lbl = labels[nameof(typeof(r.axes[2]))]
+        wa_ind = _mean(indir_dist, y)
+        wa_dir = _mean(dir_dist, x)
 
         if !silent
-            display(
-                "Selection $(collect('a':'z')[i]) :"
+            display("No selections available.")
+            display("The mean of the whole distribution is:")
+            display(dir_lbl[1] *
+                "_total = $(round(wa_dir, sigdigits=4)) " * dir_lbl[2]
             )
-            display(
-                ind_lbl[1] * " = $(round(wa_indir[i], sigdigits=4)) " * ind_lbl[2]
+            display(ind_lbl[1] *
+                "_total = $(round(wa_ind, sigdigits=4)) " * ind_lbl[2]
             )
-            display(
-                dir_lbl[1] * " = $(round(wa_dir[i], sigdigits=4)) " * dir_lbl[2]
-            )
-            if r.axes[2] isa Union{IR,SR} && r.axes[1] isa CPMG
-                display(
-                    "T₁/T₂ = $(round(wa_indir[i]/wa_dir[i], sigdigits=2)) "
-                )
-            end
-            display("Volume = $(round(volumes[i], sigdigits=4) * 100) %")
-            println()
         end
-    end
 
-    return wa_indir, wa_dir, volumes
+        return [wa_dir], [wa_ind], [1]
+
+    else
+        wa_ind = Vector(undef, length(r.selections))
+        wa_dir = Vector(undef, length(r.selections))
+        volumes = Vector(undef, length(r.selections))
+
+        points = [[i, j] for i in x, j in y]
+        mask = zeros(size(points))
+
+        for (i, s) in enumerate(r.selections)
+
+            mask .= [
+                PolygonOps.inpolygon(p, s; in=1, on=1, out=0) for p in points
+            ]
+            spo = mask .* z
+
+            dir_dist = vec(sum(spo, dims=2)) / sum(spo)
+            indir_dist = vec(sum(spo, dims=1)) / sum(spo)
+
+            wa_ind[i] = _mean(indir_dist, y)
+            wa_dir[i] = _mean(dir_dist, x)
+            volumes[i] = sum(spo) / sum(z)
+
+            if !silent
+                display(
+                    "Selection $(collect('a':'z')[i]) :"
+                )
+                display(ind_lbl[1] *
+                    " = $(round(wa_ind[i], sigdigits=4)) " * ind_lbl[2]
+                )
+                display(dir_lbl[1] *
+                    " = $(round(wa_dir[i], sigdigits=4)) " * dir_lbl[2]
+                )
+                if r.axes[2] isa Union{IR,SR} && r.axes[1] isa CPMG
+                    display(
+                        "T₁/T₂ = $(round(wa_ind[i]/wa_dir[i], sigdigits=2)) "
+                    )
+                end
+                display("Volume = $(round(volumes[i], sigdigits=4) * 100) %")
+                println()
+            end
+        end
+
+        return wa_ind, wa_dir, volumes
+    end
 end
 
 
@@ -329,11 +385,11 @@ function islogspaced(x::AbstractVector)
     any(<(0), x) && return false
 
     lin_steps = diff(x)
-    lin_cv = std(lin_steps) / mean(lin_steps)
+    lin_cv = std(lin_steps) / Statistics.mean(lin_steps)
 
     log_cv = if all(x .> 0)
         log_steps = diff(log.(x))
-        std(log_steps) / mean(log_steps)
+        std(log_steps) / Statistics.mean(log_steps)
     else
         # Can't be log-spaced if there are negative numbers or zeros
         Inf
