@@ -94,8 +94,8 @@ function Makie.plot!(
     linkxaxes!(axmain, axtop)
     linkyaxes!(axright, axmain)
 
-    hidedecorations!(axtop, grid=!extend_grid)
-    hidedecorations!(axright, grid=!extend_grid)
+    hidedecorations!(axtop, grid=(!extend_grid))
+    hidedecorations!(axright, grid=(!extend_grid))
 
     colgap!(gr, gap)
     rowgap!(gr, gap)
@@ -123,6 +123,15 @@ function Makie.plot!(
 
 end
 
+# ascending (low, high) limits regardless of data order
+function lims(v, sc)
+    lo, hi = extrema(v)
+    if sc == log10
+        return (exp10(floor(log10(lo))), exp10(ceil(log10(hi))))
+    else
+        return (lo, hi)
+    end
+end
 
 function static_plots(
     axmain, axtop, axright, res,
@@ -132,6 +141,10 @@ function static_plots(
     empty!(axmain)
     empty!(axtop)
     empty!(axright)
+
+    # reset scales so a stale log10 doesn't reject the new limits
+    axmain.xscale = axtop.xscale = identity
+    axmain.yscale = axright.yscale = identity
 
     if tp
         x, y = (res.axes[2], res.axes[1])
@@ -153,36 +166,27 @@ function static_plots(
 
     xsc, ysc = map(val -> islogspaced(val) ? log10 : identity, (x, y))
 
+    x_low, x_high = lims(x, xsc)
+    y_low, y_high = lims(y, ysc)
+
     if all(isa.(res.axes, Union{IR,SR,CPMG})) && xsc == log10 && ysc == log10
         # diagonal should be in the middle
-        x_low = exp10(floor(log10(min(x[1], y[1]))))
-        x_high = exp10(ceil(log10(max(x[end], y[end]))))
-        y_low, y_high = x_low, x_high
-    else
-        if xsc == log10
-            x_low = exp10(floor(log10(x[1])))
-            x_high = exp10(ceil(log10(x[end])))
-        else
-            x_low = x[1]
-            x_high = x[end]
-        end
-        if ysc == log10
-            y_low = exp10(floor(log10(y[1])))
-            y_high = exp10(ceil(log10(y[end])))
-        else
-            y_low = y[1]
-            y_high = y[end]
-        end
+        x_low = y_low = min(x_low, y_low)
+        x_high = y_high = max(x_high, y_high)
     end
+
+    xrev = x[1] >= x[end]
+    yrev = y[1] >= y[end]
+    axmain.xreversed = axtop.xreversed = xrev
+    axmain.yreversed = axright.yreversed = yrev
+
     axmain.limits = (x_low, x_high, y_low, y_high)
     axtop.limits = (x_low, x_high, 0, nothing)
     axright.limits = (0, nothing, y_low, y_high)
 
     # scale must be defined after the limits
-    axmain.xscale = xsc
-    axmain.yscale = ysc
-    axtop.xscale = xsc
-    axright.yscale = ysc
+    axmain.xscale = axtop.xscale = xsc
+    axmain.yscale = axright.yscale = ysc
 
     if xsc == log10
         if abs(log10(x_low)) + abs(log10(x_high)) <= 7

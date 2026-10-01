@@ -30,13 +30,13 @@ Base.IndexStyle(::Type{<:DataAxis}) = IndexLinear()
 Base.getindex(E::DataAxis, i::Int) = E.x[i]
 Base.setindex!(E::DataAxis, val, i::Int) = (E.x[i] = val)
 
-Base.convert(::Type{S}, x::AbstractVector) where {S<:DataAxis} = S(x)
+Base.convert(::Type{S}, x::AbstractVector) where {S<:DataAxis} =
+    Base.typename(S).wrapper(x)
 
-function Base.getindex(E::T, I::AbstractArray{<:Integer}) where {T<:DataAxis}
-    T(E.x[I])
-end
-function Base.getindex(E::T, I::AbstractRange{<:Integer}) where {T<:DataAxis}
-    T(E.x[I])
+Base.getindex(E::DataAxis, ::Base.Slice) = E   # `:` keeps the axis as is
+
+function Base.getindex(E::DataAxis, I::AbstractArray{<:Integer})
+    Base.typename(typeof(E)).wrapper(E.x[I])
 end
 
 # Promote integer inputs to float for any DataAxis subtype

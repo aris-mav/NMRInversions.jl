@@ -55,7 +55,7 @@ function invert(
             else
                 values = axes[i]
             end
-            typeof(input.axes[i])(values)
+            Base.typename(typeof(input.axes[i])).wrapper(values)
         else
             input.axes[i]
         end

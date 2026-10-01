@@ -76,7 +76,7 @@ function Makie.plot(
         for a in (ax1, ax2, ax3)
             a.yticksvisible = false
             a.yticklabelsvisible = false
-            a.yticks = 1.1:1.1:length(res_mat)*1.1
+            a.yticks = 1.1:1.1:(length(res_mat)*1.1)
         end
     end
 
@@ -183,7 +183,7 @@ function Makie.plot(res::NMRInversions.InversionData{1})
     end
 
     on(button_filter.clicks) do _
-        res.filter[slider.interval[][1]+1:slider.interval[][2]] .= 0
+        res.filter[(slider.interval[][1]+1):slider.interval[][2]] .= 0
         scale_filter!(res)
         redraw(fig, res, interval_low, interval_high)
     end
@@ -309,7 +309,7 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
 
             txt =
                 " " * sel * " : " * text_labels[1] * "$(round(wa[i], sigdigits = 2))" *
-                text_labels[2] * "$(round(areas[i]*100, sigdigits = 2))" * text_labels[3]
+                    text_labels[2] * "$(round(areas[i]*100, sigdigits = 2))" * text_labels[3]
 
             text!(
                 ax2, res.axes[1][2], height,
