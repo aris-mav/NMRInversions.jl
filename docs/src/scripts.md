@@ -51,7 +51,7 @@ ax = Axis(
     xscale=log10,
     yticklabelsvisible = false,
     limits = (
-        minimum(results[1].axes[1]), maximum(results[1].axes[1]), -0.1, length(results)
+        minimum(results[1].dimensions[1]), maximum(results[1].dimensions[1]), -0.1, length(results)
     ),
     yticks= 0:length(results),
 )
@@ -63,7 +63,7 @@ max_value = maximum(val for r in results for val in r.data)
 for (i, r) in enumerate(results)
     lines!(
         ax, 
-        r.axes[1], 
+        r.dimensions[1], 
         r.data ./ max_value .+ (i-1), 
         colormap=:tab10, colorrange=(1, 10), color=i,
     )

@@ -98,7 +98,7 @@ function expfit(
         scale_to_one!(input.data)
     end
 
-    x = input.axes[1]
+    x = input.dimensions[1]
     y = real.(input.data)
 
     if isa(n, Int)
@@ -142,23 +142,23 @@ function expfit(
     eq = join(
         [
         (i == 1 ? "" : " + ") *
-        string(round(u[i], sigdigits=2)) *
-        " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) *
-        ")"
+            string(round(u[i], sigdigits=2)) *
+            " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) *
+            ")"
         for i in 1:2:length(u)
     ]
     )
 
     # Normalised version of the fit equation
     eqn = string(round(max_value, sigdigits=2)) * " * (" *
-          join(
-              [
-              (i == 1 ? "" : " + ") *
-              string(round(u[i] / max_value, sigdigits=2)) *
-              " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) * ")"
-              for i in 1:2:length(u)
-          ]
-          ) * ")"
+        join(
+            [
+            (i == 1 ? "" : " + ") *
+                string(round(u[i] / max_value, sigdigits=2)) *
+                " * exp(-$x_ax" * op * string(round(u[i+1], sigdigits=2)) * ")"
+            for i in 1:2:length(u)
+        ]
+        ) * ")"
 
     if x isa IR
         unstr = string(round(max_value, sigdigits=2))

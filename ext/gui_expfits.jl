@@ -56,7 +56,7 @@ splat it by using `...` in the function call (e.g. `plot!(fig, [data1, data2, da
 function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitData...;
     markersize=7, normeq=false, yscale=identity)
 
-    xlbl = if res[1].input.axes[1] isa PFG
+    xlbl = if res[1].input.dimensions[1] isa PFG
         "b factor (s/m² e-9)"
     else
         "time (s)"
@@ -71,7 +71,7 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitDat
 
     for r in res
 
-        x = r.input.axes[1]
+        x = r.input.dimensions[1]
         y = r.input.data
 
         if isempty(r.title)
@@ -81,7 +81,7 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitDat
         end
 
         xfit = NMRInversions.logrange(x[1], x[end], 2^10)
-        yfit = NMRInversions.mexp(r.u, typeof(r.input.axes[1])(xfit))
+        yfit = NMRInversions.mexp(r.u, typeof(r.input.dimensions[1])(xfit))
 
         lines!(ax, xfit, yfit, label=getfield(r, normeq == true ? :eqn : :eq))
     end

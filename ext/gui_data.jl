@@ -10,7 +10,7 @@ function Makie.plot(data::NMRInversions.ExperimentData{1})
     fig = Figure()
     ax = Axis(fig[:, :])
 
-    x = data.axes[1]
+    x = data.dimensions[1]
 
     if any(isa.(data.data, Complex))
 
@@ -43,8 +43,8 @@ function Makie.plot(data::NMRInversions.ExperimentData{2})
     GLMakie.activate!(; title="Data visualization")
 
     dt = real.(data.data)
-    xd = data.axes[1]
-    xi = data.axes[2]
+    xd = data.dimensions[1]
+    xi = data.dimensions[2]
 
     if any(map(x -> length(x) > 16000, [xd, xi]))
 
@@ -54,9 +54,9 @@ function Makie.plot(data::NMRInversions.ExperimentData{2})
 
     fig = Figure()
     ax_dir = Axis(fig[1:4, 1:5], ylabel="Signal (a.u.)",
-        title="Direct dimension ($(nameof(typeof(data.axes[1]))))")
+        title="Direct dimension ($(nameof(typeof(data.dimensions[1]))))")
     ax_indir = Axis(fig[6:9, 1:5], ylabel="Signal (a.u.)",
-        title="Indirect dimension ($(nameof(typeof(data.axes[2]))))")
+        title="Indirect dimension ($(nameof(typeof(data.dimensions[2]))))")
     ax_full = Axis3(fig[1:9, 6:10], zticklabelsize=0.1, zlabelvisible=false)
 
     sld = Slider(fig[5, 1:5], range=1:length(xi), startvalue=1)

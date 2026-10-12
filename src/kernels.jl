@@ -101,7 +101,7 @@ function create_kernel(
 )
 
     W_½ = sqrt(input.W[1])
-    axis = input.axes[1]
+    axis = input.dimensions[1]
     g = input.data
 
     K = create_kernel(axis, X[1], y=g)
@@ -131,7 +131,7 @@ function create_kernel(
     X::NTuple{2,AbstractVector};
 )
 
-    axes = input.axes
+    dimensions = input.dimensions
     data = input.data
 
     W1_½ = sqrt(input.W[1])
@@ -140,8 +140,8 @@ function create_kernel(
     G = W1_½ * real.(data) * W2_½
 
     # Generate Kernels
-    K_dir = create_kernel(axes[1], X[1], y=vec(data[:, argmax(abs.(data[1, :]))]))
-    K_indir = create_kernel(axes[2], X[2], y=vec(data[argmax(abs.(data[:, 1])), :]))
+    K_dir = create_kernel(dimensions[1], X[1], y=vec(data[:, argmax(abs.(data[1, :]))]))
+    K_indir = create_kernel(dimensions[2], X[2], y=vec(data[argmax(abs.(data[:, 1])), :]))
 
     scale_to_one!(K_dir)
     scale_to_one!(K_indir)

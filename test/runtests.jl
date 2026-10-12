@@ -22,7 +22,7 @@ function test_invert(seq::Type{<:DataAxis}, SNR=100; kwargs...)
     y = @. g + (maximum(g) / SNR) * randn()
 
     data = ExperimentData(seq(x), y)
-    results = invert(data, axes=(X,); kwargs...)
+    results = invert(data, dimensions=(X,); kwargs...)
 
     # The condition below is COMPLETELY arbitrary, but seems sensible
     score = LinearAlgebra.norm(

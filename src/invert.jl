@@ -6,7 +6,7 @@ Receives `ExperimentData`, returns `InversionData`.
 
 The keyword arguments are:
 
-- `axes` : a D-dimensional tuple where each element is an array containing the \
+- `dimensions` : a D-dimensional tuple where each element is an array containing the \
 range of the output (e.g. relaxation times or diffusion coefficients) in \
 every corresponding dimension. `nothing` can be passed instead of an array in \
 any of the tuple elements, in which case a sensible array will be generated \
@@ -20,7 +20,7 @@ automatically (that is also the default option).
 """
 function invert(
     input::ExperimentData{D};
-    axes::NTuple{
+    dimensions::NTuple{
         D,Union{AbstractVector{<:Real},AbstractRange,Nothing}
     }=ntuple(i -> nothing, Val(D)),
     alpha::Union{Real,AlphaOptimizer}=GCV(),
@@ -29,7 +29,7 @@ function invert(
     scale::Bool=true,
 ) where {D}
 
-    dims_to_invert = haskernel.(input.axes)
+    dims_to_invert = haskernel.(input.dimensions)
 
     if all(!, dims_to_invert)
         error("None of the dimensions are invertable.")
@@ -43,21 +43,21 @@ function invert(
 
     n_points = div(128, 2^(ndims(input) - 1))
 
-    axes = ntuple(Val(ndims(input))) do i
+    dimensions = ntuple(Val(ndims(input))) do i
         if dims_to_invert[i]
-            if isnothing(axes[i])
-                x = input.axes[i].x
+            if isnothing(dimensions[i])
+                x = input.dimensions[i].x
                 lower, upper = x isa PFG ?
                                (minimum(x) * 7, maximum(x) * 10) :
                                (minimum(x) / 7, maximum(x) * 7)
 
                 values = NMRInversions.logrange(lower, upper, n_points)
             else
-                values = axes[i]
+                values = dimensions[i]
             end
-            Base.typename(typeof(input.axes[i])).wrapper(values)
+            Base.typename(typeof(input.dimensions[i])).wrapper(values)
         else
-            input.axes[i]
+            input.dimensions[i]
         end
     end
 
@@ -68,32 +68,32 @@ function invert(
         for (dim, inv) in enumerate(dims_to_invert)
     )
 
-    data = Array{Float64}(undef, length.(axes))
-    alphas = Array{Float64}(undef, length.(axes))
+    data = Array{Float64}(undef, length.(dimensions))
+    alphas = Array{Float64}(undef, length.(dimensions))
     residuals = Array{Float64}(undef, size(input.data))
 
     for idx in Iterators.product(slices...)
 
         if !silent && !all(dims_to_invert)
             println("Inverting \
-            $(nameof.(typeof.(input.axes))[findall(dims_to_invert)]), \
+            $(nameof.(typeof.(input.dimensions))[findall(dims_to_invert)]), \
             at data$(_show_idx(idx))")
         end
 
         data[idx...], residuals[idx...], alphas[idx...] = _solve(
-            input[idx...], axes[findall(dims_to_invert)], alpha, solver, silent)
+            input[idx...], dimensions[findall(dims_to_invert)], alpha, solver, silent)
     end
 
-    for i in eachindex(axes)
-        if input.axes[i] isa PFG
+    for i in eachindex(dimensions)
+        if input.dimensions[i] isa PFG
             # convert to SI units
-            axes[i] .= axes[i] ./ 1e9
+            dimensions[i] .= dimensions[i] ./ 1e9
         end
     end
 
     return InversionData{D}(
         input,
-        axes,
+        dimensions,
         data,
         residuals,
         alphas,
@@ -104,7 +104,7 @@ function invert(
 end
 
 function _solve(
-    input::ExperimentData, axes,
+    input::ExperimentData, dimensions,
     alpha::Union{Real,AlphaOptimizer},
     solver::RegularizationSolver,
     silent::Bool,
@@ -116,7 +116,7 @@ function _solve(
         error("3D inversions not implemented yet, please submit an issue.")
     end
 
-    k = create_kernel(input, axes)
+    k = create_kernel(input, dimensions)
 
     if isa(alpha, Real)
         f, _ = solve_regularization(k.K, k.g, alpha, solver)
@@ -128,7 +128,7 @@ function _solve(
     Kf = if D == 1
         k.K_uncompressed[1] * f
     elseif D == 2
-        k.K_uncompressed[1] * reshape(f, length.(axes)) * k.K_uncompressed[2]'
+        k.K_uncompressed[1] * reshape(f, length.(dimensions)) * k.K_uncompressed[2]'
     end
 
     g = real.(input.data)

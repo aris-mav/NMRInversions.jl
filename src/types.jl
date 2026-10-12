@@ -128,9 +128,9 @@ export FC
 # Define experiment data containing both Axes and data 
 export ExperimentData
 """
-    ExperimentData(axes, data)
+    ExperimentData(dimensions, data)
 Struct containing NMR data.
-- `axes` should be a tuple of `DataAxis`s with the `x` data in each of them.
+- `dimensions` should be a tuple of `DataAxis`s with the `x` data in each of them.
 - `data` should be an aray of n-dimensions with the recorded data.
 - `SNR` is the signal-to-noise ratio (calculated automatically for complex data)
 - `W` is a tuple containing the precision matrix (inverse of the covariance 
@@ -138,7 +138,7 @@ matrix) in each of the dimensions. Relevant for compressed data, identity by
 default.
 """
 struct ExperimentData{D}
-    axes::NTuple{D,DataAxis}
+    dimensions::NTuple{D,DataAxis}
     data::AbstractArray{<:Number,D}
     SNR::Real
     W::NTuple{D,Union{AbstractMatrix,UniformScaling}}
@@ -147,7 +147,7 @@ end
 # Flexible outer constructor to catch dimension size mismatches
 """
     ExperimentData(
-    axes::Tuple{Vararg{DataAxis}}, 
+    dimensions::Tuple{Vararg{DataAxis}}, 
     data::AbstractArray{<:Number,D};
     compress = false
 ) where {D}
@@ -156,25 +156,25 @@ Constructor for `ExperimentalData`, calculating SNR and compressing the data if
 needed.
 """
 function ExperimentData(
-    axes::Tuple{Vararg{DataAxis}},
+    dimensions::Tuple{Vararg{DataAxis}},
     data::AbstractArray{<:Number,D};
     compress=false
 ) where {D}
 
-    if length(axes) != D
+    if length(dimensions) != D
         throw(DimensionMismatch(
             """
-            The number of axes (you gave $(length(axes))) \
+            The number of dimensions (you gave $(length(dimensions))) \
             must match the dimensions of the data ($D).
             """
         ))
     end
 
     for i in 1:D
-        if length(axes[i].x) != size(data, i)
+        if length(dimensions[i].x) != size(data, i)
             throw(DimensionMismatch(
                 """
-                The axis $(typeof(axes[i])) has length $(length(axes[i].x)), \
+                The axis $(typeof(dimensions[i])) has length $(length(dimensions[i].x)), \
                 but the `data` array has length $(size(data, i)) \
                 at the corresponding dimension $i.
                 """
@@ -183,7 +183,7 @@ function ExperimentData(
     end
 
     original_data = ExperimentData{D}(
-        axes, data, calc_snr(axes, data), ntuple(i -> LinearAlgebra.I, D)
+        dimensions, data, calc_snr(dimensions, data), ntuple(i -> LinearAlgebra.I, D)
     )
 
     if compress
@@ -194,8 +194,8 @@ function ExperimentData(
 end
 
 # Outer constructor for 1-dimensional case
-function ExperimentData(axes::DataAxis, data::AbstractVector)
-    return ExperimentData((axes,), data)
+function ExperimentData(dimensions::DataAxis, data::AbstractVector)
+    return ExperimentData((dimensions,), data)
 end
 
 # Implement indexing
@@ -229,11 +229,11 @@ function Base.getindex(E::ExperimentData{D}, I...) where {D}
         return E.data[idx...] # fully scalar index -> return the raw value
     end
 
-    new_axes = ntuple(j -> E.axes[keep[j]][idx[keep[j]]], new_D)
+    new_dimensions = ntuple(j -> E.dimensions[keep[j]][idx[keep[j]]], new_D)
     new_W = ntuple(j -> _slice_W(E.W[keep[j]], idx[keep[j]]), new_D)
 
     return ExperimentData{new_D}(
-        new_axes,
+        new_dimensions,
         E.data[idx...],
         E.SNR,
         new_W
@@ -247,7 +247,7 @@ export InversionData
 Output of the `invert` function, containing all the relevant information:
 
 - `input` : `ExperimentData` structure that was used as input to the inversion function.
-- `axes` : "x-axes" of the output (i.e., relaxation times, diffusion coefficients).
+- `dimensions` : "x-axes" of the output (i.e., relaxation times, diffusion coefficients).
 - `data` : the results of the inversion.
 - `residuals` : an array containing the residuals of the fit.
 - `alpha` : the smooting term used to produce the `data` array.
@@ -257,7 +257,7 @@ Output of the `invert` function, containing all the relevant information:
 """
 mutable struct InversionData{D}
     input::ExperimentData{D}
-    axes::NTuple{D,DataAxis}
+    dimensions::NTuple{D,DataAxis}
     data::AbstractArray{<:Number,D}
     residuals::AbstractArray{<:Number,D}
     alphas::AbstractArray{<:Number,D}

@@ -51,7 +51,7 @@ function Γ(m::Int, order::Int)
 end
 
 """
-    calc_snr(axes, data)
+    calc_snr(dimensions, data)
 
 Calculate the Signal-to-Noise Ratio (SNR) from complex data,
 where the real part is (mostly) signal and the imaginary part is (mostly) noise.
@@ -59,7 +59,7 @@ The STD of the latter half of the imaginary signal is used for the calculation
 (former half might contain signal residues as well). 
 """
 function calc_snr(
-    axes::NTuple{D,DataAxis},
+    dimensions::NTuple{D,DataAxis},
     data::AbstractArray{<:Number,D},
 ) where {D}
 
@@ -69,10 +69,10 @@ function calc_snr(
         # find the midpoint in each dimension
         mid_value_idxs = [
             searchsortedfirst(x, (x[begin] + x[end]) / 2)
-            for x in axes
+            for x in dimensions
         ]
         # see which dimension has the most point between midpoint and end
-        n_points = lastindex.(axes) .- mid_value_idxs
+        n_points = lastindex.(dimensions) .- mid_value_idxs
         # select the one with the most of them
         dim = argmax(n_points)
 
@@ -95,8 +95,8 @@ Return a vector of matrices, containing the F for each selection polygon.
 """
 function selections(res::InversionData{2})
 
-    dir = res.axes[1]
-    indir = res.axes[2]
+    dir = res.dimensions[1]
+    indir = res.dimensions[2]
     F = res.data
 
     x = collect(1:length(indir))
@@ -144,7 +144,7 @@ function autophase(data::ExperimentData; rotation::Real=0)
     for (type, func) in rules
 
         # find the 1st dimension of the chosen type
-        dim = findfirst(isa.(data.axes, type))
+        dim = findfirst(isa.(data.dimensions, type))
         isnothing(dim) && continue
 
         # index all elements (:) of the chosen dimension, 1 for other dimensions
@@ -175,10 +175,10 @@ function autophase(data::ExperimentData; rotation::Real=0)
             y .= -y
         end
 
-        return ExperimentData(data.axes, y)
+        return ExperimentData(data.dimensions, y)
     end
 
-    throw("Autophase not implemented for $(typeof.(data.axes)).")
+    throw("Autophase not implemented for $(typeof.(data.dimensions)).")
 
 end
 
@@ -192,8 +192,8 @@ Can be used as: `r.data[NMRInversions._selection_indices(r)[1]]`
 function _selection_indices(r::InversionData{1})
     [
         begin
-            _, low = findmin(x -> abs(x - s[1][1]), r.axes[1])
-            _, high = findmin(x -> abs(x - s[2][1]), r.axes[1])
+            _, low = findmin(x -> abs(x - s[1][1]), r.dimensions[1])
+            _, high = findmin(x -> abs(x - s[2][1]), r.dimensions[1])
             low:high
         end
         for s in r.selections
@@ -224,17 +224,17 @@ function mean(r::InversionData{1}; silent::Bool=false)
 
     distribution = r.data .* r.filter
 
-    lbl = if r.axes[1] isa Union{IR,SR}
+    lbl = if r.dimensions[1] isa Union{IR,SR}
         ["<T₁>", "s"]
-    elseif r.axes[1] isa CPMG
+    elseif r.dimensions[1] isa CPMG
         ["<T₂>", "s"]
-    elseif r.axes[1] isa PFG
+    elseif r.dimensions[1] isa PFG
         ["<D>", "m²/s"]
     end
 
     if isempty(r.selections)
 
-        wa = _mean(distribution ./ sum(distribution), r.axes[1])
+        wa = _mean(distribution ./ sum(distribution), r.dimensions[1])
 
         if !silent
             display("No selections available.")
@@ -253,7 +253,7 @@ function mean(r::InversionData{1}; silent::Bool=false)
             idx = (first(idx)+1):last(idx)
 
             area = sum(distribution[idx])
-            wa[i] = _mean(distribution[idx] / area, r.axes[1][idx])
+            wa[i] = _mean(distribution[idx] / area, r.dimensions[1][idx])
             areas[i] = area / total_area
 
             if !silent
@@ -284,7 +284,7 @@ If there are no selections the total is used instead.
 function mean(r::InversionData{2}; silent::Bool=false)
 
     z = r.data .* r.filter
-    x, y = r.axes[1], r.axes[2]
+    x, y = r.dimensions[1], r.dimensions[2]
 
     labels = Dict(
         :IR => ["<T₁>", "s"],
@@ -293,8 +293,8 @@ function mean(r::InversionData{2}; silent::Bool=false)
         :PFG => ["<D>", "m²/s"],
         :Spectrum => ["<δ>", "ppm"],
     )
-    dir_lbl = labels[nameof(typeof(r.axes[1]))]
-    ind_lbl = labels[nameof(typeof(r.axes[2]))]
+    dir_lbl = labels[nameof(typeof(r.dimensions[1]))]
+    ind_lbl = labels[nameof(typeof(r.dimensions[2]))]
 
     if isempty(r.selections)
         dir_dist = vec(sum(z, dims=2)) / sum(z)
@@ -348,7 +348,7 @@ function mean(r::InversionData{2}; silent::Bool=false)
                 display(dir_lbl[1] *
                     " = $(round(wa_dir[i], sigdigits=4)) " * dir_lbl[2]
                 )
-                if r.axes[2] isa Union{IR,SR} && r.axes[1] isa CPMG
+                if r.dimensions[2] isa Union{IR,SR} && r.dimensions[1] isa CPMG
                     display(
                         "T₁/T₂ = $(round(wa_ind[i]/wa_dir[i], sigdigits=2)) "
                     )

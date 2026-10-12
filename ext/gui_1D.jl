@@ -29,15 +29,15 @@ function Makie.plot(
 
     ax1 = Axis(
         position1,
-        xlabel=x_label(res.input.axes[1]), ylabel="Signal (a.u.)",
+        xlabel=x_label(res.input.dimensions[1]), ylabel="Signal (a.u.)",
         yscale=yscale, xscale=xscale
     )
     ax2 = Axis(
         position2,
-        xlabel=X_label(res.axes[1]), xscale=log10
+        xlabel=X_label(res.dimensions[1]), xscale=log10
     )
     ax3 = Axis(
-        position3, xlabel=x_label(res.input.axes[1]), ylabel="Residuals (a.u.)",
+        position3, xlabel=x_label(res.input.dimensions[1]), ylabel="Residuals (a.u.)",
         xscale=xscale
     )
 
@@ -65,8 +65,8 @@ function Makie.plot(
     end
 
     ax2.limits = (
-        minimum(minimum(vec) for r in res_mat for vec in r.axes),
-        maximum(maximum(vec) for r in res_mat for vec in r.axes),
+        minimum(minimum(vec) for r in res_mat for vec in r.dimensions),
+        maximum(maximum(vec) for r in res_mat for vec in r.dimensions),
         stacked ? nothing : minimum(map(res -> -0.025 * maximum(res.data .* res.filter), res_mat)),
         stacked ? nothing : maximum(map(res -> 1.025 * maximum(res.data .* res.filter), res_mat)),
     )
@@ -105,26 +105,26 @@ function Makie.plot(res::NMRInversions.InversionData{1})
 
     slider = IntervalSlider(
         fig[6, 6:10],
-        range=[1:length(res.axes[1])...],
-        startvalues=(1, length(res.axes[1]))
+        range=[1:length(res.dimensions[1])...],
+        startvalues=(1, length(res.dimensions[1]))
     )
 
     interval_low = lift(slider.interval) do i
-        return res.axes[1][i[1]]
+        return res.dimensions[1][i[1]]
     end
 
     interval_high = lift(slider.interval) do i
-        return res.axes[1][i[2]]
+        return res.dimensions[1][i[2]]
     end
 
     weighted_average = lift(slider.interval) do i
-        return res.data[i[1]:i[2]]' * res.axes[1][i[1]:i[2]] / sum(res.data[i[1]:i[2]])
+        return res.data[i[1]:i[2]]' * res.dimensions[1][i[1]:i[2]] / sum(res.data[i[1]:i[2]])
     end
 
     labeltext = lift(slider.interval) do i
         return """
-        Selected range from $(round(res.axes[1][i[1]], sigdigits=2)) \
-        to $(round(res.axes[1][i[2]], sigdigits=2)).
+        Selected range from $(round(res.dimensions[1][i[1]], sigdigits=2)) \
+        to $(round(res.dimensions[1][i[2]], sigdigits=2)).
         Weighted average = $(round(weighted_average[], sigdigits=3))
         """
     end
@@ -161,7 +161,7 @@ function Makie.plot(res::NMRInversions.InversionData{1})
     on(button_xscale.clicks) do _
         if log_x
             fig.content[1].limits = (
-                exp10(floor(log10(res.axes[1][1]))),
+                exp10(floor(log10(res.dimensions[1][1]))),
                 nothing, nothing, nothing
             ) # looks weird but it prevents an error
             fig.content[1].xscale = identity
@@ -177,7 +177,7 @@ function Makie.plot(res::NMRInversions.InversionData{1})
 
     on(button_label.clicks) do _
         low, high = slider.interval[]
-        selection = [[res.axes[1][low]], [res.axes[1][high]]]
+        selection = [[res.dimensions[1][low]], [res.dimensions[1][high]]]
         push!(res.selections, selection)
         redraw(fig, res, interval_low, interval_high)
     end
@@ -220,7 +220,7 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
 
     W_½ = sqrt(res.input.W[1])
     f = res.data .* res.filter
-    x = res.input.axes[1]
+    x = res.input.dimensions[1]
     g = res.input.data
     wg = W_½ * g
 
@@ -228,7 +228,7 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
         exp10.(range(log10(x[1]), log10(x[end]), 512))
     )
 
-    X = (x isa PFG ? res.axes[1] .* 1e9 : res.axes[1])
+    X = (x isa PFG ? res.dimensions[1] .* 1e9 : res.dimensions[1])
 
     yfit = create_kernel(xfit, X, y=wg) * f
 
@@ -245,7 +245,7 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
         colormap=:tab10, colorrange=(1, 10), color=i
     )
     !selections && lines!(
-        ax2, res.axes[1],
+        ax2, res.dimensions[1],
         offset == 0 ? real.(f) : (scale_to_one!(real.(f)) .+ offset),
         colormap=:tab10, colorrange=(1, 10), color=i, label=res.title
     )
@@ -262,11 +262,11 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
 
     if selections
 
-        if res.input.axes[1] isa Union{IR,SR}
+        if res.input.dimensions[1] isa Union{IR,SR}
             text_labels = ["<T₁> = ", " s, Area= ", " %"]
-        elseif res.input.axes[1] isa CPMG
+        elseif res.input.dimensions[1] isa CPMG
             text_labels = ["<T₂> = ", " s, Area= ", " %"]
-        elseif res.input.axes[1] isa PFG
+        elseif res.input.dimensions[1] isa PFG
             text_labels = ["<D> = ", " m²/s, Area= ", " %"]
         end
 
@@ -282,12 +282,12 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
             end
 
             band!(
-                ax2, res.axes[1][idx], b_low, b_high,
+                ax2, res.dimensions[1][idx], b_low, b_high,
                 colormap=:tab10, colorrange=(1, 10), color=i, alpha=0.35,
             )
         end
 
-        lines!(ax2, res.axes[1],
+        lines!(ax2, res.dimensions[1],
             offset == 0 ? real.(f) : (scale_to_one!(real.(f)) .+ offset),
             colormap=:tab10, colorrange=(1, 10), color=i, label=res.title)
 
@@ -296,7 +296,7 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
             height = (1 - (i - 1) * (0.1 + 0.07 * log(n_plots))) * maximum(f) + offset
 
             sel = collect('a':'z')[i]
-            h = f[argmin(abs.(res.axes[1] .- wa[i]))] / 2 + offset
+            h = f[argmin(abs.(res.dimensions[1] .- wa[i]))] / 2 + offset
 
             scatter!(ax2,
                 wa[i],
@@ -312,7 +312,7 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
                     text_labels[2] * "$(round(areas[i]*100, sigdigits = 2))" * text_labels[3]
 
             text!(
-                ax2, res.axes[1][2], height,
+                ax2, res.dimensions[1][2], height,
                 text=txt,
                 align=(:left, :top),
                 colormap=:tab10, colorrange=(1, 10), color=i,
@@ -322,8 +322,8 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
     end
 
     ax2.limits = (
-        minimum(minimum(vec) for vec in res.axes),
-        maximum(maximum(vec) for vec in res.axes),
+        minimum(minimum(vec) for vec in res.dimensions),
+        maximum(maximum(vec) for vec in res.dimensions),
         -0.025 * maximum(f),
         1.025 * maximum(f),
     )

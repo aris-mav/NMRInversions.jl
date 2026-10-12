@@ -21,10 +21,10 @@ function compress(
 )
 
     if dims == 0
-        dims = argmax(length.(input.axes))
+        dims = argmax(length.(input.dimensions))
     end
 
-    x = input.axes[dims]
+    x = input.dimensions[dims]
 
     original_length = length(x)
 
@@ -61,7 +61,7 @@ function window_average(
     log::Bool,
 )
 
-    x = input.axes[dims]
+    x = input.dimensions[dims]
     data = input.data
     original_length = length(x)
 
@@ -132,14 +132,14 @@ function window_average(
         # Build a multidimensional index that selects this bin along `dims`
         # and selects all elements along other dimensions
         select = ntuple(d ->
-                d == dims ? idx : Colon(),
+            d == dims ? idx : Colon(),
             ndims(data)
         )
 
         # Map the current bin's target position into a multi-dimensional 
         # index slice, keeping the target dimension intact for uniform array shapes.
         out_select = ntuple(d ->
-                d == dims ? (b:b) : Colon(),
+            d == dims ? (b:b) : Colon(),
             ndims(data)
         )
 
@@ -148,11 +148,11 @@ function window_average(
         new_data[out_select...] .= Statistics.mean(view(data, select...), dims=dims)
     end
 
-    new_axes = Base.setindex(input.axes, new_axis, dims)
+    new_dimensions = Base.setindex(input.dimensions, new_axis, dims)
     new_W = Base.setindex(input.W, Wdims, dims)
 
     return ExperimentData(
-        new_axes,
+        new_dimensions,
         new_data,
         input.SNR,
         new_W

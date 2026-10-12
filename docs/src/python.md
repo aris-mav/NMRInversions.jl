@@ -55,7 +55,7 @@ to plot the data:
 
 import matplotlib.pyplot as plt
 
-plt.semilogx(results.axes[0], results.data)
+plt.semilogx(results.dimensions[0], results.data)
 plt.xlabel(r"$T_2$ (s)")
 plt.show()
 ```

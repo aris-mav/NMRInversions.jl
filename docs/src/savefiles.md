@@ -4,10 +4,9 @@ provides us with a straightforward way to save our
 results in a file, and load them later if we need
 to check what's inside them.
 
-!!! info 
-    Serialization.jl and DelimitedFiles.jl are
-    both part of the standard library, and thus it
-    can be used without installation.
+!!! info Serialization.jl and DelimitedFiles.jl
+are both part of the standard library, and thus it
+can be used without installation.
 
 ## Saving results 
 
@@ -49,7 +48,7 @@ diffusion coefficient) distribution.
 ```julia
 using DelimitedFiles
 
-data_matrix = [results.axes[1] results.data]
+data_matrix = [results.dimensions[1] results.data]
 
 # The third parameter in the function below
 # determines the delimiter, in this case a comma

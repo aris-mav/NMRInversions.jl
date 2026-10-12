@@ -147,19 +147,19 @@ function static_plots(
     axmain.yscale = axright.yscale = identity
 
     if tp
-        x, y = (res.axes[2], res.axes[1])
+        x, y = (res.dimensions[2], res.dimensions[1])
         z = res.data' .* res.filter'
-        xlbl, ylbl = (X_label(res.axes[2]), X_label(res.axes[1]))
+        xlbl, ylbl = (X_label(res.dimensions[2]), X_label(res.dimensions[1]))
     else
-        x, y = (res.axes[1], res.axes[2])
+        x, y = (res.dimensions[1], res.dimensions[2])
         z = res.data .* res.filter
-        xlbl, ylbl = (X_label(res.axes[1]), X_label(res.axes[2]))
+        xlbl, ylbl = (X_label(res.dimensions[1]), X_label(res.dimensions[2]))
     end
     axmain.xlabel = xlbl
     axmain.ylabel = ylbl
 
-    if ==(typeof.(res.axes)...)
-        # if both axes are of the same type (e.g. T2T2)
+    if ==(typeof.(res.dimensions)...)
+        # if both dimensions are of the same type (e.g. T2T2)
         xlbl = L"%$xlbl \text{(direct)}"
         ylbl = L"%$ylbl \text{(indirect)}"
     end
@@ -169,7 +169,7 @@ function static_plots(
     x_low, x_high = lims(x, xsc)
     y_low, y_high = lims(y, ysc)
 
-    if all(isa.(res.axes, Union{IR,SR,CPMG})) && xsc == log10 && ysc == log10
+    if all(isa.(res.dimensions, Union{IR,SR,CPMG})) && xsc == log10 && ysc == log10
         # diagonal should be in the middle
         x_low = y_low = min(x_low, y_low)
         x_high = y_high = max(x_high, y_high)
@@ -245,7 +245,7 @@ function static_plots(
     markers = collect('a':'z')
     colors = cgrad(:tab10)
 
-    if all(x -> x isa Union{IR,SR,CPMG}, res.axes)
+    if all(x -> x isa Union{IR,SR,CPMG}, res.dimensions)
         plot_diagonal(axmain, x, y)
     end
 
@@ -265,9 +265,9 @@ function static_plots(
         xc = xdist ⋅ x / sum(spo)
         yc = ydist ⋅ y / sum(spo)
 
-        s_dir, s_indir = (symb(res.axes[1]), symb(res.axes[2]))
+        s_dir, s_indir = (symb(res.dimensions[1]), symb(res.dimensions[2]))
 
-        lbl = if res.axes[2] isa Union{IR,SR} && res.axes[1] isa CPMG
+        lbl = if res.dimensions[2] isa Union{IR,SR} && res.dimensions[1] isa CPMG
             "T₁/T₂ = $(round(wa_indir[i]/wa_dir[i] , digits=1))"
         else
             "$s_indir = $(_display_round(wa_indir[i])), \
@@ -428,13 +428,13 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
     on(events(gui).mouseposition) do _
         if tp_check.checked[]
-            x, y = res.axes[[2, 1]]
+            x, y = res.dimensions[[2, 1]]
         else
-            x, y = res.axes[[1, 2]]
+            x, y = res.dimensions[[1, 2]]
         end
         sx, sy = symb.((x, y))
         xsc, ysc = map(val -> islogspaced(val) ? exp10 : identity, (x, y))
-        if ==(typeof.(res.axes)...)
+        if ==(typeof.(res.dimensions)...)
             sx *= "(x)"
             sy *= "(y)"
         end
@@ -463,10 +463,10 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
 
     if tp_check.checked[]
         z = res.data' .* res.filter'
-        x, y = res.axes[2], res.axes[1]
+        x, y = res.dimensions[2], res.dimensions[1]
     else
         z = res.data .* res.filter
-        x, y = res.axes[1], res.axes[2]
+        x, y = res.dimensions[1], res.dimensions[2]
     end
 
     #Create a matrix for all the discrete points in the space
