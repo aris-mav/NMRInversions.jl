@@ -62,7 +62,7 @@ function window_average(
 )
 
     x = input.dimensions[dims]
-    data = input.data
+    data = input.signal
     original_length = length(x)
 
     # separate 1st point and the rest, so that the 1st point is preserve
@@ -109,7 +109,7 @@ function window_average(
     new_size = Base.setindex(size(data), nbins, dims)
 
     new_axis = typeof(x)(similar(x.x, nbins))
-    new_data = similar(input.data, new_size)
+    new_data = similar(input.signal, new_size)
 
     for b in 1:nbins
 

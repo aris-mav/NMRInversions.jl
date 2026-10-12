@@ -102,7 +102,7 @@ function create_kernel(
 
     W_½ = sqrt(input.W[1])
     axis = input.dimensions[1]
-    g = input.data
+    g = input.signal
 
     K = create_kernel(axis, X[1], y=g)
     scale_to_one!(K)
@@ -132,7 +132,7 @@ function create_kernel(
 )
 
     dimensions = input.dimensions
-    data = input.data
+    data = input.signal
 
     W1_½ = sqrt(input.W[1])
     W2_½ = sqrt(input.W[2])

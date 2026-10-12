@@ -72,7 +72,7 @@ function Makie.plot!(fig::Union{Makie.Figure,Makie.GridPosition}, res::ExpfitDat
     for r in res
 
         x = r.input.dimensions[1]
-        y = r.input.data
+        y = r.input.signal
 
         if isempty(r.title)
             scatter!(ax, x, y, markersize=markersize)

@@ -128,18 +128,18 @@ export FC
 # Define experiment data containing both Axes and data 
 export ExperimentData
 """
-    ExperimentData(dimensions, data)
+    ExperimentData(dimensions, signal)
 Struct containing NMR data.
 - `dimensions` should be a tuple of `DataAxis`s with the `x` data in each of them.
-- `data` should be an aray of n-dimensions with the recorded data.
-- `SNR` is the signal-to-noise ratio (calculated automatically for complex data)
+- `signal` should be an aray of n-dimensions with the recorded signal.
+- `SNR` is the signal-to-noise ratio (calculated automatically for complex signals)
 - `W` is a tuple containing the precision matrix (inverse of the covariance 
 matrix) in each of the dimensions. Relevant for compressed data, identity by 
 default.
 """
 struct ExperimentData{D}
     dimensions::NTuple{D,DataAxis}
-    data::AbstractArray{<:Number,D}
+    signal::AbstractArray{<:Number,D}
     SNR::Real
     W::NTuple{D,Union{AbstractMatrix,UniformScaling}}
 end
@@ -148,7 +148,7 @@ end
 """
     ExperimentData(
     dimensions::Tuple{Vararg{DataAxis}}, 
-    data::AbstractArray{<:Number,D};
+    signal::AbstractArray{<:Number,D};
     compress = false
 ) where {D}
 
@@ -157,7 +157,7 @@ needed.
 """
 function ExperimentData(
     dimensions::Tuple{Vararg{DataAxis}},
-    data::AbstractArray{<:Number,D};
+    signal::AbstractArray{<:Number,D};
     compress=false
 ) where {D}
 
@@ -165,17 +165,17 @@ function ExperimentData(
         throw(DimensionMismatch(
             """
             The number of dimensions (you gave $(length(dimensions))) \
-            must match the dimensions of the data ($D).
+            must match the dimensions of the signal ($D).
             """
         ))
     end
 
     for i in 1:D
-        if length(dimensions[i].x) != size(data, i)
+        if length(dimensions[i].x) != size(signal, i)
             throw(DimensionMismatch(
                 """
                 The axis $(typeof(dimensions[i])) has length $(length(dimensions[i].x)), \
-                but the `data` array has length $(size(data, i)) \
+                but the `signal` array has length $(size(signal, i)) \
                 at the corresponding dimension $i.
                 """
             ))
@@ -183,7 +183,7 @@ function ExperimentData(
     end
 
     original_data = ExperimentData{D}(
-        dimensions, data, calc_snr(dimensions, data), ntuple(i -> LinearAlgebra.I, D)
+        dimensions, signal, calc_snr(dimensions, signal), ntuple(i -> LinearAlgebra.I, D)
     )
 
     if compress
@@ -194,18 +194,18 @@ function ExperimentData(
 end
 
 # Outer constructor for 1-dimensional case
-function ExperimentData(dimensions::DataAxis, data::AbstractVector)
-    return ExperimentData((dimensions,), data)
+function ExperimentData(dimensions::DataAxis, signal::AbstractVector)
+    return ExperimentData((dimensions,), signal)
 end
 
 # Implement indexing
-Base.length(d::ExperimentData) = length(d.data)
-Base.size(d::ExperimentData) = size(d.data)
-Base.size(d::ExperimentData, dim::Int) = size(d.data, dim)
-Base.lastindex(d::ExperimentData) = lastindex(d.data)
-Base.lastindex(d::ExperimentData, dim::Int) = size(d.data, dim)
-Base.axes(d::ExperimentData, dim::Int) = axes(d.data, dim)
-Base.ndims(d::ExperimentData) = ndims(d.data)
+Base.length(d::ExperimentData) = length(d.signal)
+Base.size(d::ExperimentData) = size(d.signal)
+Base.size(d::ExperimentData, dim::Int) = size(d.signal, dim)
+Base.lastindex(d::ExperimentData) = lastindex(d.signal)
+Base.lastindex(d::ExperimentData, dim::Int) = size(d.signal, dim)
+Base.axes(d::ExperimentData, dim::Int) = axes(d.signal, dim)
+Base.ndims(d::ExperimentData) = ndims(d.signal)
 
 # Slice W matrix
 _slice_W(W::AbstractMatrix, idx) = W[idx, idx]
@@ -214,7 +214,7 @@ _slice_W(W::UniformScaling, _) = W
 
 function Base.getindex(E::ExperimentData{D}, I...) where {D}
 
-    idx = Base.to_indices(E.data, I)
+    idx = Base.to_indices(E.signal, I)
 
     if length(idx) != D
         throw(ArgumentError(
@@ -226,7 +226,7 @@ function Base.getindex(E::ExperimentData{D}, I...) where {D}
     new_D = length(keep)
 
     if new_D == 0
-        return E.data[idx...] # fully scalar index -> return the raw value
+        return E.signal[idx...] # fully scalar index -> return the raw value
     end
 
     new_dimensions = ntuple(j -> E.dimensions[keep[j]][idx[keep[j]]], new_D)
@@ -234,7 +234,7 @@ function Base.getindex(E::ExperimentData{D}, I...) where {D}
 
     return ExperimentData{new_D}(
         new_dimensions,
-        E.data[idx...],
+        E.signal[idx...],
         E.SNR,
         new_W
     )

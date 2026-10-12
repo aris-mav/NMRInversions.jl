@@ -38,7 +38,7 @@ function invert(
     if scale
         # copy so that original data is not mutated
         input = deepcopy(input)
-        scale_to_one!(input.data)
+        scale_to_one!(input.signal)
     end
 
     n_points = div(128, 2^(ndims(input) - 1))
@@ -70,7 +70,7 @@ function invert(
 
     data = Array{Float64}(undef, length.(dimensions))
     alphas = Array{Float64}(undef, length.(dimensions))
-    residuals = Array{Float64}(undef, size(input.data))
+    residuals = Array{Float64}(undef, size(input.signal))
 
     for idx in Iterators.product(slices...)
 
@@ -131,7 +131,7 @@ function _solve(
         k.K_uncompressed[1] * reshape(f, length.(dimensions)) * k.K_uncompressed[2]'
     end
 
-    g = real.(input.data)
+    g = real.(input.signal)
 
     r = Kf - g
 

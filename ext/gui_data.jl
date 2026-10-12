@@ -14,13 +14,13 @@ function Makie.plot(data::NMRInversions.ExperimentData{1})
 
     if any(isa.(data.data, Complex))
 
-        plot!(ax, x, imag.(data.data),
+        plot!(ax, x, imag.(data.signal),
             color=Cycled(2), label="Complex part")
 
-        plot!(ax, x, real.(data.data),
+        plot!(ax, x, real.(data.signal),
             color=Cycled(1), label="Real part")
     else
-        plot!(ax, x, data.data, label="Data points")
+        plot!(ax, x, data.signal, label="Data points")
     end
 
     fig[2, 1] = Legend(fig, ax, orientation=:horizontal,
@@ -42,7 +42,7 @@ function Makie.plot(data::NMRInversions.ExperimentData{2})
 
     GLMakie.activate!(; title="Data visualization")
 
-    dt = real.(data.data)
+    dt = real.(data.signal)
     xd = data.dimensions[1]
     xi = data.dimensions[2]
 

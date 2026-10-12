@@ -95,11 +95,11 @@ function expfit(
     if scale
         # copy so that original data is not mutated
         input = deepcopy(input)
-        scale_to_one!(input.data)
+        scale_to_one!(input.signal)
     end
 
     x = input.dimensions[1]
-    y = real.(input.data)
+    y = real.(input.signal)
 
     if isa(n, Int)
 

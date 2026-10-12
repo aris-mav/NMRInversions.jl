@@ -145,7 +145,7 @@ function Makie.plot(res::NMRInversions.InversionData{1})
     log_x = false
 
     on(button_yscale.clicks) do _
-        if !any(real.(res.input.data) .<= 0)
+        if !any(real.(res.input.signal) .<= 0)
             if log_y
                 fig.content[1].yscale = identity
                 log_y = false
@@ -221,7 +221,7 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
     W_½ = sqrt(res.input.W[1])
     f = res.data .* res.filter
     x = res.input.dimensions[1]
-    g = res.input.data
+    g = res.input.signal
     wg = W_½ * g
 
     xfit = typeof(x)(

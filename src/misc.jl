@@ -131,7 +131,7 @@ and will be added to the automatic angle correction.
 """
 function autophase(data::ExperimentData; rotation::Real=0)
 
-    y = data.data
+    y = data.signal
 
     # Declare which points should be the (near) maxima for each type 
     rules = [
