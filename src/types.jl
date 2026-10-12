@@ -248,17 +248,17 @@ Output of the `invert` function, containing all the relevant information:
 
 - `input` : `ExperimentData` structure that was used as input to the inversion function.
 - `dimensions` : "x-axes" of the output (i.e., relaxation times, diffusion coefficients).
-- `data` : the results of the inversion.
+- `distribution` : the results of the inversion.
 - `residuals` : an array containing the residuals of the fit.
-- `alpha` : the smooting term used to produce the `data` array.
-- `filter` : an array working as a mask to the `data` array (mostly for visualization).
-- `selections` : polygon selections for the `data` array (mostly for visualization).
+- `alpha` : the smooting term used to produce the `distribution` array.
+- `filter` : an array working as a mask to the `distribution` array (mostly for visualization).
+- `selections` : polygon selections for the `distribution` array (mostly for visualization).
 - `title` : a title descibing this object (mostly for visualization).
 """
 mutable struct InversionData{D}
     input::ExperimentData{D}
     dimensions::NTuple{D,DataAxis}
-    data::AbstractArray{<:Number,D}
+    distribution::AbstractArray{<:Number,D}
     residuals::AbstractArray{<:Number,D}
     alphas::AbstractArray{<:Number,D}
     filter::AbstractArray{<:Number,D}

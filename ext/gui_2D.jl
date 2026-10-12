@@ -148,11 +148,11 @@ function static_plots(
 
     if tp
         x, y = (res.dimensions[2], res.dimensions[1])
-        z = res.data' .* res.filter'
+        z = res.distribution' .* res.filter'
         xlbl, ylbl = (X_label(res.dimensions[2]), X_label(res.dimensions[1]))
     else
         x, y = (res.dimensions[1], res.dimensions[2])
-        z = res.data .* res.filter
+        z = res.distribution .* res.filter
         xlbl, ylbl = (X_label(res.dimensions[1]), X_label(res.dimensions[2]))
     end
     axmain.xlabel = xlbl
@@ -462,10 +462,10 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
     Label(gui[13, 10:19], current_coordinates_label)
 
     if tp_check.checked[]
-        z = res.data' .* res.filter'
+        z = res.distribution' .* res.filter'
         x, y = res.dimensions[2], res.dimensions[1]
     else
-        z = res.data .* res.filter
+        z = res.distribution .* res.filter
         x, y = res.dimensions[1], res.dimensions[2]
     end
 
@@ -613,7 +613,7 @@ function Makie.plot(res::NMRInversions.InversionData{2}; kwargs...)
         end
 
         on(reset_filter_b.clicks) do _
-            res.filter .= ones(size(res.data))
+            res.filter .= ones(size(res.distribution))
 
             static_plots(
                 axmain, axtop, axright, res, colormenu.selection[],

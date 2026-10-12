@@ -57,14 +57,14 @@ ax = Axis(
 )
 
 # find the largest value in the distributions (used below to set them apart)
-max_value = maximum(val for r in results for val in r.data)
+max_value = maximum(val for r in results for val in r.distribution)
 
 # plot the results, one stacked on top of the other
 for (i, r) in enumerate(results)
     lines!(
         ax, 
         r.dimensions[1], 
-        r.data ./ max_value .+ (i-1), 
+        r.distribution ./ max_value .+ (i-1), 
         colormap=:tab10, colorrange=(1, 10), color=i,
     )
     text!(

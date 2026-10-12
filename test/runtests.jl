@@ -26,7 +26,7 @@ function test_invert(seq::Type{<:DataAxis}, SNR=100; kwargs...)
 
     # The condition below is COMPLETELY arbitrary, but seems sensible
     score = LinearAlgebra.norm(
-        f_custom - (results.data ./ (maximum(results.data)) .* maximum(f_custom))
+        f_custom - (results.distribution ./ (maximum(results.distribution)) .* maximum(f_custom))
     )
     threshold = 10 * SNR^(-0.35)
 

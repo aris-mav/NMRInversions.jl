@@ -48,7 +48,7 @@ diffusion coefficient) distribution.
 ```julia
 using DelimitedFiles
 
-data_matrix = [results.dimensions[1] results.data]
+data_matrix = [results.dimensions[1] results.distribution]
 
 # The third parameter in the function below
 # determines the delimiter, in this case a comma

@@ -67,8 +67,8 @@ function Makie.plot(
     ax2.limits = (
         minimum(minimum(vec) for r in res_mat for vec in r.dimensions),
         maximum(maximum(vec) for r in res_mat for vec in r.dimensions),
-        stacked ? nothing : minimum(map(res -> -0.025 * maximum(res.data .* res.filter), res_mat)),
-        stacked ? nothing : maximum(map(res -> 1.025 * maximum(res.data .* res.filter), res_mat)),
+        stacked ? nothing : minimum(map(res -> -0.025 * maximum(res.distribution .* res.filter), res_mat)),
+        stacked ? nothing : maximum(map(res -> 1.025 * maximum(res.distribution .* res.filter), res_mat)),
     )
 
 
@@ -118,7 +118,7 @@ function Makie.plot(res::NMRInversions.InversionData{1})
     end
 
     weighted_average = lift(slider.interval) do i
-        return res.data[i[1]:i[2]]' * res.dimensions[1][i[1]:i[2]] / sum(res.data[i[1]:i[2]])
+        return res.distribution[i[1]:i[2]]' * res.dimensions[1][i[1]:i[2]] / sum(res.distribution[i[1]:i[2]])
     end
 
     labeltext = lift(slider.interval) do i
@@ -194,7 +194,7 @@ function Makie.plot(res::NMRInversions.InversionData{1})
     end
 
     on(button_reset_f.clicks) do _
-        res.filter = ones(size(res.data))
+        res.filter = ones(size(res.distribution))
         redraw(fig, res, interval_low, interval_high)
     end
 
@@ -219,7 +219,7 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
     selections=false, offset::Real=0, n_plots::Int=1, i=1)
 
     W_½ = sqrt(res.input.W[1])
-    f = res.data .* res.filter
+    f = res.distribution .* res.filter
     x = res.input.dimensions[1]
     g = res.input.signal
     wg = W_½ * g
@@ -274,7 +274,7 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
 
         for (i, idx) in enumerate(NMRInversions._selection_indices(res))
 
-            b_low = zeros(length(res.data[idx])) .+ offset
+            b_low = zeros(length(res.distribution[idx])) .+ offset
             b_high = if (offset == 0)
                 f[idx]
             else

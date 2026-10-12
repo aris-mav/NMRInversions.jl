@@ -55,7 +55,8 @@ to plot the data:
 
 import matplotlib.pyplot as plt
 
-plt.semilogx(results.dimensions[0], results.data)
+plt.semilogx(results.dimensions[0],
+results.distribution)
 plt.xlabel(r"$T_2$ (s)")
 plt.show()
 ```
@@ -81,7 +82,7 @@ straightforward (if needed):
 
 import numpy as np
 
-d = np.array(results.data)
+d = np.array(results.distribution)
 ```
 
 The package(s) installed here via Julia can be

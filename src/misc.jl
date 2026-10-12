@@ -97,12 +97,12 @@ function selections(res::InversionData{2})
 
     dir = res.dimensions[1]
     indir = res.dimensions[2]
-    F = res.data
+    F = res.distribution
 
     x = collect(1:length(indir))
     y = collect(1:length(dir))
 
-    z = res.data' .* res.filter'
+    z = res.distribution' .* res.filter'
 
     points = [[i, j] for i in x, j in y] #important, used by inpolygon later
     mask = zeros(size(points))
@@ -187,7 +187,7 @@ end
 
 Returns a vector of ranges which correspond to selections.
 
-Can be used as: `r.data[NMRInversions._selection_indices(r)[1]]`
+Can be used as: `r.distribution[NMRInversions._selection_indices(r)[1]]`
 """
 function _selection_indices(r::InversionData{1})
     [
@@ -222,7 +222,7 @@ for each selection. If there are no selections the total is used instead.
 """
 function mean(r::InversionData{1}; silent::Bool=false)
 
-    distribution = r.data .* r.filter
+    distribution = r.distribution .* r.filter
 
     lbl = if r.dimensions[1] isa Union{IR,SR}
         ["<T₁>", "s"]
@@ -283,7 +283,7 @@ If there are no selections the total is used instead.
 """
 function mean(r::InversionData{2}; silent::Bool=false)
 
-    z = r.data .* r.filter
+    z = r.distribution .* r.filter
     x, y = r.dimensions[1], r.dimensions[2]
 
     labels = Dict(
@@ -369,8 +369,8 @@ export scale_filter!
 Add selected range to the filter, scaling it to keep the integral of `f` constant.
 """
 function scale_filter!(res::InversionData)
-    integral = sum(res.data)
-    new_integral = sum(res.data .* res.filter)
+    integral = sum(res.distribution)
+    new_integral = sum(res.distribution .* res.filter)
     scale = new_integral != 0 ? integral / new_integral : 0
     res.filter .= res.filter .* scale
 end

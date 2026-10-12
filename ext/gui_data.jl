@@ -12,7 +12,7 @@ function Makie.plot(data::NMRInversions.ExperimentData{1})
 
     x = data.dimensions[1]
 
-    if any(isa.(data.data, Complex))
+    if any(isa.(data.signal, Complex))
 
         plot!(ax, x, imag.(data.signal),
             color=Cycled(2), label="Complex part")
