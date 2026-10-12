@@ -34,6 +34,29 @@ pulse sequence seems to be a fairly elegant way to
 make the package scale to n-dimensions, thus this
 convention is used from version 2.0 onwards.
 
+## Input Experiment Data structure
+
+These can be used as inputs containing all of the
+necessary information to run the `invert` and
+`expfit` functions (e.g. if `a` is an
+`ExperimentData` object, `invert(a)` does the
+job).
+
+```@docs
+ExperimentData
+```
+
+##  Output data structures
+
+When you run an inversion function (e.g. ` r =
+invert(a)`), the output is an `InversionData`
+structure.
+
+```@docs
+InversionData
+ExpfitData
+```
+
 
 ## Inversion Solvers
 
@@ -74,29 +97,6 @@ alpha=1)`).
 ```@docs
 GCV
 LCurve
-```
-
-## Inversion and Expfit Inputs
-
-These can be used as inputs containing all of the
-necessary information to run the `invert` and
-`expfit` functions (e.g. if `a` is an
-`ExperimentData` object, `invert(a)` does the
-job).
-
-```@docs
-ExperimentData
-```
-
-##  Inversion and Expfit Outputs
-
-When you run an inversion function (e.g. ` r =
-invert(a)`), the output is an `InversionData`
-structure.
-
-```@docs
-InversionData
-ExpfitData
 ```
 
 ## Kernel Structure
