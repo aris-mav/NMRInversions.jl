@@ -169,7 +169,7 @@ function static_plots(
     x_low, x_high = lims(x, xsc)
     y_low, y_high = lims(y, ysc)
 
-    if all(isa.(res.dimensions, Union{IR,SR,CPMG})) && xsc == log10 && ysc == log10
+    if all(isa.(res.dimensions, Union{T1,T2})) && xsc == log10 && ysc == log10
         # diagonal should be in the middle
         x_low = y_low = min(x_low, y_low)
         x_high = y_high = max(x_high, y_high)
@@ -245,7 +245,7 @@ function static_plots(
     markers = collect('a':'z')
     colors = cgrad(:tab10)
 
-    if all(x -> x isa Union{IR,SR,CPMG}, res.dimensions)
+    if all(x -> x isa Union{T1,T2}, res.dimensions)
         plot_diagonal(axmain, x, y)
     end
 
@@ -267,7 +267,7 @@ function static_plots(
 
         s_dir, s_indir = (symb(res.dimensions[1]), symb(res.dimensions[2]))
 
-        lbl = if res.dimensions[2] isa Union{IR,SR} && res.dimensions[1] isa CPMG
+        lbl = if res.dimensions[2] isa T1 && res.dimensions[1] isa T2
             "T₁/T₂ = $(round(wa_indir[i]/wa_dir[i] , digits=1))"
         else
             "$s_indir = $(_display_round(wa_indir[i])), \

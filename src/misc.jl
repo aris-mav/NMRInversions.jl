@@ -224,11 +224,11 @@ function mean(r::InversionData{1}; silent::Bool=false)
 
     distribution = r.distribution .* r.filter
 
-    lbl = if r.dimensions[1] isa Union{IR,SR}
+    lbl = if r.dimensions[1] isa T1
         ["<T₁>", "s"]
-    elseif r.dimensions[1] isa CPMG
+    elseif r.dimensions[1] isa T2
         ["<T₂>", "s"]
-    elseif r.dimensions[1] isa PFG
+    elseif r.dimensions[1] isa D
         ["<D>", "m²/s"]
     end
 
@@ -287,10 +287,9 @@ function mean(r::InversionData{2}; silent::Bool=false)
     x, y = r.dimensions[1], r.dimensions[2]
 
     labels = Dict(
-        :IR => ["<T₁>", "s"],
-        :SR => ["<T₁>", "s"],
-        :CPMG => ["<T₂>", "s"],
-        :PFG => ["<D>", "m²/s"],
+        :T1 => ["<T₁>", "s"],
+        :T2 => ["<T₂>", "s"],
+        :D => ["<D>", "m²/s"],
         :Spectrum => ["<δ>", "ppm"],
     )
     dir_lbl = labels[nameof(typeof(r.dimensions[1]))]
@@ -348,7 +347,7 @@ function mean(r::InversionData{2}; silent::Bool=false)
                 display(dir_lbl[1] *
                     " = $(round(wa_dir[i], sigdigits=4)) " * dir_lbl[2]
                 )
-                if r.dimensions[2] isa Union{IR,SR} && r.dimensions[1] isa CPMG
+                if r.dimensions[2] isa T1 && r.dimensions[1] isa T2
                     display(
                         "T₁/T₂ = $(round(wa_ind[i]/wa_dir[i], sigdigits=2)) "
                     )

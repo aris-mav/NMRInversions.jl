@@ -158,8 +158,8 @@ function read_tnt_data(filename::String)
     haskey(sections, "TMAG") || error("No TMAG section found")
 
     tmag = sections["TMAG"].data
-    npts = [reinterpret(Int32, tmag[4i-3:4i])[1] for i in 1:4]
-    actual_npts = [reinterpret(Int32, tmag[16+4i-3:16+4i])[1] for i in 1:4]
+    npts = [reinterpret(Int32, tmag[(4i-3):4i])[1] for i in 1:4]
+    actual_npts = [reinterpret(Int32, tmag[(16+4i-3):(16+4i)])[1] for i in 1:4]
 
     data_bytes = sections["DATA"].data
     n_bytes = length(data_bytes)

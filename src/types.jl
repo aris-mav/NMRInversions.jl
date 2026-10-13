@@ -16,6 +16,9 @@ Subtypes are:
 - `SR` (Saturation recovery)
 - `CPMG`
 - `PFG` (Pulsed field gradient)
+- `T1`
+- `T2`
+- `D`
 - `Spectrum`
 - `FID` (Free induction decay)
 - `FC` (Field cycling)
@@ -50,7 +53,7 @@ end
     IR{T<:Real} <: DataAxis{T}
 
 `DataAxis` type for inversion recovery measurements.
-The `x` field contains the corresponding time data.
+The `x` field contains the corresponding time data (in seconds).
 """
 struct IR{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
     x::V
@@ -61,7 +64,7 @@ export IR
     SR{T<:Real} <: DataAxis{T}
 
 `DataAxis` type for saturation recovery measurements.
-The `x` field contains the corresponding time data.
+The `x` field contains the corresponding time data (in seconds).
 """
 struct SR{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
     x::V
@@ -72,7 +75,7 @@ export SR
     CPMG{T<:Real} <: DataAxis{T}
 
 `DataAxis` type for CPMG measurements.
-The `x` field contains the corresponding time data.
+The `x` field contains the corresponding time data (in seconds).
 """
 struct CPMG{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
     x::V
@@ -91,6 +94,39 @@ end
 export PFG
 
 """
+    T1{T<:Real} <: DataAxis{T}
+
+`DataAxis` type for T1 relaxation time distributions.
+The `x` field contains the corresponding time data (in seconds).
+"""
+struct T1{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
+    x::V
+end
+export T1
+
+"""
+    T2{T<:Real} <: DataAxis{T}
+
+`DataAxis` type for T2 relaxation time distributions.
+The `x` field contains the corresponding time data (in seconds).
+"""
+struct T2{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
+    x::V
+end
+export T2
+
+"""
+    D{T<:Real} <: DataAxis{T}
+
+`DataAxis` type for distributions of diffusion coefficients.
+The `x` field contains the corresponding time data (in seconds).
+"""
+struct D{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
+    x::V
+end
+export D
+
+"""
     Spectrum{T<:Real} <: DataAxis{T}
 
 `DataAxis` type for NMR spectra.
@@ -105,7 +141,7 @@ export Spectrum
     FID{T<:Real} <: DataAxis{T}
 
 `DataAxis` type for free induction decay measurements.
-The `x` field contains the corresponding time data.
+The `x` field contains the corresponding time data (in seconds).
 """
 struct FID{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
     x::V
@@ -124,6 +160,15 @@ struct FC{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
 end
 export FC
 
+"""
+    invert_axis(sampling_axis, values)
+
+"""
+invert_axis(::CPMG, v) = T2(v)
+invert_axis(::Union{IR,SR}, v) = T1(v)
+invert_axis(::PFG, v) = D(v)
+invert_axis(::A, v) where {A<:DataAxis} = throw(ArgumentError(
+    "no inversion defined for $(nameof(A)) axes"))
 
 # Define experiment data containing both Axes and data 
 export ExperimentData

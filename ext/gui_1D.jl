@@ -262,11 +262,11 @@ function static_plots(ax1, ax2, ax3, res::NMRInversions.InversionData{1};
 
     if selections
 
-        if res.input.dimensions[1] isa Union{IR,SR}
+        if res.dimensions[1] isa T1
             text_labels = ["<T₁> = ", " s, Area= ", " %"]
-        elseif res.input.dimensions[1] isa CPMG
+        elseif res.dimensions[1] isa T2
             text_labels = ["<T₂> = ", " s, Area= ", " %"]
-        elseif res.input.dimensions[1] isa PFG
+        elseif res.dimensions[1] isa D
             text_labels = ["<D> = ", " m²/s, Area= ", " %"]
         end
 

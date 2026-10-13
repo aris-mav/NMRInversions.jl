@@ -55,7 +55,7 @@ function invert(
             else
                 values = dimensions[i]
             end
-            Base.typename(typeof(input.dimensions[i])).wrapper(values)
+            invert_axis(input.dimensions[i], values)
         else
             input.dimensions[i]
         end
