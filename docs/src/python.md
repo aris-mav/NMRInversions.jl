@@ -62,14 +62,29 @@ plt.show()
 ```
 
 If you have your NMR data already imported in
-Python (e.g., in the form of `numpy` arrays, `x`
-for time and `y` for signal) you can still invert
+Python (e.g., in the form of `numpy` arrays, `t`
+for time and `s` for signal) you can still invert
 them by creating a `data` structure as follows:
 
 ```python
 ...
 
-data = jl.ExperimentData(jl.CPMG(x), y) 
+data = jl.ExperimentData(jl.CPMG(t), s) 
+results = jl.invert(data)
+```
+
+Similarly, for 2D cases, suppose you have a T1-T2
+experiment with CPMG as the direct dimension and
+inversion recovery as the indirect one. You can
+do:
+
+```python
+...
+
+data = jl.ExperimentData(
+    (jl.CPMG(t_direct), jl.IR(t_indirect)),
+    data_matrix,
+)
 results = jl.invert(data)
 ```
 
