@@ -192,7 +192,7 @@ function Base.getindex(E::ExperimentData{D}, I...) where {D}
 end
 
 function Base.show(io::IO, ::MIME"text/plain", d::ExperimentData{N}) where N
-    print(io, "$(join(size(d), "×")) ExperimentData")
+    print(io, "ExperimentData ($(join(size(d), "×")) points)")
 end
 
 export InversionData
@@ -232,7 +232,7 @@ Base.axes(d::InversionData, dim::Int) = axes(d.distribution, dim)
 Base.ndims(d::InversionData) = ndims(d.distribution)
 
 function Base.show(io::IO, ::MIME"text/plain", d::InversionData{N}) where N
-    print(io, "$(join(size(d), "×")) InversionData")
+    print(io, "InversionData ($(join(size(d), "×")) points)")
 end
 
 export ExpfitData
