@@ -23,153 +23,57 @@ Subtypes are:
 - `FID` (Free induction decay)
 - `FC` (Field cycling)
 """
-abstract type DataAxis{T} <: AbstractVector{T} end;
+abstract type DataAxis{T} <: AbstractVector{T} end
 export DataAxis
 
-# Make DataAxis indexable
+# define all the DataAxis types
+for (S, desc) in (
+    (:IR, "inversion recovery measurements. `x` contains time data (in seconds)."),
+    (:SR, "saturation recovery measurements. `x` contains time data (in seconds)."),
+    (:CPMG, "CPMG measurements. `x` contains time data (in seconds)."),
+    (:PFG, "pulsed field gradient measurements. `x` contains b-factor data."),
+    (:T1, "T1 relaxation time distributions. `x` contains time data (in seconds)."),
+    (:T2, "T2 relaxation time distributions. `x` contains time data (in seconds)."),
+    (:D, "distributions of diffusion coefficients. `x` contains diffusion coefficients."),
+    (:Spectrum, "NMR spectra. `x` contains ppm data."),
+    (:FID, "free induction decay measurements. `x` contains time data (in seconds)."),
+    (:FC, "field cycling (\"dispersion\") measurements. `x` contains B0 data."),
+)
+    @eval begin
+        @doc "    $($(string(S))){T<:Real} <: DataAxis{T}\n\n`DataAxis` type for " * $desc
+        struct $S{T<:Real} <: DataAxis{T}
+            x::Vector{T}
+            # accept any AbstractVector (ranges, views, ...);
+            $S{T}(x::AbstractVector) where {T<:Real} = new{T}(convert(Vector{T}, x))
+        end
+        # promote integers to floats
+        $S(x::AbstractVector{T}) where {T<:Real} = $S{float(T)}(x)
+        export $S
+    end
+end
+
+# make DataAxis indexable
 Base.size(E::DataAxis) = size(E.x)
 Base.length(E::DataAxis) = length(E.x)
 Base.IndexStyle(::Type{<:DataAxis}) = IndexLinear()
 Base.getindex(E::DataAxis, i::Int) = E.x[i]
 Base.setindex!(E::DataAxis, val, i::Int) = (E.x[i] = val)
 
-Base.convert(::Type{S}, x::AbstractVector) where {S<:DataAxis} =
-    Base.typename(S).wrapper(x)
-
 Base.getindex(E::DataAxis, ::Base.Slice) = E   # `:` keeps the axis as is
 
 function Base.getindex(E::DataAxis, I::AbstractArray{<:Integer})
-    Base.typename(typeof(E)).wrapper(E.x[I])
+    typeof(E).name.wrapper(E.x[I])
 end
 
-# Promote integer inputs to float for any DataAxis subtype
-function (::Type{T})(x::AbstractVector{<:Integer}) where {T<:DataAxis}
-    T(float.(x))
-end
-
-# Define all the DataAxis types
-
-"""
-    IR{T<:Real} <: DataAxis{T}
-
-`DataAxis` type for inversion recovery measurements.
-The `x` field contains the corresponding time data (in seconds).
-"""
-struct IR{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
-    x::V
-end
-export IR
-
-"""
-    SR{T<:Real} <: DataAxis{T}
-
-`DataAxis` type for saturation recovery measurements.
-The `x` field contains the corresponding time data (in seconds).
-"""
-struct SR{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
-    x::V
-end
-export SR
-
-"""
-    CPMG{T<:Real} <: DataAxis{T}
-
-`DataAxis` type for CPMG measurements.
-The `x` field contains the corresponding time data (in seconds).
-"""
-struct CPMG{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
-    x::V
-end
-export CPMG
-
-"""
-    PFG{T<:Real} <: DataAxis{T}
-
-`DataAxis` type for pulsed field gradient measurements.
-The `x` field contains the corresponding b-factor data.
-"""
-struct PFG{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
-    x::V
-end
-export PFG
-
-"""
-    T1{T<:Real} <: DataAxis{T}
-
-`DataAxis` type for T1 relaxation time distributions.
-The `x` field contains the corresponding time data (in seconds).
-"""
-struct T1{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
-    x::V
-end
-export T1
-
-"""
-    T2{T<:Real} <: DataAxis{T}
-
-`DataAxis` type for T2 relaxation time distributions.
-The `x` field contains the corresponding time data (in seconds).
-"""
-struct T2{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
-    x::V
-end
-export T2
-
-"""
-    D{T<:Real} <: DataAxis{T}
-
-`DataAxis` type for distributions of diffusion coefficients.
-The `x` field contains the corresponding time data (in seconds).
-"""
-struct D{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
-    x::V
-end
-export D
-
-"""
-    Spectrum{T<:Real} <: DataAxis{T}
-
-`DataAxis` type for NMR spectra.
-The `x` field contains the corresponding ppm data.
-"""
-struct Spectrum{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
-    x::V
-end
-export Spectrum
-
-"""
-    FID{T<:Real} <: DataAxis{T}
-
-`DataAxis` type for free induction decay measurements.
-The `x` field contains the corresponding time data (in seconds).
-"""
-struct FID{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
-    x::V
-end
-
-export FID
-
-"""
-    FC{T<:Real} <: DataAxis{T}
-
-`DataAxis` type for field cycling (or "dispersion") measurements.
-The `x` field contains the corresponding B0 data.
-"""
-struct FC{T<:Real,V<:AbstractVector{T}} <: DataAxis{T}
-    x::V
-end
-export FC
 
 """
     invert_axis(sampling_axis, values)
-
 """
 invert_axis(::CPMG, v) = T2(v)
 invert_axis(::Union{IR,SR}, v) = T1(v)
 invert_axis(::PFG, v) = D(v)
 invert_axis(::A, v) where {A<:DataAxis} = throw(ArgumentError(
     "no inversion defined for $(nameof(A)) axes"))
-
 # Define experiment data containing both Axes and data 
 export ExperimentData
 """
