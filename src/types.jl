@@ -78,7 +78,9 @@ invert_axis(::A, v) where {A<:DataAxis} = throw(ArgumentError(
 export ExperimentData
 """
     ExperimentData(dimensions, signal)
-Struct containing NMR data.
+
+Struct containing NMR data in its fields:
+
 - `dimensions` should be a tuple of `DataAxis`s with the `x` data in each of them.
 - `signal` should be an aray of n-dimensions with the recorded signal.
 - `SNR` is the signal-to-noise ratio (calculated automatically for complex signals)
@@ -189,11 +191,16 @@ function Base.getindex(E::ExperimentData{D}, I...) where {D}
     )
 end
 
+function Base.show(io::IO, ::MIME"text/plain", d::ExperimentData{N}) where N
+    print(io, "$(join(size(d), "×")) ExperimentData")
+end
+
 export InversionData
 """
     InversionData()
 
-Output of the `invert` function, containing all the relevant information:
+Output of the `invert` function, containing all the relevant information in its
+    fields:
 
 - `input` : `ExperimentData` structure that was used as input to the inversion function.
 - `dimensions` : "x-axes" of the output (i.e., relaxation times, diffusion coefficients).
@@ -215,6 +222,18 @@ mutable struct InversionData{D}
     title::String
 end
 
+# Implement indexing
+Base.length(d::InversionData) = length(d.distribution)
+Base.size(d::InversionData) = size(d.distribution)
+Base.size(d::InversionData, dim::Int) = size(d.distribution, dim)
+Base.lastindex(d::InversionData) = lastindex(d.distribution)
+Base.lastindex(d::InversionData, dim::Int) = size(d.distribution, dim)
+Base.axes(d::InversionData, dim::Int) = axes(d.distribution, dim)
+Base.ndims(d::InversionData) = ndims(d.distribution)
+
+function Base.show(io::IO, ::MIME"text/plain", d::InversionData{N}) where N
+    print(io, "$(join(size(d), "×")) InversionData")
+end
 
 export ExpfitData
 """
