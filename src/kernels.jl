@@ -140,8 +140,12 @@ function create_kernel(
     G = W1_½ * real.(data) * W2_½
 
     # Generate Kernels
-    K_dir = create_kernel(dimensions[1], X[1], y=vec(data[:, argmax(abs.(data[1, :]))]))
-    K_indir = create_kernel(dimensions[2], X[2], y=vec(data[argmax(abs.(data[:, 1])), :]))
+    K_dir = create_kernel(
+        dimensions[1], X[1], y=vec(data[:, argmax(abs.(data[1, :]))])
+    )
+    K_indir = create_kernel(
+        dimensions[2], X[2], y=vec(data[argmax(abs.(data[:, 1])), :])
+    )
 
     scale_to_one!(K_dir)
     scale_to_one!(K_indir)
@@ -154,7 +158,8 @@ function create_kernel(
     # using outer product instead of Kronecker, to make indices more obvious
     S21 = usv_indir.S * usv_dir.S'
 
-    idx = isnan(input.SNR) ? (:) : findall(i -> i .> (1 / input.SNR), S21)
+    SNR = isnan(input.SNR) ? 1e6 : input.SNR
+    idx = findall(>(1 / SNR), S21)
 
     s̃ = S21[idx]
     ñ = length(s̃)

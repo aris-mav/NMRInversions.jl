@@ -88,7 +88,7 @@ Struct containing NMR data in its fields:
 matrix) in each of the dimensions. Relevant for compressed data, identity by 
 default.
 """
-struct ExperimentData{D}
+mutable struct ExperimentData{D}
     dimensions::NTuple{D,DataAxis}
     signal::AbstractArray{<:Number,D}
     SNR::Real
